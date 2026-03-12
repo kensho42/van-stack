@@ -40,6 +40,7 @@ describe("ssr renderer", () => {
       '<meta name="description" content="Status update for GitHub downtime">',
     );
     expect(html).toContain('<link rel="canonical" href="/posts/github-down">');
+    expect(html).toContain('<div data-van-stack-app-root="">');
     expect(html).toContain("<article><h1>GitHub Down</h1></article>");
     expect(html).toContain('"pathname":"/posts/github-down"');
     expect(html).toContain('"hydrationPolicy":"app"');

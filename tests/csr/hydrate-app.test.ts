@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 
+import { bindRenderEnv, van } from "../../packages/core/src/render";
 import { hydrateApp } from "../../packages/csr/src/index";
 
 const routes = [{ id: "posts/[slug]", path: "/posts/:slug" }];
@@ -13,9 +14,21 @@ function createBootstrapScript(payload: object) {
 function createHydrationEnv() {
   let clickHandler: ((event: Record<string, unknown>) => unknown) | undefined;
   let popstateHandler: (() => unknown) | undefined;
+  const appRoot = {
+    querySelector: vi.fn(),
+  };
+  let bootstrapScript: { textContent: string | null } | null = null;
 
   const document = {
-    querySelector: vi.fn(),
+    querySelector: vi.fn((selector: string) => {
+      if (selector === "script[data-van-stack-bootstrap]") {
+        return bootstrapScript;
+      }
+      if (selector === "[data-van-stack-app-root]") {
+        return appRoot;
+      }
+      return null;
+    }),
     addEventListener: vi.fn((type: string, handler: typeof clickHandler) => {
       if (type === "click") {
         clickHandler = handler;
@@ -44,6 +57,10 @@ function createHydrationEnv() {
     history: {
       pushState: vi.fn(),
     },
+    appRoot,
+    setBootstrapScript(payload: object | null) {
+      bootstrapScript = payload ? createBootstrapScript(payload) : null;
+    },
     getClickHandler() {
       return clickHandler;
     },
@@ -56,6 +73,21 @@ function createHydrationEnv() {
 describe("csr hydrate app", () => {
   test("hydrates from SSR bootstrap and intercepts same-origin navigation", async () => {
     const env = createHydrationEnv();
+    const hydrateSpy = vi.fn((dom, bind) => bind(dom));
+    const routeHydrate = vi.fn((input: Record<string, unknown>) => {
+      van.hydrate(input.root, (dom: unknown) => dom);
+    });
+    bindRenderEnv({
+      tags: {},
+      state(value: unknown) {
+        return { val: value };
+      },
+      derive(fn: () => unknown) {
+        return fn();
+      },
+      add(..._args: unknown[]) {},
+      hydrate: hydrateSpy,
+    });
     const bootstrap = {
       routeId: "posts/[slug]",
       path: "/posts/agentic-coding-is-the-future?tab=summary",
@@ -64,27 +96,41 @@ describe("csr hydrate app", () => {
       hydrationPolicy: "app",
       data: { post: { slug: "agentic-coding-is-the-future" } },
     };
-    env.document.querySelector.mockReturnValue(
-      createBootstrapScript(bootstrap),
-    );
+    env.setBootstrapScript(bootstrap);
 
     const load = vi.fn(async (match: { params: Record<string, string> }) => ({
       post: { slug: match.params.slug },
     }));
 
     const app = hydrateApp({
-      routes,
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          files: {
+            hydrate: async () => ({ default: routeHydrate }),
+          },
+        },
+      ],
       history: env.history,
       transport: { load },
       document: env.document as never,
       window: env.window as never,
     });
+    await app.ready;
     const preventDefault = vi.fn();
 
     const listener = vi.fn();
     app.router.subscribe(listener);
 
     expect(app.bootstrap).toEqual(bootstrap);
+    expect(routeHydrate).toHaveBeenCalledWith({
+      root: env.appRoot,
+      data: bootstrap.data,
+      params: bootstrap.params,
+      path: bootstrap.path,
+    });
+    expect(hydrateSpy).toHaveBeenCalledWith(env.appRoot, expect.any(Function));
     expect(listener).toHaveBeenCalledWith({
       path: "/posts/agentic-coding-is-the-future?tab=summary",
       data: { post: { slug: "agentic-coding-is-the-future" } },
@@ -166,7 +212,7 @@ describe("csr hydrate app", () => {
 
   test("throws when bootstrap is missing or not app mode", () => {
     const missingEnv = createHydrationEnv();
-    missingEnv.document.querySelector.mockReturnValue(null);
+    missingEnv.setBootstrapScript(null);
 
     expect(() =>
       hydrateApp({
@@ -178,13 +224,11 @@ describe("csr hydrate app", () => {
     ).toThrow("No van-stack bootstrap payload was found in the document.");
 
     const wrongModeEnv = createHydrationEnv();
-    wrongModeEnv.document.querySelector.mockReturnValue(
-      createBootstrapScript({
-        pathname: "/posts/no-handoff",
-        hydrationPolicy: "document-only",
-        data: null,
-      }),
-    );
+    wrongModeEnv.setBootstrapScript({
+      pathname: "/posts/no-handoff",
+      hydrationPolicy: "document-only",
+      data: null,
+    });
 
     expect(() =>
       hydrateApp({

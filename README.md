@@ -47,6 +47,7 @@ src/routes/
   posts/
     [slug]/
       page.ts
+      hydrate.ts
       route.ts
       loader.ts
       meta.ts
@@ -129,6 +130,37 @@ export default function route() {
 }
 ```
 
+`hydrate.ts` is for real DOM hydration of SSR routes using `hydrationPolicy: "app"`:
+
+```ts
+import { van } from "van-stack/render";
+
+export default function hydrate(input: {
+  root: Element;
+  data: { post: { likes: number } };
+}) {
+  const likes = van.state(input.data.post.likes);
+  const button = input.root.querySelector("[data-like-button]");
+  const count = input.root.querySelector("[data-like-count]");
+
+  if (!(button instanceof HTMLButtonElement) || !(count instanceof HTMLSpanElement)) {
+    throw new Error("Missing hydration markers.");
+  }
+
+  van.hydrate(button, (dom) => {
+    dom.onclick = () => {
+      likes.val += 1;
+    };
+    return dom;
+  });
+
+  van.hydrate(count, (dom) => {
+    dom.textContent = String(likes.val);
+    return dom;
+  });
+}
+```
+
 ### Shell CSR Boot
 
 ```ts
@@ -164,13 +196,14 @@ import { hydrateApp } from "van-stack/csr";
 const routes = await loadRoutes({ root: "src/routes" });
 
 const app = hydrateApp({ routes });
+await app.ready;
 
 app.router.subscribe((entry) => {
   console.log(entry.path, entry.data);
 });
 ```
 
-`hydrateApp(...)` reads the SSR bootstrap payload, creates a `hydrated` router, intercepts same-origin in-app link clicks, and listens for `popstate`. App code still owns mounting and rendering.
+`hydrateApp(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, waits for that route-level DOM hydration to finish via `app.ready`, then creates a `hydrated` router, intercepts same-origin in-app link clicks, and listens for `popstate`.
 
 ## API Tour
 
@@ -214,6 +247,8 @@ export default function page() {
   );
 }
 ```
+
+The render facade also exposes `van.hydrate(...)` for route-level DOM hydration modules.
 
 ### `van-stack/csr`
 
@@ -261,6 +296,7 @@ For SSR handoff in `app` hydration mode, prefer `hydrateApp(...)` over manual bo
 import { hydrateApp } from "van-stack/csr";
 
 const app = hydrateApp({ routes });
+await app.ready;
 
 app.router.subscribe((entry) => {
   console.log(entry.path);
@@ -318,7 +354,7 @@ Routes that participate in SSG should provide `entries.ts` so dynamic params can
 - `islands`: SSR HTML plus targeted client activation
 - `app`: SSR HTML followed by full client-router handoff
 
-In practice, `app` handoff means SSR emits bootstrap state and the client calls `hydrateApp({ routes })` to continue from that initial route.
+In practice, `app` handoff means SSR emits bootstrap state and an app root, while the client calls `hydrateApp({ routes })`, awaits `app.ready`, and then continues from that initial route with real DOM hydration plus router takeover.
 
 Hydration policy is about how SSR output becomes interactive. CSR mode is about how a client router boots and where data comes from.
 

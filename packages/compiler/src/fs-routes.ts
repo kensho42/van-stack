@@ -8,6 +8,7 @@ import {
 
 export const reservedRouteFileKinds: RouteFileKind[] = [
   "page",
+  "hydrate",
   "route",
   "layout",
   "loader",

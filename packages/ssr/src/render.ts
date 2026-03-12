@@ -106,6 +106,14 @@ async function resolveRouteModule<T>(
   return module.default;
 }
 
+function wrapPageBody(body: string, hydrationPolicy: string | undefined) {
+  if (hydrationPolicy === "app") {
+    return `<div data-van-stack-app-root="">${body}</div>`;
+  }
+
+  return body;
+}
+
 export async function renderRequest(input: RenderRequestInput) {
   bindServerRenderEnv();
   const requestPath = getRequestPath(input.request);
@@ -137,7 +145,10 @@ export async function renderRequest(input: RenderRequestInput) {
     const meta = metaHandler
       ? await metaHandler({ params: match.params, data })
       : undefined;
-    const body = await page({ data });
+    const body = wrapPageBody(
+      await page({ data }),
+      route.hydrationPolicy ?? defaultHydrationPolicy,
+    );
     const bootstrap = JSON.stringify({
       routeId: route.id,
       path: requestPath.path,

@@ -19,4 +19,6 @@ export default function page() {
 
 Runtime/bootstrap code binds the concrete Van implementation through `bindRenderEnv(...)`. Route modules and shared components should not care whether the active runtime is `vanjs-core` or `mini-van-plate`.
 
+The facade also exposes `van.hydrate(...)` for route-level `hydrate.ts` modules in `app` SSR handoff flows.
+
 Render-time code stays environment-safe. Browser-only behavior belongs in explicit client-only enhancement paths.

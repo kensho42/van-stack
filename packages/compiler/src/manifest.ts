@@ -9,6 +9,7 @@ import { compileRoutesFromPaths } from "./fs-routes";
 
 const routeFileOrder: RouteFileKind[] = [
   "page",
+  "hydrate",
   "route",
   "layout",
   "loader",

@@ -47,6 +47,10 @@ describe("core primitives", () => {
   });
 
   test("forwards the shared Van API after binding", () => {
+    const hydrate = (
+      dom: { id: string },
+      fn: (dom: { id: string }) => string,
+    ) => fn(dom);
     const fakeVan = {
       tags: {
         div: (...children: unknown[]) => ({
@@ -61,6 +65,7 @@ describe("core primitives", () => {
         return fn();
       },
       add(..._args: unknown[]) {},
+      hydrate,
     };
 
     bindRenderEnv(fakeVan);
@@ -72,6 +77,9 @@ describe("core primitives", () => {
     });
     expect(van.state(2)).toEqual({ val: 2 });
     expect(van.derive(() => "ready")).toBe("ready");
+    expect(van.hydrate({ id: "root" }, (dom: { id: string }) => dom.id)).toBe(
+      "root",
+    );
   });
 
   test("allows CSR and SSR runtimes to bind concrete Van implementations", () => {
@@ -81,11 +89,13 @@ describe("core primitives", () => {
     expect(getRenderEnv()).toBe(clientVan);
     expect(typeof clientVan.tags.div).toBe("function");
     expect(typeof clientVan.state).toBe("function");
+    expect(typeof clientVan.hydrate).toBe("function");
 
     const serverVan = bindServerRenderEnv();
     expect(getRenderEnv()).toBe(serverVan);
     expect(typeof serverVan.tags.div).toBe("function");
     expect(typeof serverVan.state).toBe("function");
+    expect(typeof serverVan.hydrate).toBe("function");
 
     const staticVan = bindStaticRenderEnv();
     expect(staticVan).toBe(serverVan);

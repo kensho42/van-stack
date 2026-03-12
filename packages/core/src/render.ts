@@ -9,6 +9,7 @@ export type VanLike = {
   state: CallableFunction;
   derive: CallableFunction;
   add: CallableFunction;
+  hydrate: CallableFunction;
 };
 
 let renderEnv: VanLike | null = null;
@@ -43,5 +44,8 @@ export const van: VanLike = {
   },
   add(...args: unknown[]) {
     return getBoundRenderEnv().add(...args);
+  },
+  hydrate(...args: unknown[]) {
+    return getBoundRenderEnv().hydrate(...args);
   },
 };

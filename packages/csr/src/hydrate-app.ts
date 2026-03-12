@@ -5,6 +5,7 @@ import type {
   Router,
   Transport,
 } from "../../core/src/index";
+import { matchPath as matchCanonicalPath } from "../../core/src/index";
 import { createRouter } from "./router";
 
 type BootstrapElementLike = {
@@ -44,6 +45,10 @@ type DocumentLike = {
   ) => void;
 };
 
+type AppRootLike = {
+  querySelector?: (selector: string) => unknown;
+};
+
 type WindowLike = {
   location: {
     origin: string;
@@ -58,7 +63,7 @@ export type HydrateAppOptions = {
   bootstrapSelector?: string;
   document?: DocumentLike;
   history?: HistoryLike;
-  routes: RouteDefinition[];
+  routes: HydratableRoute[];
   transport?: Transport;
   window?: WindowLike;
 };
@@ -66,10 +71,25 @@ export type HydrateAppOptions = {
 export type HydratedApp = {
   bootstrap: BootstrapPayload;
   dispose: () => void;
+  ready: Promise<void>;
   router: Router;
 };
 
 const defaultBootstrapSelector = "script[data-van-stack-bootstrap]";
+const defaultAppRootSelector = "[data-van-stack-app-root]";
+
+type RouteHydrateModule = (input: {
+  root: AppRootLike;
+  data: unknown;
+  params: Record<string, string>;
+  path: string;
+}) => unknown;
+
+type HydratableRoute = RouteDefinition & {
+  files?: {
+    hydrate?: () => Promise<{ default: RouteHydrateModule }>;
+  };
+};
 
 function getDocument(document: DocumentLike | undefined) {
   if (document) return document;
@@ -119,6 +139,52 @@ function getCurrentPath(window: WindowLike) {
   return `${window.location.pathname}${window.location.search}`;
 }
 
+function getAppRoot(document: DocumentLike) {
+  const root = document.querySelector(defaultAppRootSelector);
+
+  if (!root) {
+    throw new Error("No van-stack app root was found in the document.");
+  }
+
+  return root as AppRootLike;
+}
+
+function getMatchedRoute(
+  routes: HydratableRoute[],
+  bootstrap: BootstrapPayload,
+) {
+  if (bootstrap.routeId) {
+    const matchedById = routes.find((route) => route.id === bootstrap.routeId);
+    if (matchedById) return matchedById;
+  }
+
+  const pathname = bootstrap.pathname;
+  const matchedByPath = routes.find((route) =>
+    Boolean(matchCanonicalPath(route.path, pathname)),
+  );
+
+  if (matchedByPath) return matchedByPath;
+
+  throw new Error(`No route matched bootstrap path: ${bootstrap.pathname}`);
+}
+
+async function hydrateRouteRoot(
+  route: HydratableRoute,
+  bootstrap: BootstrapPayload,
+  root: AppRootLike,
+) {
+  const hydrateFactory = route.files?.hydrate;
+  if (!hydrateFactory) return;
+
+  const module = await hydrateFactory();
+  await module.default({
+    root,
+    data: bootstrap.data,
+    params: bootstrap.params ?? {},
+    path: bootstrap.path ?? bootstrap.pathname,
+  });
+}
+
 function getAnchor(event: ClickEventLike) {
   return event.target?.closest?.("a[href]") ?? null;
 }
@@ -162,6 +228,9 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     bootstrap,
     transport: options.transport,
   });
+  const root = getAppRoot(document);
+  const matchedRoute = getMatchedRoute(options.routes, bootstrap);
+  const ready = hydrateRouteRoot(matchedRoute, bootstrap, root).then(() => {});
 
   const clickHandler = async (event: ClickEventLike) => {
     const anchor = getAnchor(event);
@@ -184,6 +253,7 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
 
   return {
     bootstrap,
+    ready,
     router,
     dispose() {
       document.removeEventListener("click", clickHandler);

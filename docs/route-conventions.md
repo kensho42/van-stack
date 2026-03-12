@@ -5,6 +5,7 @@ Filesystem routing autoloads from `src/routes` and usually stays in memory via `
 Reserved route filenames:
 
 - `page.ts`
+- `hydrate.ts`
 - `route.ts`
 - `layout.ts`
 - `loader.ts`
@@ -18,6 +19,8 @@ Bracket params like `[slug]` compile to canonical paths like `:slug`.
 Helpers such as `_components` are ignored unless they use a reserved filename.
 
 `meta.ts` is the route-level place for page metadata such as title, description, and canonical URL.
+
+`hydrate.ts` is the client-only route module for real DOM hydration of `app` routes. It receives the existing SSR root plus bootstrap data and should call `van.hydrate(...)` on the DOM nodes that need to become interactive.
 
 `route.ts` is the raw `Request -> Response` escape hatch for non-HTML routes such as `robots.txt`, `sitemap.xml`, feeds, proxy endpoints, or webhooks.
 

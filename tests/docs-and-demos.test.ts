@@ -17,6 +17,7 @@ const requiredDemos = [
   "demo/csr/shell/src/routes/index/page.ts",
   "demo/csr/custom/src/routes/index/page.ts",
   "demo/ssr-blog/src/routes/posts/[slug]/page.ts",
+  "demo/ssr-blog/src/routes/posts/[slug]/hydrate.ts",
   "demo/ssr-blog/src/routes/posts/[slug]/loader.ts",
   "demo/ssg-site/src/routes/index/page.ts",
   "demo/adaptive-nav/src/routes/index/layout.ts",
@@ -56,6 +57,7 @@ describe("docs and demos", () => {
     expect(readme).toContain("hydrateApp");
     expect(readme).toContain("renderRequest");
     expect(readme).toContain("route.ts");
+    expect(readme).toContain("hydrate.ts");
     expect(readme).toContain("robots.txt");
     expect(readme).toContain("request,");
     expect(readme).not.toContain("request: new Request");
@@ -63,6 +65,7 @@ describe("docs and demos", () => {
     expect(readme).toContain("stack");
     expect(readme).toContain(".van-stack/routes.generated.ts");
     expect(readme).toContain("van-stack/render");
+    expect(readme).toContain("app.ready");
   });
 
   test("distinguishes hydration policy from CSR runtime mode", () => {
@@ -76,6 +79,7 @@ describe("docs and demos", () => {
     expect(hydrationModes).toContain("Hydration policy");
     expect(hydrationModes).toContain("CSR runtime mode");
     expect(hydrationModes).toContain("hydrateApp");
+    expect(hydrationModes).toContain("app.ready");
   });
 
   test("documents the updated demos for SSR, shell-first CSR, and custom CSR", () => {
@@ -103,6 +107,7 @@ describe("docs and demos", () => {
     expect(gettingStarted).toContain("loadRoutes");
     expect(gettingStarted).toContain(".van-stack/routes.generated.ts");
     expect(routeConventions).toContain("src/routes");
+    expect(routeConventions).toContain("hydrate.ts");
     expect(routeConventions).toContain(".van-stack/routes.generated.ts");
     expect(vite).toContain("optional");
     expect(vite).toContain("route discovery");
@@ -117,6 +122,7 @@ describe("docs and demos", () => {
     expect(readme).toContain("van-stack/render");
     expect(sharedComponents).toContain("van-stack/render");
     expect(sharedComponents).toContain("bindRenderEnv");
+    expect(sharedComponents).toContain("van.hydrate");
     expect(demos).toContain("hydrated");
     expect(demos).toContain("van-stack/render");
   });

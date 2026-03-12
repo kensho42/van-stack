@@ -48,6 +48,7 @@ describe("filesystem route compiler", () => {
     const routes = compileRoutesFromPaths([
       "/src/routes/posts/layout.ts",
       "/src/routes/posts/[slug]/page.ts",
+      "/src/routes/posts/[slug]/hydrate.ts",
       "/src/routes/posts/[slug]/loader.ts",
       "/src/routes/posts/[slug]/route.ts",
       "/src/routes/posts/[slug]/meta.ts",
@@ -61,6 +62,7 @@ describe("filesystem route compiler", () => {
         directorySegments: ["posts", "[slug]"],
         files: {
           page: "/src/routes/posts/[slug]/page.ts",
+          hydrate: "/src/routes/posts/[slug]/hydrate.ts",
           loader: "/src/routes/posts/[slug]/loader.ts",
           route: "/src/routes/posts/[slug]/route.ts",
           meta: "/src/routes/posts/[slug]/meta.ts",
@@ -109,6 +111,7 @@ describe("filesystem route compiler", () => {
 
     const layoutPath = app.write("src/routes/posts/layout.ts");
     const pagePath = app.write("src/routes/posts/[slug]/page.ts");
+    const hydratePath = app.write("src/routes/posts/[slug]/hydrate.ts");
     const loaderPath = app.write("src/routes/posts/[slug]/loader.ts");
     const routePath = app.write("src/routes/posts/[slug]/route.ts");
     const metaPath = app.write("src/routes/posts/[slug]/meta.ts");
@@ -122,6 +125,7 @@ describe("filesystem route compiler", () => {
 
     expect(discovered).toEqual([
       layoutPath,
+      hydratePath,
       loaderPath,
       metaPath,
       pagePath,
@@ -137,6 +141,7 @@ describe("filesystem route compiler", () => {
         directorySegments: ["posts", "[slug]"],
         files: {
           page: pagePath,
+          hydrate: hydratePath,
           loader: loaderPath,
           route: routePath,
           meta: metaPath,
@@ -152,6 +157,7 @@ describe("filesystem route compiler", () => {
 
     app.write("src/routes/posts/layout.ts");
     app.write("src/routes/posts/[slug]/page.ts");
+    app.write("src/routes/posts/[slug]/hydrate.ts");
     app.write("src/routes/posts/[slug]/loader.ts");
     app.write("src/routes/posts/[slug]/route.ts");
     app.write("src/routes/posts/[slug]/meta.ts");
@@ -163,6 +169,9 @@ describe("filesystem route compiler", () => {
     expect(manifest.code).toContain('id: "posts/[slug]"');
     expect(manifest.code).toContain(
       'page: () => import("../src/routes/posts/[slug]/page.ts")',
+    );
+    expect(manifest.code).toContain(
+      'hydrate: () => import("../src/routes/posts/[slug]/hydrate.ts")',
     );
     expect(manifest.code).toContain(
       'loader: () => import("../src/routes/posts/[slug]/loader.ts")',
@@ -202,6 +211,10 @@ describe("filesystem route compiler", () => {
       "export default function page() { return 'page'; }\n",
     );
     app.write(
+      "src/routes/posts/[slug]/hydrate.ts",
+      "export default function hydrate() { return null; }\n",
+    );
+    app.write(
       "src/routes/posts/[slug]/loader.ts",
       "export default async function loader() { return { ok: true }; }\n",
     );
@@ -214,6 +227,7 @@ describe("filesystem route compiler", () => {
       path: "/posts/:slug",
     });
     expect(typeof routes[0]?.files.page).toBe("function");
+    expect(typeof routes[0]?.files.hydrate).toBe("function");
     expect(typeof routes[0]?.files.loader).toBe("function");
     expect(routes[0]?.layoutChain).toHaveLength(1);
     expect(
