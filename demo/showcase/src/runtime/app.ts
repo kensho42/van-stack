@@ -1,3 +1,17 @@
+import { fileURLToPath } from "node:url";
+
+import { loadRoutes } from "../../../../packages/compiler/src/index";
+import { renderRequest } from "../../../../packages/ssr/src/index";
+
+import { getShowcasePost } from "../content/blog";
+
+type ShowcaseRoute = Awaited<ReturnType<typeof loadRoutes>>[number] & {
+  hydrationPolicy?: "app" | "document-only";
+};
+
+const routesRoot = fileURLToPath(new URL("../routes", import.meta.url));
+let routesPromise: Promise<ShowcaseRoute[]> | null = null;
+
 function createHtml(title: string, body: string, status = 200) {
   return new Response(
     `<!doctype html><html><head><title>${title}</title></head><body>${body}</body></html>`,
@@ -7,22 +21,6 @@ function createHtml(title: string, body: string, status = 200) {
         "content-type": "text/html; charset=utf-8",
       },
     },
-  );
-}
-
-function renderLandingPage() {
-  return createHtml(
-    "van-stack Showcase",
-    `
-      <main>
-        <h1>van-stack Showcase</h1>
-        <p>Evaluate the same blog app through two demo tracks.</p>
-        <nav>
-          <a href="/gallery">Runtime Gallery</a>
-          <a href="/walkthrough">Guided Walkthrough</a>
-        </nav>
-      </main>
-    `,
   );
 }
 
@@ -52,16 +50,42 @@ function renderRouteNotFound() {
   );
 }
 
+async function getShowcaseRoutes() {
+  if (!routesPromise) {
+    routesPromise = loadRoutes({ root: routesRoot }).then((routes) =>
+      routes.map((route) => ({
+        ...route,
+        hydrationPolicy: route.id.startsWith("gallery/hydrated/")
+          ? "app"
+          : "document-only",
+      })),
+    );
+  }
+
+  return routesPromise;
+}
+
+function getRequestedPost(pathname: string) {
+  const match = pathname.match(/^\/gallery\/[^/]+\/posts\/([^/]+)$/);
+  if (!match) return null;
+  return getShowcasePost(match[1] ?? "");
+}
+
 export async function handleShowcaseRequest(request: Request) {
   const { pathname } = new URL(request.url);
 
-  if (pathname === "/") {
-    return renderLandingPage();
-  }
-
-  if (pathname.startsWith("/gallery/") && pathname.includes("/posts/")) {
+  if (pathname.includes("/posts/") && !getRequestedPost(pathname)) {
     return renderPostNotFound();
   }
 
-  return renderRouteNotFound();
+  const response = await renderRequest({
+    request,
+    routes: await getShowcaseRoutes(),
+  });
+
+  if (response.status === 404) {
+    return renderRouteNotFound();
+  }
+
+  return response;
 }
