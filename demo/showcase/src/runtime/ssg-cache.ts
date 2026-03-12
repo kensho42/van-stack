@@ -10,6 +10,7 @@ type StaticPage = {
 
 const routesRoot = fileURLToPath(new URL("../routes", import.meta.url));
 let pagesPromise: Promise<StaticPage[]> | null = null;
+type ShowcaseStaticRoutes = Parameters<typeof buildStaticRoutes>[0]["routes"];
 
 async function buildShowcaseSsgPages() {
   const routes = await loadRoutes({ root: routesRoot });
@@ -19,7 +20,7 @@ async function buildShowcaseSsgPages() {
     .map((route) => ({
       ...route,
       hydrationPolicy: "document-only" as const,
-    }));
+    })) as ShowcaseStaticRoutes;
 
   return buildStaticRoutes({
     routes: ssgRoutes,

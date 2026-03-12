@@ -5,12 +5,10 @@ import { renderRequest } from "../../../../packages/ssr/src/index";
 
 import { getShowcasePost } from "../content/blog";
 
-type ShowcaseRoute = Awaited<ReturnType<typeof loadRoutes>>[number] & {
-  hydrationPolicy?: "app" | "document-only";
-};
+type ShowcaseRenderRoutes = Parameters<typeof renderRequest>[0]["routes"];
 
 const routesRoot = fileURLToPath(new URL("../routes", import.meta.url));
-let routesPromise: Promise<ShowcaseRoute[]> | null = null;
+let routesPromise: Promise<ShowcaseRenderRoutes> | null = null;
 
 function createHtml(title: string, body: string, status = 200) {
   return new Response(
@@ -52,13 +50,14 @@ function renderRouteNotFound() {
 
 async function getShowcaseRoutes() {
   if (!routesPromise) {
-    routesPromise = loadRoutes({ root: routesRoot }).then((routes) =>
-      routes.map((route) => ({
-        ...route,
-        hydrationPolicy: route.id.startsWith("gallery/hydrated/")
-          ? "app"
-          : "document-only",
-      })),
+    routesPromise = loadRoutes({ root: routesRoot }).then(
+      (routes) =>
+        routes.map((route) => ({
+          ...route,
+          hydrationPolicy: route.id.startsWith("gallery/hydrated/")
+            ? "app"
+            : "document-only",
+        })) as ShowcaseRenderRoutes,
     );
   }
 

@@ -17,7 +17,7 @@
     "demo/*"
   ],
   "scripts": {
-    "start": "bun demo/showcase/src/runtime/server.ts",
+    "start": "bun -e \"await import('./demo/showcase/src/runtime/start.ts')\"",
     "test": "vitest run",
     "check": "biome check .",
     "build": "tsc -p tsconfig.json --noEmit"

@@ -1,7 +1,4 @@
-import {
-  getShowcaseMode,
-  type ShowcaseModeId,
-} from "../content/modes";
+import { getShowcaseMode, type ShowcaseModeId } from "../content/modes";
 
 export type ShowcaseTrack = {
   label: string;

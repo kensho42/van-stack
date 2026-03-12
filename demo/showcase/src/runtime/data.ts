@@ -1,8 +1,8 @@
 import {
   getRelatedPosts,
   getShowcasePost,
-  showcasePosts,
   type ShowcasePost,
+  showcasePosts,
 } from "../content/blog";
 import {
   getShowcaseMode,

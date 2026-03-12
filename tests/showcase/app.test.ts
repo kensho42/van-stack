@@ -1,7 +1,12 @@
+import { createServer } from "node:http";
+
 import { describe, expect, test } from "vitest";
 
 import { handleShowcaseRequest } from "../../demo/showcase/src/runtime/app";
-import { startShowcaseServer } from "../../demo/showcase/src/runtime/server";
+import {
+  startShowcaseServer,
+  startShowcaseServerWithFallback,
+} from "../../demo/showcase/src/runtime/server";
 
 describe("showcase app", () => {
   test("renders the landing page with both evaluator demo tracks", async () => {
@@ -69,7 +74,9 @@ describe("showcase app", () => {
 
   test("renders shell and custom gallery pages with mode-specific callouts", async () => {
     const shellResponse = await handleShowcaseRequest(
-      new Request("https://example.com/gallery/shell/posts/runtime-gallery-tour"),
+      new Request(
+        "https://example.com/gallery/shell/posts/runtime-gallery-tour",
+      ),
     );
     const customResponse = await handleShowcaseRequest(
       new Request(
@@ -163,6 +170,62 @@ describe("showcase app", () => {
     } finally {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      });
+    }
+  });
+
+  test("falls back to an open port when the preferred port is busy", async () => {
+    const blocker = createServer((_req, res) => {
+      res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+      res.end("busy");
+    });
+
+    await new Promise<void>((resolve) => {
+      blocker.listen(0, resolve);
+    });
+
+    const blockerAddress = blocker.address();
+    if (!blockerAddress || typeof blockerAddress === "string") {
+      blocker.close();
+      throw new Error("Busy-port blocker did not expose a numeric port.");
+    }
+
+    const server = await startShowcaseServerWithFallback(blockerAddress.port);
+    const address = server.address();
+
+    if (!address || typeof address === "string") {
+      blocker.close();
+      server.close();
+      throw new Error(
+        "Showcase fallback server did not expose a numeric port.",
+      );
+    }
+
+    try {
+      expect(address.port).not.toBe(blockerAddress.port);
+
+      const response = await fetch(`http://127.0.0.1:${address.port}/`);
+
+      expect(response.status).toBe(200);
+      expect(await response.text()).toContain("Runtime Gallery");
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      });
+      await new Promise<void>((resolve, reject) => {
+        blocker.close((error) => {
           if (error) {
             reject(error);
             return;

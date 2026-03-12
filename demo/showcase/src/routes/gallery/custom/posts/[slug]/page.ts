@@ -1,9 +1,6 @@
 import { van } from "van-stack/render";
 
-import {
-  getPostByline,
-  getPostEyebrow,
-} from "../../../../../components/blog";
+import { getPostByline, getPostEyebrow } from "../../../../../components/blog";
 import { getModeCallout } from "../../../../../components/chrome";
 import type { GalleryPostData } from "../../../../../runtime/data";
 
@@ -19,7 +16,9 @@ export default function page(input: { data: unknown }) {
     p(getPostByline(data.post)),
     p(data.post.summary),
     aside(h2(callout.title), p(callout.body)),
-    p("This route highlights app-owned resolution so the app shell keeps control of fetching."),
+    p(
+      "This route highlights app-owned resolution so the app shell keeps control of fetching.",
+    ),
     section(
       h2("Related posts"),
       ul(...data.related.map((post) => li(post.title))),

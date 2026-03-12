@@ -1,9 +1,6 @@
 import { van } from "van-stack/render";
 
-import {
-  getPostByline,
-  getPostEyebrow,
-} from "../../../../../components/blog";
+import { getPostByline, getPostEyebrow } from "../../../../../components/blog";
 import { getModeCallout } from "../../../../../components/chrome";
 import type { GalleryPostData } from "../../../../../runtime/data";
 

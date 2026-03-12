@@ -94,10 +94,7 @@ export function getShowcasePost(slug: string) {
   return showcasePosts.find((post) => post.slug === slug);
 }
 
-export function getRelatedPosts(
-  post: ShowcasePost,
-  limit = 2,
-): ShowcasePost[] {
+export function getRelatedPosts(post: ShowcasePost, limit = 2): ShowcasePost[] {
   return post.relatedSlugs
     .map((slug) => getShowcasePost(slug))
     .filter((candidate): candidate is ShowcasePost => candidate !== undefined)

@@ -1,9 +1,6 @@
 import { van } from "van-stack/render";
 
-import {
-  getPostByline,
-  getPostEyebrow,
-} from "../../../../../components/blog";
+import { getPostByline, getPostEyebrow } from "../../../../../components/blog";
 import { getModeCallout } from "../../../../../components/chrome";
 import type { GalleryPostData } from "../../../../../runtime/data";
 
@@ -20,7 +17,9 @@ export default function page(input: { data: unknown }) {
     p(data.post.summary),
     aside(h2(callout.title), p(callout.body)),
     p("Hydrated Mode"),
-    p("This route starts from SSR HTML and keeps the same post alive on the client."),
+    p(
+      "This route starts from SSR HTML and keeps the same post alive on the client.",
+    ),
     button({ "data-like-button": "" }, "Like this post"),
     p(span({ "data-like-count": "" }, "3"), " readers found this helpful"),
     section(

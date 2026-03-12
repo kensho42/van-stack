@@ -11,10 +11,7 @@ export default function page() {
     section(
       ul(
         ...showcaseModes.map((mode) =>
-          li(
-            a({ href: mode.galleryPath }, mode.title),
-            `: ${mode.summary}`,
-          ),
+          li(a({ href: mode.galleryPath }, mode.title), `: ${mode.summary}`),
         ),
       ),
     ),

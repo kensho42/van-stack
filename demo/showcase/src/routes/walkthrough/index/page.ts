@@ -10,10 +10,7 @@ export default function page() {
     p("Review annotated capability pages for the same blog app."),
     ul(
       ...showcaseModes.map((mode) =>
-        li(
-          a({ href: mode.walkthroughPath }, mode.title),
-          `: ${mode.proves}`,
-        ),
+        li(a({ href: mode.walkthroughPath }, mode.title), `: ${mode.proves}`),
       ),
     ),
   );
