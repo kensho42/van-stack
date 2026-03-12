@@ -14,6 +14,7 @@ import {
   buildRouteManifest,
   compileRoutesFromPaths,
   discoverRoutes,
+  loadRoutes,
   writeRouteManifest,
 } from "../../packages/compiler/src/index";
 
@@ -176,5 +177,33 @@ describe("filesystem route compiler", () => {
     );
     expect(existsSync(outFile)).toBe(true);
     expect(readFileSync(outFile, "utf8")).toContain('id: "posts/[slug]"');
+  });
+
+  test("loads routes in memory without writing a generated manifest file", async () => {
+    const app = createTempApp();
+
+    app.write("src/routes/posts/layout.ts");
+    app.write(
+      "src/routes/posts/[slug]/page.ts",
+      "export default function page() { return 'page'; }\n",
+    );
+    app.write(
+      "src/routes/posts/[slug]/loader.ts",
+      "export default async function loader() { return { ok: true }; }\n",
+    );
+
+    const routes = await loadRoutes({ root: app.routesRoot });
+
+    expect(routes).toHaveLength(1);
+    expect(routes[0]).toMatchObject({
+      id: "posts/[slug]",
+      path: "/posts/:slug",
+    });
+    expect(typeof routes[0]?.files.page).toBe("function");
+    expect(typeof routes[0]?.files.loader).toBe("function");
+    expect(routes[0]?.layoutChain).toHaveLength(1);
+    expect(
+      existsSync(join(app.appRoot, ".van-stack", "routes.generated.ts")),
+    ).toBe(false);
   });
 });

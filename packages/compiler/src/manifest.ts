@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import type { NormalizedRoute, RouteFileKind } from "../../core/src/index";
 
@@ -22,10 +23,24 @@ type BuildRouteManifestOptions = {
   filePaths?: string[];
 };
 
+type LoadRoutesOptions = {
+  root: string;
+  filePaths?: string[];
+};
+
 export type RouteManifest = {
   routes: NormalizedRoute[];
   code: string;
   outFile: string;
+};
+
+export type RouteModuleLoader<T = unknown> = () => Promise<{ default: T }>;
+
+export type LoadedRoute = {
+  id: string;
+  path: string;
+  files: Partial<Record<RouteFileKind, RouteModuleLoader>>;
+  layoutChain: RouteModuleLoader[];
 };
 
 function normalizePath(path: string): string {
@@ -62,6 +77,35 @@ function toImportPath(fromFile: string, toFile: string): string {
 
 function renderImportFactory(targetFile: string, outFile: string): string {
   return `() => import("${toImportPath(outFile, targetFile)}")`;
+}
+
+function createModuleLoader(targetFile: string): RouteModuleLoader {
+  const href = pathToFileURL(resolve(targetFile)).href;
+
+  return () => import(/* @vite-ignore */ href);
+}
+
+function buildLoadedRoute(
+  route: NormalizedRoute,
+  routesRoot: string,
+): LoadedRoute {
+  const files: LoadedRoute["files"] = {};
+
+  for (const key of routeFileOrder) {
+    const filePath = route.files[key];
+    if (!filePath) continue;
+
+    files[key] = createModuleLoader(filePath);
+  }
+
+  return {
+    id: route.id,
+    path: route.path,
+    files,
+    layoutChain: route.layoutChain.map((segment) =>
+      createModuleLoader(join(routesRoot, ...segment.split("/"), "layout.ts")),
+    ),
+  };
 }
 
 function renderFiles(route: NormalizedRoute, outFile: string): string[] {
@@ -140,6 +184,17 @@ export async function buildRouteManifest(
     code,
     outFile,
   };
+}
+
+export async function loadRoutes(
+  options: LoadRoutesOptions,
+): Promise<LoadedRoute[]> {
+  const routesRoot = resolve(options.root);
+  const filePaths =
+    options.filePaths ?? (await discoverRoutes({ root: routesRoot }));
+  const routes = compileRoutesFromPaths(filePaths, { root: routesRoot });
+
+  return routes.map((route) => buildLoadedRoute(route, routesRoot));
 }
 
 export async function writeRouteManifest(

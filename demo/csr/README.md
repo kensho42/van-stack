@@ -8,4 +8,4 @@ Demonstrates all three CSR runtime modes:
 
 Each route module imports `van` from `van-stack/render`, not `vanjs-core` directly.
 
-In the filesystem-routing path, the demo would import routes from `.van-stack/routes.generated.ts`.
+In the filesystem-routing path, the demo would typically call `await loadRoutes({ root: "src/routes" })`. Writing `.van-stack/routes.generated.ts` stays available for custom tooling, but it is not the default path.

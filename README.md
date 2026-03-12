@@ -56,14 +56,20 @@ src/routes/
       error.ts
 ```
 
-By default, filesystem apps should discover those files from `src/routes` and generate a JS manifest at `.van-stack/routes.generated.ts`. That manifest becomes the runtime input for CSR, SSR, and SSG.
+By default, filesystem apps should discover those files from `src/routes` and load runtime routes directly in memory. If you need a persisted artifact for custom build tooling, the compiler can still emit `.van-stack/routes.generated.ts`.
+
+```ts
+import { loadRoutes } from "@van-stack/compiler";
+
+const routes = await loadRoutes({ root: "src/routes" });
+```
+
+For an explicit generated file:
 
 ```ts
 import { writeRouteManifest } from "@van-stack/compiler";
 
 await writeRouteManifest({ root: "src/routes" });
-
-import routes from "./.van-stack/routes.generated";
 ```
 
 `loader.ts`
@@ -153,7 +159,7 @@ const customRouter = createRouter({
 
 `hydrated` mode is for SSR handoff. It consumes bootstrap data from `van-stack/ssr`, then uses the same transport pattern for later navigations.
 
-In a filesystem-routing app, `routes` would usually come from `.van-stack/routes.generated.ts` instead of being handwritten.
+In a filesystem-routing app, `routes` would usually come from `await loadRoutes({ root: "src/routes" })` instead of being handwritten. Persisting `.van-stack/routes.generated.ts` is optional.
 
 Shared route modules should import their Van API from `van-stack/render`:
 

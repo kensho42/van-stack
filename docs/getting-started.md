@@ -6,7 +6,7 @@
 
 1. Define routes under `src/routes`.
 2. Use reserved filenames such as `page.ts`, `layout.ts`, `loader.ts`, and `meta.ts`.
-3. Generate a JS route manifest from that tree, typically at `.van-stack/routes.generated.ts`.
+3. Load runtime routes from that tree, usually with `loadRoutes({ root: "src/routes" })`.
 4. Choose whether the app runs in CSR, SSR, or SSG mode.
 5. If the app has a client router, choose a CSR runtime mode:
    - `hydrated` for SSR handoff in the browser
@@ -17,8 +17,10 @@
 For filesystem apps, the happy path is:
 
 1. author route modules in `src/routes`
-2. generate `.van-stack/routes.generated.ts`
-3. import that manifest into CSR, SSR, or SSG entrypoints
+2. call `await loadRoutes({ root: "src/routes" })`
+3. pass those routes into CSR, SSR, or SSG entrypoints
+
+If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src/routes" })` can still emit `.van-stack/routes.generated.ts`.
 
 ## Rule of thumb
 

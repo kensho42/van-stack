@@ -1,6 +1,6 @@
 # Route Conventions
 
-Filesystem routing autoloads from `src/routes` and compiles into `.van-stack/routes.generated.ts`.
+Filesystem routing autoloads from `src/routes` and usually stays in memory via `loadRoutes({ root: "src/routes" })`. If you need an emitted artifact, the compiler can also write `.van-stack/routes.generated.ts`.
 
 Reserved route filenames:
 
@@ -18,4 +18,4 @@ Helpers such as `_components` are ignored unless they use a reserved filename.
 
 `meta.ts` is the route-level place for page metadata such as title, description, and canonical URL.
 
-The generated JS manifest is the runtime bridge between route files and the CSR, SSR, or SSG entrypoints. Apps that do not want filesystem routing can still skip this and provide routes manually.
+The runtime route manifest is the bridge between route files and the CSR, SSR, or SSG entrypoints. Most apps can keep it in memory; apps that need an explicit build artifact can persist `.van-stack/routes.generated.ts`. Apps that do not want filesystem routing can still skip this and provide routes manually.

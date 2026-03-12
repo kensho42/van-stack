@@ -46,6 +46,7 @@ describe("docs and demos", () => {
     expect(readme).toContain("shell");
     expect(readme).toContain("custom");
     expect(readme).toContain("src/routes");
+    expect(readme).toContain("loadRoutes");
     expect(readme).toContain(".van-stack/routes.generated.ts");
     expect(readme).toContain("van-stack/render");
   });
@@ -81,6 +82,7 @@ describe("docs and demos", () => {
     const vite = readFileSync("docs/vite.md", "utf8");
     const csrDemo = readFileSync("demo/csr/README.md", "utf8");
 
+    expect(gettingStarted).toContain("loadRoutes");
     expect(gettingStarted).toContain(".van-stack/routes.generated.ts");
     expect(routeConventions).toContain("src/routes");
     expect(routeConventions).toContain(".van-stack/routes.generated.ts");
