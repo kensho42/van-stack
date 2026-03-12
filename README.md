@@ -374,10 +374,19 @@ Presentation is separate from route matching and data loading. The same route tr
 
 ## Demos
 
-- `demo/csr`: `hydrated`, `shell`, and `custom` client boot patterns
-- `demo/ssr-blog`: SSR blog route with slug loader and bootstrap handoff
-- `demo/ssg-site`: static generation from route entries
-- `demo/adaptive-nav`: `replace` vs `stack` presentation
+For the fastest evaluator path, run the showcase from the repo root:
+
+```bash
+bun run start
+```
+
+- `demo/showcase`: evaluator-first demo workspace for the shared blog app
+  - `Runtime Gallery`: live `hydrated`, `shell`, `custom`, `ssg`, and adaptive comparisons
+  - `Guided Walkthrough`: annotated pages that explain the same blog app and link back to the live routes
+- `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
+- `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
+- `demo/ssg-site`: focused reference for static generation from route entries
+- `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation
 
 ## Docs
 

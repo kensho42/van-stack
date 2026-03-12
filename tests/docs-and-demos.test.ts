@@ -99,16 +99,25 @@ describe("docs and demos", () => {
     const demos = readFileSync("docs/demos.md", "utf8");
     const csrDemo = readFileSync("demo/csr/README.md", "utf8");
     const ssrDemo = readFileSync("demo/ssr-blog/README.md", "utf8");
+    const showcaseDemo = readFileSync("demo/showcase/README.md", "utf8");
 
     expect(demos).toContain("hydrated");
     expect(demos).toContain("shell");
     expect(demos).toContain("custom");
+    expect(demos).toContain("demo/showcase");
+    expect(demos).toContain("Runtime Gallery");
+    expect(demos).toContain("Guided Walkthrough");
     expect(csrDemo).toContain("hydrated");
     expect(csrDemo).toContain("hydrateApp");
     expect(csrDemo).toContain("shell");
     expect(csrDemo).toContain("custom");
+    expect(csrDemo).toContain("bun run start");
     expect(ssrDemo).toContain("hydrated");
     expect(ssrDemo).toContain("hydrateApp");
+    expect(ssrDemo).toContain("demo/showcase");
+    expect(showcaseDemo).toContain("bun run start");
+    expect(showcaseDemo).toContain("Runtime Gallery");
+    expect(showcaseDemo).toContain("Guided Walkthrough");
   });
 
   test("documents route autoloading and keeps Vite optional", () => {
@@ -132,6 +141,10 @@ describe("docs and demos", () => {
     const sharedComponents = readFileSync("docs/shared-components.md", "utf8");
     const demos = readFileSync("docs/demos.md", "utf8");
 
+    expect(readme).toContain("bun run start");
+    expect(readme).toContain("demo/showcase");
+    expect(readme).toContain("Runtime Gallery");
+    expect(readme).toContain("Guided Walkthrough");
     expect(readme).toContain("van-stack/render");
     expect(readme).toContain('import { van, vanX } from "van-stack/render"');
     expect(sharedComponents).toContain("van-stack/render");
@@ -142,6 +155,7 @@ describe("docs and demos", () => {
     expect(sharedComponents).toContain("bindRenderEnv");
     expect(sharedComponents).toContain("van.hydrate");
     expect(demos).toContain("hydrated");
+    expect(demos).toContain("focused references");
     expect(demos).toContain("van-stack/render");
   });
 
