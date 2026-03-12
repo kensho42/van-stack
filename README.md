@@ -234,13 +234,15 @@ import { renderRequest } from "van-stack/ssr";
 const routes = await loadRoutes({ root: "src/routes" });
 
 const response = await renderRequest({
-  request: new Request("https://example.com/posts/github-down"),
+  request,
   routes,
 });
 
 console.log(response.status);
 console.log(response.html);
 ```
+
+`request` is the incoming server/runtime request object.
 
 ### `van-stack/ssg`
 

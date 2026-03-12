@@ -54,7 +54,8 @@ describe("docs and demos", () => {
     expect(readme).toContain("loadRoutes");
     expect(readme).toContain('mode: "shell"');
     expect(readme).toContain("renderRequest");
-    expect(readme).toContain("request: new Request");
+    expect(readme).toContain("request,");
+    expect(readme).not.toContain("request: new Request");
     expect(readme).toContain("replace");
     expect(readme).toContain("stack");
     expect(readme).toContain(".van-stack/routes.generated.ts");
