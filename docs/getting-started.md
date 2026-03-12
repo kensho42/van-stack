@@ -5,7 +5,7 @@
 ## MVP setup
 
 1. Define routes under `src/routes`.
-2. Use reserved filenames such as `page.ts`, `layout.ts`, `loader.ts`, and `meta.ts`.
+2. Use reserved filenames such as `page.ts`, `route.ts`, `layout.ts`, `loader.ts`, and `meta.ts`.
 3. Load runtime routes from that tree, usually with `loadRoutes({ root: "src/routes" })`.
 4. Choose whether the app runs in CSR, SSR, or SSG mode.
 5. If the app has a client router, choose a CSR runtime mode:

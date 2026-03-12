@@ -64,10 +64,11 @@ export async function buildStaticRoutes(input: BuildStaticRoutesInput) {
         request: new Request(`https://van-stack.local${path}`),
         routes: [route],
       });
+      const html = await response.text();
 
       output.push({
         path,
-        html: response.html,
+        html,
       });
     }
   }

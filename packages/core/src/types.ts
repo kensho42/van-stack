@@ -6,6 +6,7 @@ export type CsrMode = "hydrated" | "shell" | "custom";
 
 export type RouteFileKind =
   | "page"
+  | "route"
   | "layout"
   | "loader"
   | "action"

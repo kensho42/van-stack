@@ -49,6 +49,7 @@ describe("filesystem route compiler", () => {
       "/src/routes/posts/layout.ts",
       "/src/routes/posts/[slug]/page.ts",
       "/src/routes/posts/[slug]/loader.ts",
+      "/src/routes/posts/[slug]/route.ts",
       "/src/routes/posts/[slug]/meta.ts",
       "/src/routes/posts/[slug]/error.ts",
     ]);
@@ -61,6 +62,7 @@ describe("filesystem route compiler", () => {
         files: {
           page: "/src/routes/posts/[slug]/page.ts",
           loader: "/src/routes/posts/[slug]/loader.ts",
+          route: "/src/routes/posts/[slug]/route.ts",
           meta: "/src/routes/posts/[slug]/meta.ts",
           error: "/src/routes/posts/[slug]/error.ts",
         },
@@ -108,6 +110,7 @@ describe("filesystem route compiler", () => {
     const layoutPath = app.write("src/routes/posts/layout.ts");
     const pagePath = app.write("src/routes/posts/[slug]/page.ts");
     const loaderPath = app.write("src/routes/posts/[slug]/loader.ts");
+    const routePath = app.write("src/routes/posts/[slug]/route.ts");
     const metaPath = app.write("src/routes/posts/[slug]/meta.ts");
     app.write("src/routes/posts/[slug]/notes.md", "# helper");
     app.write(
@@ -117,7 +120,13 @@ describe("filesystem route compiler", () => {
 
     const discovered = await discoverRoutes({ root: app.routesRoot });
 
-    expect(discovered).toEqual([layoutPath, loaderPath, metaPath, pagePath]);
+    expect(discovered).toEqual([
+      layoutPath,
+      loaderPath,
+      metaPath,
+      pagePath,
+      routePath,
+    ]);
 
     expect(
       compileRoutesFromPaths(discovered, { root: app.routesRoot }),
@@ -129,6 +138,7 @@ describe("filesystem route compiler", () => {
         files: {
           page: pagePath,
           loader: loaderPath,
+          route: routePath,
           meta: metaPath,
         },
         layoutChain: ["posts"],
@@ -143,6 +153,7 @@ describe("filesystem route compiler", () => {
     app.write("src/routes/posts/layout.ts");
     app.write("src/routes/posts/[slug]/page.ts");
     app.write("src/routes/posts/[slug]/loader.ts");
+    app.write("src/routes/posts/[slug]/route.ts");
     app.write("src/routes/posts/[slug]/meta.ts");
 
     const manifest = await buildRouteManifest({ root: app.routesRoot });
@@ -155,6 +166,9 @@ describe("filesystem route compiler", () => {
     );
     expect(manifest.code).toContain(
       'loader: () => import("../src/routes/posts/[slug]/loader.ts")',
+    );
+    expect(manifest.code).toContain(
+      'route: () => import("../src/routes/posts/[slug]/route.ts")',
     );
     expect(manifest.code).toContain(
       'meta: () => import("../src/routes/posts/[slug]/meta.ts")',

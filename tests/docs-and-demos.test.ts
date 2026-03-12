@@ -54,6 +54,8 @@ describe("docs and demos", () => {
     expect(readme).toContain("loadRoutes");
     expect(readme).toContain('mode: "shell"');
     expect(readme).toContain("renderRequest");
+    expect(readme).toContain("route.ts");
+    expect(readme).toContain("robots.txt");
     expect(readme).toContain("request,");
     expect(readme).not.toContain("request: new Request");
     expect(readme).toContain("replace");

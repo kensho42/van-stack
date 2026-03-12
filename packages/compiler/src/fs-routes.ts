@@ -8,6 +8,7 @@ import {
 
 export const reservedRouteFileKinds: RouteFileKind[] = [
   "page",
+  "route",
   "layout",
   "loader",
   "action",

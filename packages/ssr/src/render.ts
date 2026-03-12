@@ -6,11 +6,16 @@ import {
 import { bindServerRenderEnv } from "./render-env";
 
 type ModuleLoader<T> = () => Promise<{ default: T }>;
+type RouteHandler = (input: {
+  request: Request;
+  params: Record<string, string>;
+}) => Promise<Response> | Response;
 
 type RouteDefinition = {
   id: string;
   path: string;
   hydrationPolicy?: string;
+  route?: RouteHandler;
   loader?: (input: {
     params: Record<string, string>;
   }) => Promise<unknown> | unknown;
@@ -20,6 +25,7 @@ type RouteDefinition = {
   }) => Promise<RouteMeta> | RouteMeta;
   page?: (input: { data: unknown }) => Promise<string> | string;
   files?: {
+    route?: ModuleLoader<RouteHandler>;
     loader?: ModuleLoader<
       (input: { params: Record<string, string> }) => Promise<unknown> | unknown
     >;
@@ -108,6 +114,17 @@ export async function renderRequest(input: RenderRequestInput) {
     const match = matchPath(route.path, requestPath.pathname);
     if (!match) continue;
 
+    const routeHandler = await resolveRouteModule(
+      route.route,
+      route.files?.route,
+    );
+    if (routeHandler) {
+      return routeHandler({
+        request: input.request,
+        params: match.params,
+      });
+    }
+
     const loader = await resolveRouteModule(route.loader, route.files?.loader);
     const metaHandler = await resolveRouteModule(route.meta, route.files?.meta);
     const page = await resolveRouteModule(route.page, route.files?.page);
@@ -130,14 +147,24 @@ export async function renderRequest(input: RenderRequestInput) {
       data,
     });
 
-    return {
-      status: 200,
-      html: `<!doctype html><html><head>${buildHead(meta)}</head><body>${body}<script type="application/json" data-van-stack-bootstrap>${bootstrap}</script></body></html>`,
-    };
+    return new Response(
+      `<!doctype html><html><head>${buildHead(meta)}</head><body>${body}<script type="application/json" data-van-stack-bootstrap>${bootstrap}</script></body></html>`,
+      {
+        status: 200,
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+        },
+      },
+    );
   }
 
-  return {
-    status: 404,
-    html: "<!doctype html><html><head></head><body><h1>Not Found</h1></body></html>",
-  };
+  return new Response(
+    "<!doctype html><html><head></head><body><h1>Not Found</h1></body></html>",
+    {
+      status: 404,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+      },
+    },
+  );
 }

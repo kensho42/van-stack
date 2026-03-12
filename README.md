@@ -47,6 +47,7 @@ src/routes/
   posts/
     [slug]/
       page.ts
+      route.ts
       loader.ts
       meta.ts
 ```
@@ -113,6 +114,18 @@ export default function meta(input: {
     description: input.data.post.excerpt,
     canonical: `/posts/${input.params.slug}`,
   };
+}
+```
+
+`route.ts` is for raw `Request -> Response` handlers such as `robots.txt`, `sitemap.xml`, feeds, proxies, or webhook endpoints:
+
+```ts
+export default function route() {
+  return new Response("User-agent: *\nAllow: /\n", {
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+    },
+  });
 }
 ```
 
@@ -239,10 +252,12 @@ const response = await renderRequest({
 });
 
 console.log(response.status);
-console.log(response.html);
+console.log(await response.text());
 ```
 
 `request` is the incoming server/runtime request object.
+
+For non-HTML endpoints such as `robots.txt`, `sitemap.xml`, or reverse-proxy style content routes, define `route.ts` and return a raw `Response`.
 
 ### `van-stack/ssg`
 

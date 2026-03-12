@@ -31,16 +31,18 @@ describe("ssr renderer", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(response.html).toContain("<title>GitHub Down</title>");
-    expect(response.html).toContain(
+    expect(response.headers.get("content-type")).toContain("text/html");
+
+    const html = await response.text();
+
+    expect(html).toContain("<title>GitHub Down</title>");
+    expect(html).toContain(
       '<meta name="description" content="Status update for GitHub downtime">',
     );
-    expect(response.html).toContain(
-      '<link rel="canonical" href="/posts/github-down">',
-    );
-    expect(response.html).toContain("<article><h1>GitHub Down</h1></article>");
-    expect(response.html).toContain('"pathname":"/posts/github-down"');
-    expect(response.html).toContain('"hydrationPolicy":"app"');
+    expect(html).toContain('<link rel="canonical" href="/posts/github-down">');
+    expect(html).toContain("<article><h1>GitHub Down</h1></article>");
+    expect(html).toContain('"pathname":"/posts/github-down"');
+    expect(html).toContain('"hydrationPolicy":"app"');
   });
 
   test("renders a manifest-style route by loading route modules lazily", async () => {
@@ -85,13 +87,45 @@ describe("ssr renderer", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(response.html).toContain("<title>Manifest Route</title>");
-    expect(response.html).toContain(
+
+    const html = await response.text();
+
+    expect(html).toContain("<title>Manifest Route</title>");
+    expect(html).toContain(
       '<meta name="description" content="Loaded from the generated manifest">',
     );
-    expect(response.html).toContain(
-      "<article><h1>Manifest Route</h1></article>",
+    expect(html).toContain("<article><h1>Manifest Route</h1></article>");
+    expect(html).toContain('"hydrationPolicy":"app"');
+  });
+
+  test("serves raw non-HTML content through route.ts handlers", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/robots.txt"),
+      routes: [
+        {
+          id: "robots.txt",
+          path: "/robots.txt",
+          files: {
+            async route() {
+              return {
+                default() {
+                  return new Response("User-agent: *\nAllow: /\n", {
+                    headers: {
+                      "content-type": "text/plain; charset=utf-8",
+                    },
+                  });
+                },
+              };
+            },
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe(
+      "text/plain; charset=utf-8",
     );
-    expect(response.html).toContain('"hydrationPolicy":"app"');
+    expect(await response.text()).toBe("User-agent: *\nAllow: /\n");
   });
 });
