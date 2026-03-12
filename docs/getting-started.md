@@ -11,7 +11,7 @@
 5. If the app has a client router, choose a CSR runtime mode:
    - `hydrated` for SSR handoff in the browser
    - `shell` for Tauri or PWA boot from a minimal HTML shell
-   - `custom` for routing-only CSR apps with host-owned data fetching
+   - `custom` for routing-only CSR apps with host-owned or component-level data fetching
 6. Pick a hydration policy per SSR route branch when the app serves HTML.
 
 For filesystem apps, the happy path is:
@@ -26,7 +26,7 @@ If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src
 
 - use `hydrated` when the browser receives HTML from `van-stack/ssr`
 - use `shell` when the app boots from bundled assets but still wants `loader.ts`
-- use `custom` when the app already has its own GraphQL, REST, RPC, or native data layer
+- use `custom` when the app already has its own GraphQL, REST, RPC, native data layer, or component-level query logic
 - use manual route arrays only when you intentionally want to bypass filesystem routing
 
 Hydration policy is not the same as CSR runtime mode. A route can use `app` hydration for SSR handoff, while the same codebase can also boot in `shell` mode for Tauri.

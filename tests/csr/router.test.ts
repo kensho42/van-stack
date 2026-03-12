@@ -124,4 +124,30 @@ describe("csr router", () => {
       data: { post: { slug: "graphql-app", source: "graphql" } },
     });
   });
+
+  test("allows custom mode without a resolver for component-level fetching", async () => {
+    const pushState = vi.fn();
+    const router = createRouter({
+      mode: "custom",
+      routes,
+      history: { pushState },
+    });
+
+    const initial = await router.load("/posts/component-owned");
+    const next = await router.navigate("/posts/component-owned?tab=comments");
+
+    expect(initial).toEqual({
+      path: "/posts/component-owned",
+      data: undefined,
+    });
+    expect(next).toEqual({
+      path: "/posts/component-owned?tab=comments",
+      data: undefined,
+    });
+    expect(pushState).toHaveBeenCalledWith(
+      { path: "/posts/component-owned?tab=comments" },
+      "",
+      "/posts/component-owned?tab=comments",
+    );
+  });
 });

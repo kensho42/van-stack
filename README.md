@@ -35,7 +35,7 @@ bun add van-stack
 
 - `hydrated`: start from SSR HTML and continue with client navigation
 - `shell`: boot from a tiny HTML shell and keep using VanStack route modules
-- `custom`: boot from a tiny HTML shell and let the host app own data resolution
+- `custom`: boot from a tiny HTML shell and let the host app own data resolution or fetch at component level
 
 ## Hydration policies
 
@@ -156,6 +156,18 @@ const customRouter = createRouter({
   },
 });
 ```
+
+If the app already fetches through component-level hooks or view-local logic, `resolve` is optional in `custom` mode:
+
+```ts
+const customRouter = createRouter({
+  mode: "custom",
+  routes,
+  history: window.history,
+});
+```
+
+In that shape, VanStack owns matching, params, history, and navigation, while the rendered components own their own data fetching.
 
 `hydrated` mode is for SSR handoff. It consumes bootstrap data from `van-stack/ssr`, then uses the same transport pattern for later navigations.
 

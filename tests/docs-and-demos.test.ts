@@ -58,6 +58,7 @@ describe("docs and demos", () => {
     expect(gettingStarted).toContain("hydrated");
     expect(gettingStarted).toContain("shell");
     expect(gettingStarted).toContain("custom");
+    expect(gettingStarted).toContain("component-level");
     expect(hydrationModes).toContain("Hydration policy");
     expect(hydrationModes).toContain("CSR runtime mode");
   });

@@ -87,7 +87,7 @@ export type CreateCustomRouterOptions = {
   mode: "custom";
   routes: RouteDefinition[];
   history: HistoryLike;
-  resolve: Resolve;
+  resolve?: Resolve;
 };
 
 export type CreateRouterOptions =

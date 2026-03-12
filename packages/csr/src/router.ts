@@ -85,7 +85,7 @@ function getTransport(options: CreateRouterOptions): Transport {
 
 function getResolve(options: CreateRouterOptions): Resolve {
   if (options.mode === "custom") {
-    return options.resolve;
+    return options.resolve ?? (async () => undefined);
   }
 
   const transport = getTransport(options);

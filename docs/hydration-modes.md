@@ -18,7 +18,7 @@ CSR runtime mode applies whenever `van-stack/csr` boots a client router:
 
 - `hydrated`: continue from SSR bootstrap payload
 - `shell`: boot from a minimal document and use transport-backed route loading
-- `custom`: boot from a minimal document and delegate route data to the host app
+- `custom`: boot from a minimal document and delegate route data to the host app, or skip route-level data loading entirely
 
 These choices are related but separate:
 
