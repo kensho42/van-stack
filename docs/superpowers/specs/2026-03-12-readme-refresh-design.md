@@ -8,7 +8,7 @@ Rewrite the root `README.md` as a broader landing page with a guided API tour. T
 
 - Make the README the main entrypoint for new users.
 - Keep examples aligned with the current codebase.
-- Explain how `van-stack`, `@van-stack/compiler`, and the runtime subpaths fit together.
+- Explain how `van-stack`, `van-stack/compiler`, and the runtime subpaths fit together.
 - Prefer `loadRoutes({ root: "src/routes" })` over emitted-manifest examples.
 - Show realistic examples for:
   - route modules
@@ -22,7 +22,7 @@ Rewrite the root `README.md` as a broader landing page with a guided API tour. T
 
 - Rewrite every document under `docs/`.
 - Change runtime behavior.
-- Normalize package naming in code; the README should describe the current package surface accurately.
+- Redesign package boundaries beyond the compiler subpath naming change.
 
 ## Recommended Structure
 
@@ -34,7 +34,7 @@ Rewrite the root `README.md` as a broader landing page with a guided API tour. T
 - quick start
 - route module example
 - API tour
-  - `@van-stack/compiler`
+  - `van-stack/compiler`
   - `van-stack/render`
   - `van-stack/csr`
   - `van-stack/ssr`

@@ -20,7 +20,7 @@
 - [ ] **Step 1: Write the failing test**
 
 Require the README to mention:
-- `@van-stack/compiler`
+- `van-stack/compiler`
 - `How It Fits Together`
 - `Quick Start`
 - `API Tour`

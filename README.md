@@ -5,7 +5,7 @@
 ## Install
 
 ```bash
-bun add van-stack @van-stack/compiler
+bun add van-stack
 ```
 
 ## Why van-stack?
@@ -21,7 +21,7 @@ bun add van-stack @van-stack/compiler
 ## Package Surface
 
 - `van-stack`: core route model, matching, types, defaults
-- `@van-stack/compiler`: filesystem route discovery, in-memory route loading, optional manifest writing
+- `van-stack/compiler`: filesystem route discovery, in-memory route loading, optional manifest writing
 - `van-stack/render`: shared Van facade for route modules and demos
 - `van-stack/csr`: client router for `hydrated`, `shell`, and `custom`
 - `van-stack/ssr`: request-to-HTML rendering with bootstrap payloads
@@ -31,7 +31,7 @@ bun add van-stack @van-stack/compiler
 ## How It Fits Together
 
 1. Author route modules under `src/routes`.
-2. Use `@van-stack/compiler` to load those routes into memory with `loadRoutes({ root: "src/routes" })`.
+2. Use `van-stack/compiler` to load those routes into memory with `loadRoutes({ root: "src/routes" })`.
 3. Write shared route components against `van-stack/render`.
 4. Pass the loaded routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
 5. Add `van-stack/vite` only if you want route-aware DX on top of the compiler layer.
@@ -54,7 +54,7 @@ src/routes/
 ### Load Routes
 
 ```ts
-import { loadRoutes } from "@van-stack/compiler";
+import { loadRoutes } from "van-stack/compiler";
 
 const routes = await loadRoutes({ root: "src/routes" });
 ```
@@ -62,7 +62,7 @@ const routes = await loadRoutes({ root: "src/routes" });
 That gives you a runtime-ready route list. If a custom build pipeline needs a persisted artifact, the compiler can still write `.van-stack/routes.generated.ts` explicitly:
 
 ```ts
-import { writeRouteManifest } from "@van-stack/compiler";
+import { writeRouteManifest } from "van-stack/compiler";
 
 await writeRouteManifest({ root: "src/routes" });
 ```
@@ -119,7 +119,7 @@ export default function meta(input: {
 ### Shell CSR Boot
 
 ```ts
-import { loadRoutes } from "@van-stack/compiler";
+import { loadRoutes } from "van-stack/compiler";
 import { createRouter } from "van-stack/csr";
 
 const routes = await loadRoutes({ root: "src/routes" });
@@ -142,12 +142,12 @@ await router.navigate("/posts/github-down");
 
 ## API Tour
 
-### `@van-stack/compiler`
+### `van-stack/compiler`
 
 Use the compiler when you want filesystem routing:
 
 ```ts
-import { loadRoutes, writeRouteManifest } from "@van-stack/compiler";
+import { loadRoutes, writeRouteManifest } from "van-stack/compiler";
 
 const routes = await loadRoutes({ root: "src/routes" });
 
@@ -228,7 +228,7 @@ In that second shape, VanStack owns route matching, params, query parsing, histo
 SSR consumes the same route graph and returns HTML plus bootstrap state:
 
 ```ts
-import { loadRoutes } from "@van-stack/compiler";
+import { loadRoutes } from "van-stack/compiler";
 import { renderRequest } from "van-stack/ssr";
 
 const routes = await loadRoutes({ root: "src/routes" });
@@ -247,7 +247,7 @@ console.log(response.html);
 SSG also consumes the same route graph:
 
 ```ts
-import { loadRoutes } from "@van-stack/compiler";
+import { loadRoutes } from "van-stack/compiler";
 import { buildStaticRoutes } from "van-stack/ssg";
 
 const routes = await loadRoutes({ root: "src/routes" });

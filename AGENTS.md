@@ -5,7 +5,7 @@
 `van-stack` is a router-first framework for VanJS. The repo currently covers:
 
 - `van-stack`: core route matching, runtime types, hydration defaults, and shared render facade exports
-- `@van-stack/compiler`: filesystem route discovery, normalization, in-memory `loadRoutes({ root })`, and optional `writeRouteManifest({ root })`
+- `van-stack/compiler`: filesystem route discovery, normalization, in-memory `loadRoutes({ root })`, and optional `writeRouteManifest({ root })`
 - `van-stack/csr`: CSR router with `hydrated`, `shell`, and `custom` modes
 - `van-stack/ssr`: SSR HTML rendering and bootstrap handoff
 - `van-stack/ssg`: static generation from the same route model

@@ -39,7 +39,8 @@ describe("docs and demos", () => {
     const readme = readFileSync("README.md", "utf8");
 
     expect(readme).toContain("van-stack");
-    expect(readme).toContain("@van-stack/compiler");
+    expect(readme).toContain("van-stack/compiler");
+    expect(readme).not.toContain("@van-stack/compiler");
     expect(readme).toContain("CSR");
     expect(readme).toContain("SSR");
     expect(readme).toContain("SSG");
