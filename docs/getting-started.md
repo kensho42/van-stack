@@ -1,0 +1,32 @@
+# Getting Started
+
+`van-stack` apps are organized around filesystem routes, hydration policies, and explicit runtime modes.
+
+## MVP setup
+
+1. Define routes under `src/routes`.
+2. Use reserved filenames such as `page.ts`, `layout.ts`, `loader.ts`, and `meta.ts`.
+3. Generate a JS route manifest from that tree, typically at `.van-stack/routes.generated.ts`.
+4. Choose whether the app runs in CSR, SSR, or SSG mode.
+5. If the app has a client router, choose a CSR runtime mode:
+   - `hydrated` for SSR handoff in the browser
+   - `shell` for Tauri or PWA boot from a minimal HTML shell
+   - `custom` for routing-only CSR apps with host-owned data fetching
+6. Pick a hydration policy per SSR route branch when the app serves HTML.
+
+For filesystem apps, the happy path is:
+
+1. author route modules in `src/routes`
+2. generate `.van-stack/routes.generated.ts`
+3. import that manifest into CSR, SSR, or SSG entrypoints
+
+## Rule of thumb
+
+- use `hydrated` when the browser receives HTML from `van-stack/ssr`
+- use `shell` when the app boots from bundled assets but still wants `loader.ts`
+- use `custom` when the app already has its own GraphQL, REST, RPC, or native data layer
+- use manual route arrays only when you intentionally want to bypass filesystem routing
+
+Hydration policy is not the same as CSR runtime mode. A route can use `app` hydration for SSR handoff, while the same codebase can also boot in `shell` mode for Tauri.
+
+See the demos for concrete starting points.

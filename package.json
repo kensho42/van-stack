@@ -1,0 +1,33 @@
+{
+  "name": "van-stack",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.10",
+  "exports": {
+    ".": "./packages/core/src/index.ts",
+    "./render": "./packages/core/src/render.ts",
+    "./csr": "./packages/csr/src/index.ts",
+    "./ssr": "./packages/ssr/src/index.ts",
+    "./ssg": "./packages/ssg/src/index.ts",
+    "./vite": "./packages/vite/src/index.ts"
+  },
+  "workspaces": [
+    "packages/*",
+    "demo/*"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "check": "biome check .",
+    "build": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.4",
+    "@types/node": "24.5.2",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  },
+  "dependencies": {
+    "mini-van-plate": "0.6.3",
+    "vanjs-core": "1.6.0"
+  }
+}
