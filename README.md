@@ -234,7 +234,7 @@ import { renderRequest } from "van-stack/ssr";
 const routes = await loadRoutes({ root: "src/routes" });
 
 const response = await renderRequest({
-  pathname: "/posts/github-down",
+  request: new Request("https://example.com/posts/github-down"),
   routes,
 });
 

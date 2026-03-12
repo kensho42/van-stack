@@ -61,7 +61,7 @@ export async function buildStaticRoutes(input: BuildStaticRoutesInput) {
       }
 
       const response = await renderRequest({
-        pathname: path,
+        request: new Request(`https://van-stack.local${path}`),
         routes: [route],
       });
 

@@ -34,9 +34,18 @@ type RouteDefinition = {
 };
 
 type RenderRequestInput = {
-  pathname: string;
+  request: Request;
   routes: RouteDefinition[];
 };
+
+function getRequestPath(request: Request) {
+  const url = new URL(request.url);
+
+  return {
+    pathname: url.pathname,
+    path: `${url.pathname}${url.search}`,
+  };
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -93,9 +102,10 @@ async function resolveRouteModule<T>(
 
 export async function renderRequest(input: RenderRequestInput) {
   bindServerRenderEnv();
+  const requestPath = getRequestPath(input.request);
 
   for (const route of input.routes) {
-    const match = matchPath(route.path, input.pathname);
+    const match = matchPath(route.path, requestPath.pathname);
     if (!match) continue;
 
     const loader = await resolveRouteModule(route.loader, route.files?.loader);
@@ -113,8 +123,8 @@ export async function renderRequest(input: RenderRequestInput) {
     const body = await page({ data });
     const bootstrap = JSON.stringify({
       routeId: route.id,
-      path: input.pathname,
-      pathname: input.pathname,
+      path: requestPath.path,
+      pathname: requestPath.pathname,
       params: match.params,
       hydrationPolicy: route.hydrationPolicy ?? defaultHydrationPolicy,
       data,

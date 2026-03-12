@@ -3,9 +3,9 @@ import { describe, expect, test } from "vitest";
 import { renderRequest } from "../../packages/ssr/src/index";
 
 describe("ssr renderer", () => {
-  test("renders a dynamic slug route and embeds a bootstrap payload", async () => {
+  test("renders a dynamic slug route from a Request and embeds a bootstrap payload", async () => {
     const response = await renderRequest({
-      pathname: "/posts/github-down",
+      request: new Request("https://example.com/posts/github-down"),
       routes: [
         {
           id: "posts/[slug]",
@@ -45,7 +45,7 @@ describe("ssr renderer", () => {
 
   test("renders a manifest-style route by loading route modules lazily", async () => {
     const response = await renderRequest({
-      pathname: "/posts/manifest-route",
+      request: new Request("https://example.com/posts/manifest-route"),
       routes: [
         {
           id: "posts/[slug]",
