@@ -39,14 +39,22 @@ describe("docs and demos", () => {
     const readme = readFileSync("README.md", "utf8");
 
     expect(readme).toContain("van-stack");
+    expect(readme).toContain("@van-stack/compiler");
     expect(readme).toContain("CSR");
     expect(readme).toContain("SSR");
     expect(readme).toContain("SSG");
+    expect(readme).toContain("How It Fits Together");
+    expect(readme).toContain("Quick Start");
+    expect(readme).toContain("API Tour");
     expect(readme).toContain("hydrated");
     expect(readme).toContain("shell");
     expect(readme).toContain("custom");
     expect(readme).toContain("src/routes");
     expect(readme).toContain("loadRoutes");
+    expect(readme).toContain('mode: "shell"');
+    expect(readme).toContain("renderRequest");
+    expect(readme).toContain("replace");
+    expect(readme).toContain("stack");
     expect(readme).toContain(".van-stack/routes.generated.ts");
     expect(readme).toContain("van-stack/render");
   });

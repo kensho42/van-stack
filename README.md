@@ -1,62 +1,57 @@
 # van-stack
 
-`van-stack` is a router-first framework for VanJS with support for CSR, SSR, SSG, and adaptive navigation.
+`van-stack` is a router-first framework for VanJS with support for CSR, SSR, SSG, and adaptive navigation. It is built around one shared route model, one shared Van render facade, and multiple runtime entrypoints.
 
 ## Install
 
 ```bash
-bun add van-stack
+bun add van-stack @van-stack/compiler
 ```
 
 ## Why van-stack?
 
-- filesystem routing with simple reserved filenames
-- explicit hydration policies: `document-only`, `islands`, `app`
-- three CSR runtime modes: `hydrated`, `shell`, `custom`
-- SSR and SSG built on the same route model
-- adaptive presentation for `replace` and `stack`
+- filesystem routing with reserved route-module filenames
+- one route model across CSR, SSR, and SSG
+- a framework-owned `van-stack/render` facade for shared Van components
+- three CSR runtime modes: `hydrated`, `shell`, and `custom`
+- explicit hydration policies: `document-only`, `islands`, and `app`
+- adaptive navigation with `replace` and `stack`
+- optional Vite integration instead of Vite-coupled architecture
 
-## Package overview
+## Package Surface
 
-- `van-stack`: core route model, matching, hydration policies, and shared render contracts
-- `van-stack/render`: framework-owned Van facade for shared route components
-- `van-stack/csr`: browser runtime for `hydrated`, `shell`, and `custom` client apps
+- `van-stack`: core route model, matching, types, defaults
+- `@van-stack/compiler`: filesystem route discovery, in-memory route loading, optional manifest writing
+- `van-stack/render`: shared Van facade for route modules and demos
+- `van-stack/csr`: client router for `hydrated`, `shell`, and `custom`
 - `van-stack/ssr`: request-to-HTML rendering with bootstrap payloads
-- `van-stack/ssg`: static generation from route entries
-- `van-stack/vite`: optional filesystem-route DX adapter
+- `van-stack/ssg`: static generation from the same route graph
+- `van-stack/vite`: optional DX adapter
 
-## Runtime modes
+## How It Fits Together
 
-- `CSR`: client-driven routing after boot
-- `SSR`: request-time HTML rendering
-- `SSG`: static HTML generation from route entries
+1. Author route modules under `src/routes`.
+2. Use `@van-stack/compiler` to load those routes into memory with `loadRoutes({ root: "src/routes" })`.
+3. Write shared route components against `van-stack/render`.
+4. Pass the loaded routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
+5. Add `van-stack/vite` only if you want route-aware DX on top of the compiler layer.
 
-## CSR runtime modes
+Filesystem routing is the default path, but it is not mandatory. Manual route arrays still work when an app intentionally wants to bypass the compiler.
 
-- `hydrated`: start from SSR HTML and continue with client navigation
-- `shell`: boot from a tiny HTML shell and keep using VanStack route modules
-- `custom`: boot from a tiny HTML shell and let the host app own data resolution or fetch at component level
+## Quick Start
 
-## Hydration policies
-
-- `document-only`
-- `islands`
-- `app`
-
-## Filesystem route example
+### Route Files
 
 ```text
 src/routes/
   posts/
-    layout.ts
     [slug]/
       page.ts
       loader.ts
       meta.ts
-      error.ts
 ```
 
-By default, filesystem apps should discover those files from `src/routes` and load runtime routes directly in memory. If you need a persisted artifact for custom build tooling, the compiler can still emit `.van-stack/routes.generated.ts`.
+### Load Routes
 
 ```ts
 import { loadRoutes } from "@van-stack/compiler";
@@ -64,13 +59,15 @@ import { loadRoutes } from "@van-stack/compiler";
 const routes = await loadRoutes({ root: "src/routes" });
 ```
 
-For an explicit generated file:
+That gives you a runtime-ready route list. If a custom build pipeline needs a persisted artifact, the compiler can still write `.van-stack/routes.generated.ts` explicitly:
 
 ```ts
 import { writeRouteManifest } from "@van-stack/compiler";
 
 await writeRouteManifest({ root: "src/routes" });
 ```
+
+### Route Module Example
 
 `loader.ts`
 
@@ -79,8 +76,9 @@ export default async function loader(input: { params: { slug: string } }) {
   return {
     post: {
       slug: input.params.slug,
-      title: `Post: ${input.params.slug}`
-    }
+      title: `Post: ${input.params.slug}`,
+      excerpt: `Notes about ${input.params.slug}`,
+    },
   };
 }
 ```
@@ -90,12 +88,14 @@ export default async function loader(input: { params: { slug: string } }) {
 ```ts
 import { van } from "van-stack/render";
 
-const { article, h1 } = van.tags;
+const { article, h1, p } = van.tags;
 
 export default function page(input: {
-  data: { post: { title: string; slug: string } };
+  data: {
+    post: { title: string; excerpt: string };
+  };
 }) {
-  return article(h1(input.data.post.title));
+  return article(h1(input.data.post.title), p(input.data.post.excerpt));
 }
 ```
 
@@ -104,26 +104,27 @@ export default function page(input: {
 ```ts
 export default function meta(input: {
   params: { slug: string };
-  data: { post: { title: string } };
+  data: {
+    post: { title: string; excerpt: string };
+  };
 }) {
   return {
     title: input.data.post.title,
-    description: `Read ${input.data.post.title}`,
+    description: input.data.post.excerpt,
     canonical: `/posts/${input.params.slug}`,
   };
 }
 ```
 
-## CSR example
-
-`van-stack/csr` now supports three explicit client boot modes.
+### Shell CSR Boot
 
 ```ts
+import { loadRoutes } from "@van-stack/compiler";
 import { createRouter } from "van-stack/csr";
 
-const routes = [{ id: "posts/[slug]", path: "/posts/:slug" }];
+const routes = await loadRoutes({ root: "src/routes" });
 
-const shellRouter = createRouter({
+const router = createRouter({
   mode: "shell",
   routes,
   history: window.history,
@@ -135,16 +136,69 @@ const shellRouter = createRouter({
   },
 });
 
-await shellRouter.load("/posts/agentic-coding-is-the-future");
-await shellRouter.navigate("/posts/github-down");
+await router.load("/posts/agentic-coding-is-the-future");
+await router.navigate("/posts/github-down");
 ```
 
-In `shell` mode the app boots from a minimal document, then both the first route and later navigations use the transport adapter.
+## API Tour
 
-For a host-owned backend such as GraphQL, use `custom` mode instead:
+### `@van-stack/compiler`
+
+Use the compiler when you want filesystem routing:
 
 ```ts
-const customRouter = createRouter({
+import { loadRoutes, writeRouteManifest } from "@van-stack/compiler";
+
+const routes = await loadRoutes({ root: "src/routes" });
+
+// Optional emitted artifact for custom build tooling.
+await writeRouteManifest({ root: "src/routes" });
+```
+
+`loadRoutes(...)` is the recommended path. Writing `.van-stack/routes.generated.ts` is optional.
+
+### `van-stack/render`
+
+Route modules should import Van through the framework facade, not from concrete client or server packages:
+
+```ts
+import { van } from "van-stack/render";
+
+const { button, div, p } = van.tags;
+
+export default function page() {
+  const count = van.state(0);
+
+  return div(
+    button(
+      {
+        onclick: () => {
+          count.val += 1;
+        },
+      },
+      "Increment",
+    ),
+    p(() => `Count: ${count.val}`),
+  );
+}
+```
+
+### `van-stack/csr`
+
+`van-stack/csr` supports three runtime modes:
+
+- `hydrated`: continue from SSR HTML and bootstrap data
+- `shell`: boot from a tiny document and use transport-backed loading
+- `custom`: boot from a tiny document and keep data ownership in the host app or in components
+
+Resolver-driven `custom` mode:
+
+```ts
+import { createRouter } from "van-stack/csr";
+
+const routes = [{ id: "posts/[slug]", path: "/posts/:slug" }];
+
+const router = createRouter({
   mode: "custom",
   routes,
   history: window.history,
@@ -157,84 +211,80 @@ const customRouter = createRouter({
 });
 ```
 
-If the app already fetches through component-level hooks or view-local logic, `resolve` is optional in `custom` mode:
+Component-owned `custom` mode:
 
 ```ts
-const customRouter = createRouter({
+const router = createRouter({
   mode: "custom",
   routes,
   history: window.history,
 });
 ```
 
-In that shape, VanStack owns matching, params, history, and navigation, while the rendered components own their own data fetching.
+In that second shape, VanStack owns route matching, params, query parsing, history, and navigation. Route data is not preloaded; components fetch for themselves.
 
-`hydrated` mode is for SSR handoff. It consumes bootstrap data from `van-stack/ssr`, then uses the same transport pattern for later navigations.
+### `van-stack/ssr`
 
-In a filesystem-routing app, `routes` would usually come from `await loadRoutes({ root: "src/routes" })` instead of being handwritten. Persisting `.van-stack/routes.generated.ts` is optional.
-
-Shared route modules should import their Van API from `van-stack/render`:
+SSR consumes the same route graph and returns HTML plus bootstrap state:
 
 ```ts
-import { van } from "van-stack/render";
-
-const { article, h1, p } = van.tags;
-
-export default function page() {
-  const taps = van.state(0);
-
-  return article(
-    h1("Custom CSR"),
-    p(() => `Resolver taps: ${taps.val}`),
-  );
-}
-```
-
-## SSR example
-
-```ts
+import { loadRoutes } from "@van-stack/compiler";
 import { renderRequest } from "van-stack/ssr";
+
+const routes = await loadRoutes({ root: "src/routes" });
 
 const response = await renderRequest({
   pathname: "/posts/github-down",
-  routes: [
-    {
-      id: "posts/[slug]",
-      path: "/posts/:slug",
-      hydrationPolicy: "app",
-      async loader({ params }) {
-        return { post: { slug: params.slug, title: "GitHub Down" } };
-      },
-      page({ data }) {
-        const typedData = data as { post: { title: string } };
-        return article(h1(typedData.post.title));
-      }
-    }
-  ]
+  routes,
 });
+
+console.log(response.status);
+console.log(response.html);
 ```
 
-`renderRequest` returns HTML with an embedded bootstrap payload so the browser can resume according to the selected hydration policy.
+### `van-stack/ssg`
 
-## Hydration modes in practice
+SSG also consumes the same route graph:
 
-- `document-only`: render HTML and stop
-- `islands`: render HTML and hydrate only explicit client-activated components
-- `app`: render HTML, then hand off to the CSR router for later navigations
+```ts
+import { loadRoutes } from "@van-stack/compiler";
+import { buildStaticRoutes } from "van-stack/ssg";
 
-Only `app` mode turns canonical links into internal data fetches after the initial load.
+const routes = await loadRoutes({ root: "src/routes" });
+const pages = await buildStaticRoutes({ routes });
+```
 
-Hydration policy and CSR runtime mode are different decisions:
+Routes that participate in SSG should provide `entries.ts` so dynamic params can expand into concrete paths.
 
-- hydration policy controls how SSR HTML becomes interactive
-- CSR runtime mode controls how a client router boots and where route data comes from
+## Runtime Model
+
+### CSR Modes
+
+- `hydrated`: web browser starts from SSR HTML, then continues as a client app
+- `shell`: app starts from a tiny HTML shell and uses VanStack-owned route loading
+- `custom`: app starts from a tiny HTML shell and owns its data loading strategy
+
+### Hydration Policies
+
+- `document-only`: SSR HTML only
+- `islands`: SSR HTML plus targeted client activation
+- `app`: SSR HTML followed by full client-router handoff
+
+Hydration policy is about how SSR output becomes interactive. CSR mode is about how a client router boots and where data comes from.
+
+### Presentation Modes
+
+- `replace`: browser-style view replacement
+- `stack`: mobile-style pushed views
+
+Presentation is separate from route matching and data loading. The same route tree can present as `replace` on desktop and `stack` on mobile or Tauri shells.
 
 ## Demos
 
-- `demo/csr`: `hydrated`, `shell`, and `custom` CSR boot patterns
-- `demo/ssr-blog`: hydrated SSR blog route with slug loader
-- `demo/ssg-site`: static generation example
-- `demo/adaptive-nav`: replace-vs-stack presentation example
+- `demo/csr`: `hydrated`, `shell`, and `custom` client boot patterns
+- `demo/ssr-blog`: SSR blog route with slug loader and bootstrap handoff
+- `demo/ssg-site`: static generation from route entries
+- `demo/adaptive-nav`: `replace` vs `stack` presentation
 
 ## Docs
 
