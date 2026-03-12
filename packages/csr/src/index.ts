@@ -1,3 +1,4 @@
+export * from "./hydrate-app";
 export * from "./render-env";
 export * from "./router";
 

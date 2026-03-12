@@ -26,6 +26,7 @@ describe("csr router", () => {
       mode: "hydrated",
       routes,
       bootstrap: {
+        path: "/posts/agentic-coding-is-the-future?tab=summary",
         pathname: "/posts/agentic-coding-is-the-future",
         data: { post: { slug: "agentic-coding-is-the-future" } },
       },
@@ -35,7 +36,7 @@ describe("csr router", () => {
 
     expect(router.getCurrent()).toEqual(
       expect.objectContaining({
-        path: "/posts/agentic-coding-is-the-future",
+        path: "/posts/agentic-coding-is-the-future?tab=summary",
         data: { post: { slug: "agentic-coding-is-the-future" } },
       }),
     );
@@ -60,6 +61,43 @@ describe("csr router", () => {
       path: "/posts/github-down",
       data: { post: { slug: "github-down" } },
     });
+  });
+
+  test("notifies subscribers with the current entry and later route changes", async () => {
+    const load = vi.fn(async (match: { params: Record<string, string> }) => ({
+      post: { slug: match.params.slug },
+    }));
+    const router = createRouter({
+      mode: "hydrated",
+      routes,
+      bootstrap: {
+        path: "/posts/agentic-coding-is-the-future?tab=summary",
+        pathname: "/posts/agentic-coding-is-the-future",
+        data: { post: { slug: "agentic-coding-is-the-future" } },
+      },
+      transport: { load },
+      history: { pushState: vi.fn() },
+    });
+    const listener = vi.fn();
+
+    const unsubscribe = router.subscribe(listener);
+
+    expect(listener).toHaveBeenCalledWith({
+      path: "/posts/agentic-coding-is-the-future?tab=summary",
+      data: { post: { slug: "agentic-coding-is-the-future" } },
+    });
+
+    await router.navigate("/posts/github-down?tab=summary");
+
+    expect(listener).toHaveBeenLastCalledWith({
+      path: "/posts/github-down?tab=summary",
+      data: { post: { slug: "github-down" } },
+    });
+
+    unsubscribe();
+    await router.navigate("/posts/hn-posts");
+
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 
   test("loads the initial route and later navigations through transport in shell mode", async () => {

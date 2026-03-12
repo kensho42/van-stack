@@ -153,6 +153,25 @@ await router.load("/posts/agentic-coding-is-the-future");
 await router.navigate("/posts/github-down");
 ```
 
+### App Hydration Handoff
+
+For SSR branches using `hydrationPolicy: "app"`, the client handoff no longer has to be wired by hand:
+
+```ts
+import { loadRoutes } from "van-stack/compiler";
+import { hydrateApp } from "van-stack/csr";
+
+const routes = await loadRoutes({ root: "src/routes" });
+
+const app = hydrateApp({ routes });
+
+app.router.subscribe((entry) => {
+  console.log(entry.path, entry.data);
+});
+```
+
+`hydrateApp(...)` reads the SSR bootstrap payload, creates a `hydrated` router, intercepts same-origin in-app link clicks, and listens for `popstate`. App code still owns mounting and rendering.
+
 ## API Tour
 
 ### `van-stack/compiler`
@@ -236,6 +255,18 @@ const router = createRouter({
 
 In that second shape, VanStack owns route matching, params, query parsing, history, and navigation. Route data is not preloaded; components fetch for themselves.
 
+For SSR handoff in `app` hydration mode, prefer `hydrateApp(...)` over manual bootstrap wiring:
+
+```ts
+import { hydrateApp } from "van-stack/csr";
+
+const app = hydrateApp({ routes });
+
+app.router.subscribe((entry) => {
+  console.log(entry.path);
+});
+```
+
 ### `van-stack/ssr`
 
 SSR consumes the same route graph and returns HTML plus bootstrap state:
@@ -286,6 +317,8 @@ Routes that participate in SSG should provide `entries.ts` so dynamic params can
 - `document-only`: SSR HTML only
 - `islands`: SSR HTML plus targeted client activation
 - `app`: SSR HTML followed by full client-router handoff
+
+In practice, `app` handoff means SSR emits bootstrap state and the client calls `hydrateApp({ routes })` to continue from that initial route.
 
 Hydration policy is about how SSR output becomes interactive. CSR mode is about how a client router boots and where data comes from.
 

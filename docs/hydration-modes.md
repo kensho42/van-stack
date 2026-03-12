@@ -12,6 +12,8 @@ Hydration policy is about SSR HTML. CSR runtime mode is about how the client app
 
 Only `app` mode enables internal route-data fetches for later navigations.
 
+For `app` routes, the normal client entrypoint is `hydrateApp({ routes })` from `van-stack/csr`. That helper reads the bootstrap payload emitted by SSR, creates the hydrated router, intercepts same-origin links, and handles `popstate`.
+
 ## CSR runtime mode
 
 CSR runtime mode applies whenever `van-stack/csr` boots a client router:

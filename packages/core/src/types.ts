@@ -64,8 +64,19 @@ export type Resolve = (
   navigation: Navigation,
 ) => Promise<unknown>;
 
+export type RouterEntry = {
+  path: string;
+  data: unknown;
+};
+
+export type RouterListener = (entry: RouterEntry) => void;
+
 export type BootstrapPayload = {
+  routeId?: string;
+  path?: string;
   pathname: string;
+  params?: Record<string, string>;
+  hydrationPolicy?: HydrationPolicy;
   data: unknown;
 };
 
@@ -95,3 +106,11 @@ export type CreateRouterOptions =
   | CreateHydratedRouterOptions
   | CreateShellRouterOptions
   | CreateCustomRouterOptions;
+
+export type Router = {
+  getCurrent: () => RouterEntry | null;
+  getInternalDataPath: (path: string) => string;
+  load: (path: string) => Promise<RouterEntry>;
+  navigate: (path: string) => Promise<RouterEntry>;
+  subscribe: (listener: RouterListener) => () => void;
+};

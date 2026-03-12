@@ -2,8 +2,8 @@
 
 The MVP ships focused examples instead of one large showcase.
 
-- `demo/csr`: `hydrated`, `shell`, and `custom` CSR boot patterns, including resolver-driven and component-level custom flows
-- `demo/ssr-blog`: `hydrated` SSR blog route with slug loader, bootstrap payload, and compiler-loaded routes
+- `demo/csr`: `hydrated`, `shell`, and `custom` CSR boot patterns, including `hydrateApp({ routes })`, resolver-driven custom flows, and component-level custom fetching
+- `demo/ssr-blog`: `hydrated` SSR blog route with slug loader, bootstrap payload, compiler-loaded routes, and automatic `app` handoff through `hydrateApp({ routes })`
 - `demo/ssg-site`: static generation example consuming the same filesystem route manifest
 - `demo/adaptive-nav`: replace-vs-stack presentation example with filesystem route discovery
 

@@ -31,4 +31,6 @@ If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src
 
 Hydration policy is not the same as CSR runtime mode. A route can use `app` hydration for SSR handoff, while the same codebase can also boot in `shell` mode for Tauri.
 
+For the normal SSR browser handoff path, use `hydrateApp({ routes })` from `van-stack/csr`. It reads the SSR bootstrap payload, creates the hydrated router, and wires browser navigation so the app continues from the server-rendered route instead of starting from scratch.
+
 See the demos for concrete starting points.

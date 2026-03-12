@@ -53,6 +53,7 @@ describe("docs and demos", () => {
     expect(readme).toContain("src/routes");
     expect(readme).toContain("loadRoutes");
     expect(readme).toContain('mode: "shell"');
+    expect(readme).toContain("hydrateApp");
     expect(readme).toContain("renderRequest");
     expect(readme).toContain("route.ts");
     expect(readme).toContain("robots.txt");
@@ -74,6 +75,7 @@ describe("docs and demos", () => {
     expect(gettingStarted).toContain("component-level");
     expect(hydrationModes).toContain("Hydration policy");
     expect(hydrationModes).toContain("CSR runtime mode");
+    expect(hydrationModes).toContain("hydrateApp");
   });
 
   test("documents the updated demos for SSR, shell-first CSR, and custom CSR", () => {
@@ -85,9 +87,11 @@ describe("docs and demos", () => {
     expect(demos).toContain("shell");
     expect(demos).toContain("custom");
     expect(csrDemo).toContain("hydrated");
+    expect(csrDemo).toContain("hydrateApp");
     expect(csrDemo).toContain("shell");
     expect(csrDemo).toContain("custom");
     expect(ssrDemo).toContain("hydrated");
+    expect(ssrDemo).toContain("hydrateApp");
   });
 
   test("documents route autoloading and keeps Vite optional", () => {

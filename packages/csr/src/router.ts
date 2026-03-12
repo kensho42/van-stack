@@ -6,13 +6,11 @@ import {
   type Resolve,
   type RouteDefinition,
   type RouteMatch,
+  type Router,
+  type RouterEntry,
+  type RouterListener,
   type Transport,
 } from "../../core/src/index";
-
-type CurrentEntry = {
-  path: string;
-  data: unknown;
-};
 
 function parsePath(path: string) {
   const url = new URL(path, "https://van-stack.local");
@@ -94,23 +92,31 @@ function getResolve(options: CreateRouterOptions): Resolve {
 }
 
 export function createRouter(options: CreateRouterOptions) {
-  let current: CurrentEntry | null = null;
+  let current: RouterEntry | null = null;
   let activeController: AbortController | null = null;
+  const listeners = new Set<RouterListener>();
   const resolve = getResolve(options);
 
+  function notify(entry: RouterEntry) {
+    for (const listener of listeners) {
+      listener(entry);
+    }
+  }
+
   if (options.mode === "hydrated") {
-    const bootstrapMatch = createRouteMatch(
+    createRouteMatch(
       options.routes,
-      options.bootstrap.pathname,
+      options.bootstrap.path ?? options.bootstrap.pathname,
     );
 
     current = {
-      path: bootstrapMatch.pathname,
+      path: parsePath(options.bootstrap.path ?? options.bootstrap.pathname)
+        .path,
       data: options.bootstrap.data,
     };
   }
 
-  async function resolvePath(path: string): Promise<CurrentEntry> {
+  async function resolvePath(path: string): Promise<RouterEntry> {
     activeController?.abort();
     activeController = new AbortController();
 
@@ -126,6 +132,7 @@ export function createRouter(options: CreateRouterOptions) {
       path: parsePath(path).path,
       data,
     };
+    notify(current);
 
     return current;
   }
@@ -151,5 +158,16 @@ export function createRouter(options: CreateRouterOptions) {
 
       return entry;
     },
-  };
+    subscribe(listener: RouterListener) {
+      listeners.add(listener);
+
+      if (current) {
+        listener(current);
+      }
+
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  } satisfies Router;
 }

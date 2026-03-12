@@ -2,7 +2,7 @@
 
 Demonstrates all three CSR runtime modes:
 
-- `hydrated`: start from SSR HTML and continue on the client
+- `hydrated`: start from SSR HTML and continue on the client with `hydrateApp({ routes })`
 - `shell`: boot from a tiny HTML shell and use VanStack transport-backed route loading
 - `custom`: boot from a tiny HTML shell and let the app shell provide data resolution, or keep data fetching inside components
 
