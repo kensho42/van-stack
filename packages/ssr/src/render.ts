@@ -44,6 +44,10 @@ type RenderRequestInput = {
   routes: RouteDefinition[];
 };
 
+type RenderablePageOutput = {
+  render?: () => string;
+};
+
 function getRequestPath(request: Request) {
   const url = new URL(request.url);
 
@@ -114,6 +118,18 @@ function wrapPageBody(body: string, hydrationPolicy: string | undefined) {
   return body;
 }
 
+function renderPageOutput(output: unknown): string {
+  if (
+    output &&
+    typeof output === "object" &&
+    typeof (output as RenderablePageOutput).render === "function"
+  ) {
+    return (output as RenderablePageOutput).render?.() ?? "";
+  }
+
+  return String(output ?? "");
+}
+
 export async function renderRequest(input: RenderRequestInput) {
   bindServerRenderEnv();
   const requestPath = getRequestPath(input.request);
@@ -146,7 +162,7 @@ export async function renderRequest(input: RenderRequestInput) {
       ? await metaHandler({ params: match.params, data })
       : undefined;
     const body = wrapPageBody(
-      await page({ data }),
+      renderPageOutput(await page({ data })),
       route.hydrationPolicy ?? defaultHydrationPolicy,
     );
     const bootstrap = JSON.stringify({

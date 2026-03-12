@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 
+import { van } from "../../packages/core/src/render";
 import { renderRequest } from "../../packages/ssr/src/index";
 
 describe("ssr renderer", () => {
@@ -128,5 +129,33 @@ describe("ssr renderer", () => {
       "text/plain; charset=utf-8",
     );
     expect(await response.text()).toBe("User-agent: *\nAllow: /\n");
+  });
+
+  test("renders Van facade page output instead of stringifying it", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/van"),
+      routes: [
+        {
+          id: "van",
+          path: "/van",
+          page() {
+            const { article, h1, p } = van.tags;
+
+            return article(
+              h1("Van Rendered"),
+              p("SSR should emit real HTML from Van output."),
+            );
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain("<article>");
+    expect(html).toContain("<h1>Van Rendered</h1>");
+    expect(html).not.toContain("[object Object]");
   });
 });
