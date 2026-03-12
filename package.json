@@ -17,6 +17,7 @@
     "demo/*"
   ],
   "scripts": {
+    "start": "bun demo/showcase/src/runtime/server.ts",
     "test": "vitest run",
     "check": "biome check .",
     "build": "tsc -p tsconfig.json --noEmit"

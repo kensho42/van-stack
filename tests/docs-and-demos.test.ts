@@ -16,6 +16,11 @@ const requiredDemos = [
   "demo/csr/hydrated/src/routes/index/page.ts",
   "demo/csr/shell/src/routes/index/page.ts",
   "demo/csr/custom/src/routes/index/page.ts",
+  "demo/showcase/README.md",
+  "demo/showcase/src/runtime/app.ts",
+  "demo/showcase/src/routes/index/page.ts",
+  "demo/showcase/src/routes/gallery/index/page.ts",
+  "demo/showcase/src/routes/walkthrough/index/page.ts",
   "demo/ssr-blog/src/routes/posts/[slug]/page.ts",
   "demo/ssr-blog/src/routes/posts/[slug]/hydrate.ts",
   "demo/ssr-blog/src/routes/posts/[slug]/loader.ts",
@@ -66,6 +71,14 @@ describe("docs and demos", () => {
     expect(readme).toContain(".van-stack/routes.generated.ts");
     expect(readme).toContain("van-stack/render");
     expect(readme).toContain("app.ready");
+  });
+
+  test("exposes a root start script for the runnable showcase", () => {
+    const rootPackage = JSON.parse(readFileSync("package.json", "utf8")) as {
+      scripts?: Record<string, string>;
+    };
+
+    expect(rootPackage.scripts?.start).toBeTruthy();
   });
 
   test("distinguishes hydration policy from CSR runtime mode", () => {
