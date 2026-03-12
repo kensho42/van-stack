@@ -224,31 +224,38 @@ await writeRouteManifest({ root: "src/routes" });
 
 ### `van-stack/render`
 
-Route modules should import Van through the framework facade, not from concrete client or server packages:
+Route modules should import Van and VanX through the framework facade, not from concrete client or server packages:
 
 ```ts
-import { van } from "van-stack/render";
+import { van, vanX } from "van-stack/render";
 
 const { button, div, p } = van.tags;
 
 export default function page() {
   const count = van.state(0);
+  const post = vanX.reactive({
+    title: "Increment Demo",
+    likes: 0,
+  });
 
   return div(
+    p(() => post.title),
     button(
       {
         onclick: () => {
           count.val += 1;
+          post.likes += 1;
         },
       },
       "Increment",
     ),
     p(() => `Count: ${count.val}`),
+    p(() => `Likes: ${post.likes}`),
   );
 }
 ```
 
-The render facade also exposes `van.hydrate(...)` for route-level DOM hydration modules.
+The render facade also exposes `van.hydrate(...)` for route-level DOM hydration modules. Under the hood, CSR binds the real VanX runtime while SSR and SSG bind the server-safe VanX placeholder recommended by the official Van fullstack SSR pattern.
 
 ### `van-stack/csr`
 

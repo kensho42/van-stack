@@ -120,7 +120,12 @@ describe("docs and demos", () => {
     const demos = readFileSync("docs/demos.md", "utf8");
 
     expect(readme).toContain("van-stack/render");
+    expect(readme).toContain('import { van, vanX } from "van-stack/render"');
     expect(sharedComponents).toContain("van-stack/render");
+    expect(sharedComponents).toContain(
+      'import { van, vanX } from "van-stack/render"',
+    );
+    expect(sharedComponents).toContain("vanX");
     expect(sharedComponents).toContain("bindRenderEnv");
     expect(sharedComponents).toContain("van.hydrate");
     expect(demos).toContain("hydrated");

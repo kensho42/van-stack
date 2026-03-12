@@ -1,9 +1,13 @@
-import { registerEnv } from "mini-van-plate/shared";
+import { dummyVanX, registerEnv } from "mini-van-plate/shared";
 import vanPlate from "mini-van-plate/van-plate";
 
-import { bindRenderEnv, type VanLike } from "../../core/src/render";
+import {
+  bindRenderEnv,
+  type RenderEnv,
+  type VanLike,
+} from "../../core/src/render";
 
-let serverVan: VanLike | null = null;
+let serverEnv: RenderEnv | null = null;
 
 function createServerVan(): VanLike {
   return {
@@ -15,8 +19,14 @@ function createServerVan(): VanLike {
 }
 
 export function bindServerRenderEnv() {
-  registerEnv({ van: vanPlate });
-  serverVan ??= createServerVan();
-  bindRenderEnv(serverVan);
-  return serverVan;
+  registerEnv({ van: vanPlate, vanX: dummyVanX });
+  if (!serverEnv) {
+    serverEnv = {
+      van: createServerVan(),
+      vanX: dummyVanX,
+    };
+  }
+  const env = serverEnv;
+  bindRenderEnv(env);
+  return env.van;
 }

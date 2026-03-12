@@ -78,15 +78,43 @@ describe("csr hydrate app", () => {
       van.hydrate(input.root, (dom: unknown) => dom);
     });
     bindRenderEnv({
-      tags: {},
-      state(value: unknown) {
-        return { val: value };
+      van: {
+        tags: {},
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(..._args: unknown[]) {},
+        hydrate: hydrateSpy,
       },
-      derive(fn: () => unknown) {
-        return fn();
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list(..._args: unknown[]) {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
       },
-      add(..._args: unknown[]) {},
-      hydrate: hydrateSpy,
     });
     const bootstrap = {
       routeId: "posts/[slug]",

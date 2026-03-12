@@ -3,6 +3,16 @@ export type VanState<T> = {
 };
 
 type VanTags = Record<string, CallableFunction>;
+export type VanXLike = {
+  calc: CallableFunction;
+  reactive: CallableFunction;
+  noreactive: CallableFunction;
+  stateFields: CallableFunction;
+  raw: CallableFunction;
+  list: CallableFunction;
+  replace: CallableFunction;
+  compact: CallableFunction;
+};
 
 export type VanLike = {
   tags: VanTags;
@@ -12,9 +22,14 @@ export type VanLike = {
   hydrate: CallableFunction;
 };
 
-let renderEnv: VanLike | null = null;
+export type RenderEnv = {
+  van: VanLike;
+  vanX: VanXLike;
+};
 
-function getBoundRenderEnv(): VanLike {
+let renderEnv: RenderEnv | null = null;
+
+function getBoundRenderEnv(): RenderEnv {
   if (!renderEnv) {
     throw new Error(
       "van-stack/render has not been bound to a Van runtime yet.",
@@ -24,8 +39,16 @@ function getBoundRenderEnv(): VanLike {
   return renderEnv;
 }
 
-export function bindRenderEnv(vanImpl: VanLike | null) {
-  renderEnv = vanImpl;
+function getBoundVan(): VanLike {
+  return getBoundRenderEnv().van;
+}
+
+function getBoundVanX(): VanXLike {
+  return getBoundRenderEnv().vanX;
+}
+
+export function bindRenderEnv(env: RenderEnv | null) {
+  renderEnv = env;
 }
 
 export function getRenderEnv() {
@@ -34,18 +57,45 @@ export function getRenderEnv() {
 
 export const van: VanLike = {
   get tags() {
-    return getBoundRenderEnv().tags;
+    return getBoundVan().tags;
   },
   state(value: unknown) {
-    return getBoundRenderEnv().state(value);
+    return getBoundVan().state(value);
   },
   derive(fn: () => unknown) {
-    return getBoundRenderEnv().derive(fn);
+    return getBoundVan().derive(fn);
   },
   add(...args: unknown[]) {
-    return getBoundRenderEnv().add(...args);
+    return getBoundVan().add(...args);
   },
   hydrate(...args: unknown[]) {
-    return getBoundRenderEnv().hydrate(...args);
+    return getBoundVan().hydrate(...args);
+  },
+};
+
+export const vanX: VanXLike = {
+  get calc() {
+    return getBoundVanX().calc;
+  },
+  get reactive() {
+    return getBoundVanX().reactive;
+  },
+  get noreactive() {
+    return getBoundVanX().noreactive;
+  },
+  get stateFields() {
+    return getBoundVanX().stateFields;
+  },
+  get raw() {
+    return getBoundVanX().raw;
+  },
+  get list() {
+    return getBoundVanX().list;
+  },
+  get replace() {
+    return getBoundVanX().replace;
+  },
+  get compact() {
+    return getBoundVanX().compact;
   },
 };
