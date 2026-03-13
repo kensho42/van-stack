@@ -314,10 +314,26 @@ describe("showcase app", () => {
     expect(islandsAsset.headers.get("content-type")).toContain("javascript");
     expect(shellAsset.headers.get("content-type")).toContain("javascript");
     expect(customAsset.headers.get("content-type")).toContain("javascript");
-    expect(await hydratedAsset.text()).toContain("hydrateApp");
-    expect(await islandsAsset.text()).toContain("hydrateIslands");
-    expect(await shellAsset.text()).toContain("createRouter");
-    expect(await customAsset.text()).toContain("createRouter");
+    const hydratedSource = await hydratedAsset.text();
+    const islandsSource = await islandsAsset.text();
+    const shellSource = await shellAsset.text();
+    const customSource = await customAsset.text();
+
+    expect(hydratedSource).toContain("hydrateApp");
+    expect(islandsSource).toContain("hydrateIslands");
+    expect(shellSource).toContain("createRouter");
+    expect(customSource).toContain("createRouter");
+
+    // Client entrypoints should not bundle the full showcase editorial catalog.
+    expect(hydratedSource).not.toContain("showcasePostCatalog");
+    expect(islandsSource).not.toContain("showcasePostCatalog");
+    expect(shellSource).not.toContain("showcasePostCatalog");
+    expect(customSource).not.toContain("showcasePostCatalog");
+
+    expect(hydratedSource.length).toBeLessThan(300_000);
+    expect(islandsSource.length).toBeLessThan(300_000);
+    expect(shellSource.length).toBeLessThan(300_000);
+    expect(customSource.length).toBeLessThan(300_000);
   });
 
   test("serves route metadata from meta.ts for interactive routes", async () => {

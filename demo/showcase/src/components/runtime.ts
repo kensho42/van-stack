@@ -1,9 +1,6 @@
 import { van } from "van-stack/render";
 
-import {
-  getShowcaseInitialLikeCount,
-  type ShowcasePost,
-} from "../content/blog";
+import type { ShowcasePost } from "../content/blog";
 import {
   buildShowcaseGalleryPath,
   getShowcaseMode,
@@ -12,8 +9,10 @@ import {
   type ShowcaseModeId,
 } from "../content/modes";
 import type { ShowcaseInteractionState } from "../runtime/interactions";
+import { renderBookmarkToggle } from "./bookmark-toggle";
+import { renderLikeCounter } from "./like-counter";
 
-const { a, button, div, h2, li, p, section, span, strong, ul } = van.tags;
+const { a, div, h2, li, p, section, span, strong, ul } = van.tags;
 const interactiveModeIds = new Set<ShowcaseModeId>([
   "hydrated",
   "islands",
@@ -105,33 +104,8 @@ export function renderReaderPulse(
     ),
     div(
       { class: "card-grid card-grid--tight" },
-      section(
-        { class: "runtime-panel" },
-        p({ class: "showcase-eyebrow" }, "Reaction"),
-        strong("Session likes"),
-        p(
-          span(
-            { "data-like-count": "" },
-            String(interactions?.likes ?? getShowcaseInitialLikeCount(post)),
-          ),
-          " readers found this helpful",
-        ),
-        // Buttons stay in normal flow so shell/custom/islands all share the same DOM markers.
-        button({ "data-like-button": "", type: "button" }, "Like this post"),
-      ),
-      section(
-        { class: "runtime-panel" },
-        p({ class: "showcase-eyebrow" }, "Save state"),
-        strong("Reading list"),
-        p(
-          { "data-bookmark-state": "" },
-          interactions?.bookmarked ? "Saved for this session" : "Not saved",
-        ),
-        button(
-          { "data-bookmark-button": "", type: "button" },
-          interactions?.bookmarked ? "Remove bookmark" : "Save for later",
-        ),
-      ),
+      renderLikeCounter(post, interactions),
+      renderBookmarkToggle(interactions),
     ),
   );
 }

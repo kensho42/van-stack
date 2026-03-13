@@ -47,7 +47,192 @@ function createInteractionRoot() {
   };
 }
 
+function bindComponentRenderEnv() {
+  bindRenderEnv({
+    van: {
+      tags: new Proxy(
+        {},
+        {
+          get(_target, key) {
+            return (...args: unknown[]) => ({ key, args });
+          },
+        },
+      ) as Record<string, (...args: unknown[]) => unknown>,
+      state(value: unknown) {
+        return { val: value };
+      },
+      derive(fn: () => unknown) {
+        return fn();
+      },
+      add() {},
+      hydrate(dom: unknown, bind: (dom: unknown) => unknown) {
+        return bind(dom);
+      },
+    },
+    vanX: {
+      calc(fn: () => unknown) {
+        return fn();
+      },
+      reactive<T>(value: T) {
+        return value;
+      },
+      noreactive<T>(value: T) {
+        return value;
+      },
+      stateFields<T>(value: T) {
+        return value;
+      },
+      raw<T>(value: T) {
+        return value;
+      },
+      list() {
+        return [];
+      },
+      replace<T>(_value: T, replacement: T) {
+        return replacement;
+      },
+      compact<T>(value: T) {
+        return value;
+      },
+    },
+  });
+}
+
 describe("showcase client helpers", () => {
+  test("hydrates like and bookmark controls as separate isomorphic components over one shared interaction binding", async () => {
+    bindComponentRenderEnv();
+
+    const { hydrateLikeCounter } = await import(
+      "../../demo/showcase/src/components/like-counter"
+    );
+    const { hydrateBookmarkToggle } = await import(
+      "../../demo/showcase/src/components/bookmark-toggle"
+    );
+    const { createShowcasePostInteractionBinding } = await import(
+      "../../demo/showcase/src/post-interactions"
+    );
+    const data = createGalleryPostData("custom", "runtime-gallery-tour");
+    let likes = 7;
+    let bookmarked = false;
+    const fetch = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        const url = String(input);
+        if (
+          !url.endsWith("/api/showcase/posts/runtime-gallery-tour/interactions")
+        ) {
+          throw new Error(`Unexpected interaction request: ${url}`);
+        }
+
+        const action =
+          typeof init?.body === "string"
+            ? (JSON.parse(init.body) as { action?: string }).action
+            : undefined;
+
+        if ((init?.method ?? "GET") === "POST" && action === "like") {
+          likes += 1;
+        }
+
+        if ((init?.method ?? "GET") === "POST" && action === "bookmark") {
+          bookmarked = !bookmarked;
+        }
+
+        return new Response(
+          JSON.stringify({
+            likes,
+            bookmarked,
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+            },
+          },
+        );
+      },
+    );
+    const firstMount = createInteractionRoot();
+    const binding = createShowcasePostInteractionBinding(data, {
+      fetch: fetch as never,
+    });
+
+    expect(binding).not.toBeNull();
+    if (!binding) {
+      throw new Error("Expected an interaction binding for the post detail.");
+    }
+
+    await hydrateLikeCounter(firstMount.root, binding);
+    await hydrateBookmarkToggle(firstMount.root, binding);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(firstMount.likeCount.textContent).toBe("7");
+    expect(firstMount.bookmarkState.textContent).toBe("Not saved");
+
+    await firstMount.likeButton.onclick?.();
+    await firstMount.bookmarkButton.onclick?.();
+
+    expect(firstMount.likeCount.textContent).toBe("8");
+    expect(firstMount.bookmarkState.textContent).toBe("Saved for this session");
+    expect(firstMount.bookmarkButton.textContent).toBe("Remove bookmark");
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  test("hydrates separate interaction components from preloaded server state before sending mutations", async () => {
+    bindComponentRenderEnv();
+
+    const { hydrateLikeCounter } = await import(
+      "../../demo/showcase/src/components/like-counter"
+    );
+    const { hydrateBookmarkToggle } = await import(
+      "../../demo/showcase/src/components/bookmark-toggle"
+    );
+    const { createShowcasePostInteractionBinding } = await import(
+      "../../demo/showcase/src/post-interactions"
+    );
+    const data = {
+      ...createGalleryPostData("hydrated", "runtime-gallery-tour"),
+      interactions: {
+        likes: 11,
+        bookmarked: true,
+      },
+    };
+    const fetch = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          likes: 12,
+          bookmarked: true,
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+          },
+        },
+      );
+    });
+    const root = createInteractionRoot();
+    const binding = createShowcasePostInteractionBinding(data, {
+      fetch: fetch as never,
+    });
+
+    expect(binding).not.toBeNull();
+    if (!binding) {
+      throw new Error("Expected an interaction binding for the post detail.");
+    }
+
+    await hydrateLikeCounter(root.root, binding);
+    await hydrateBookmarkToggle(root.root, binding);
+
+    expect(root.likeCount.textContent).toBe("11");
+    expect(root.bookmarkState.textContent).toBe("Saved for this session");
+    expect(root.bookmarkButton.textContent).toBe("Remove bookmark");
+    expect(fetch).not.toHaveBeenCalled();
+
+    await root.likeButton.onclick?.();
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(root.likeCount.textContent).toBe("12");
+  });
+
   test("syncs post interaction state through the showcase server API", async () => {
     const data = createGalleryPostData("custom", "runtime-gallery-tour");
     let likes = 7;
@@ -154,54 +339,7 @@ describe("showcase client helpers", () => {
   });
 
   test("intercepts only current-app links unless a link opts out", async () => {
-    bindRenderEnv({
-      van: {
-        tags: new Proxy(
-          {},
-          {
-            get(_target, key) {
-              return (...args: unknown[]) => ({ key, args });
-            },
-          },
-        ) as Record<string, (...args: unknown[]) => unknown>,
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add() {},
-        hydrate(_dom: unknown, bind: (dom: unknown) => unknown) {
-          return bind(_dom);
-        },
-      },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
-      },
-    });
+    bindComponentRenderEnv();
     const { customClientRoutes, wireClientNavigation } = await import(
       "../../demo/showcase/src/client/routes"
     );

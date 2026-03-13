@@ -32,6 +32,8 @@ The adaptive route surface mirrors the same blog graph under `/adaptive`:
 - `/adaptive/tags`
 - `/adaptive/tags/:slug`
 
+On post detail routes, likes and bookmarks are stored on the server for the current session. `hydrated` and `islands` pre-render those values into the HTML and continue them through component-level hydration; `shell` and `custom` reuse the same interaction API after client-side rendering.
+
 Run it from the repo root:
 
 ```bash
