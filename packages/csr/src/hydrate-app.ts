@@ -45,7 +45,7 @@ type DocumentLike = {
   ) => void;
 };
 
-type AppRootLike = {
+export type AppRootLike = {
   querySelector?: (selector: string) => unknown;
 };
 
@@ -78,14 +78,16 @@ export type HydratedApp = {
 const defaultBootstrapSelector = "script[data-van-stack-bootstrap]";
 const defaultAppRootSelector = "[data-van-stack-app-root]";
 
-type RouteHydrateModule = (input: {
+export type RouteHydrateInput = {
   root: AppRootLike;
   data: unknown;
   params: Record<string, string>;
   path: string;
-}) => unknown;
+};
 
-type HydratableRoute = RouteDefinition & {
+export type RouteHydrateModule = (input: RouteHydrateInput) => unknown;
+
+export type HydratableRoute = RouteDefinition & {
   files?: {
     hydrate?: () => Promise<{ default: RouteHydrateModule }>;
   };

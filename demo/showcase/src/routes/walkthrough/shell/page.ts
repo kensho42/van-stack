@@ -1,25 +1,23 @@
-import { van } from "van-stack/render";
-
-import { getShowcaseMode } from "../../../content/modes";
-
-const { a, article, h1, h2, li, p, ul } = van.tags;
+import { renderModeWalkthrough } from "../../../route-helpers/walkthrough";
 
 export default function page() {
-  const mode = getShowcaseMode("shell");
-  if (!mode) {
-    throw new Error("Missing shell showcase mode.");
-  }
-
-  return article(
-    h1("Shell Walkthrough"),
-    p(mode.summary),
-    p(mode.proves),
-    p(a({ href: mode.galleryPath }, "Live runtime page")),
-    h2("What to look for"),
-    ul(
-      li("The app can boot from a smaller shell."),
-      li("The router can fetch route data through transport."),
-      li("The blog content stays comparable to the hydrated path."),
-    ),
-  );
+  return renderModeWalkthrough({
+    modeId: "shell",
+    title: "Shell walkthrough",
+    checkpoints: [
+      "The HTML document is only a shell and does not include the article body.",
+      "The client router fetches page data from /_van-stack/data/... after boot.",
+      "Once loaded, the page should expose the same authors, categories, and tags as the SSR modes.",
+    ],
+    implementationNotes: [
+      "demo/showcase/src/runtime/api.ts",
+      "demo/showcase/src/client/shell.ts",
+      "demo/showcase/src/client/routes.ts",
+    ],
+    transportNotes: [
+      "The router owns the transport fetches through the internal VanStack data surface.",
+      "The shell document validates the path but leaves content loading to the browser entry.",
+      "This mode proves route-driven loading without SSR article HTML.",
+    ],
+  });
 }

@@ -1,6 +1,8 @@
 import { createServer } from "node:http";
 
 import { handleShowcaseRequest } from "./app";
+import { warmShowcaseAssets } from "./assets";
+import { warmShowcaseSsgCache } from "./ssg-cache";
 
 function getPort() {
   const value = Number(process.env.PORT ?? "3000");
@@ -25,6 +27,10 @@ function createShowcaseServer() {
     });
     res.end(await response.text());
   });
+}
+
+export function warmShowcaseRuntime() {
+  return Promise.all([warmShowcaseAssets(), warmShowcaseSsgCache()]);
 }
 
 function listenOnPort(

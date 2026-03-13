@@ -1,4 +1,4 @@
-import { startShowcaseServerWithFallback } from "./server";
+import { startShowcaseServerWithFallback, warmShowcaseRuntime } from "./server";
 
 function getPort() {
   const value = Number(process.env.PORT ?? "3000");
@@ -6,6 +6,7 @@ function getPort() {
 }
 
 const preferredPort = getPort();
+await warmShowcaseRuntime();
 const server = await startShowcaseServerWithFallback(preferredPort);
 const address = server.address();
 const actualPort =

@@ -63,7 +63,10 @@ describe("docs and demos", () => {
 
   test("keeps adaptive navigation documented as a separate focused demo", () => {
     const demos = readFileSync("docs/demos.md", "utf8");
-    const adaptiveNavReadme = readFileSync("demo/adaptive-nav/README.md", "utf8");
+    const adaptiveNavReadme = readFileSync(
+      "demo/adaptive-nav/README.md",
+      "utf8",
+    );
 
     expect(demos).toContain("demo/showcase");
     expect(demos).toContain("demo/adaptive-nav");

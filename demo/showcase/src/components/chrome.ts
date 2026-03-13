@@ -1,8 +1,8 @@
 import { van } from "van-stack/render";
 
 import { showcasePublication } from "../content/blog";
-import { showcaseModes, type ShowcaseLiveModeId } from "../content/modes";
-import { renderModePill, getModeCallout } from "./runtime";
+import { type ShowcaseLiveModeId, showcaseModes } from "../content/modes";
+import { getModeCallout, renderModePill } from "./runtime";
 
 export { getModeCallout };
 
@@ -353,7 +353,13 @@ export function renderShowcaseFrame(input: {
         ),
         nav(
           { class: "showcase-nav" },
-          a({ href: "/", "data-active": isActiveSection(input.currentPath, "/") }, "Home"),
+          a(
+            {
+              href: "/",
+              "data-active": isActiveSection(input.currentPath, "/"),
+            },
+            "Home",
+          ),
           a(
             {
               href: "/gallery",
@@ -389,9 +395,13 @@ export function renderShowcaseFrame(input: {
         input.title || input.summary
           ? section(
               { class: "showcase-section-block" },
-              input.title ? p({ class: "showcase-eyebrow" }, "Section overview") : null,
+              input.title
+                ? p({ class: "showcase-eyebrow" }, "Section overview")
+                : null,
               input.title ? h1(input.title) : null,
-              input.summary ? p({ class: "showcase-lede" }, input.summary) : null,
+              input.summary
+                ? p({ class: "showcase-lede" }, input.summary)
+                : null,
             )
           : null,
         ...input.children,

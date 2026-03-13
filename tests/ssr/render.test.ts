@@ -158,4 +158,28 @@ describe("ssr renderer", () => {
     expect(html).toContain("<h1>Van Rendered</h1>");
     expect(html).not.toContain("[object Object]");
   });
+
+  test("omits bootstrap markup for document-only SSR routes", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/ssr-only"),
+      routes: [
+        {
+          id: "ssr-only",
+          path: "/ssr-only",
+          hydrationPolicy: "document-only",
+          page() {
+            return `<article><h1>SSR Only</h1></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain("<article><h1>SSR Only</h1></article>");
+    expect(html).not.toContain('data-van-stack-app-root=""');
+    expect(html).not.toContain("data-van-stack-bootstrap");
+  });
 });

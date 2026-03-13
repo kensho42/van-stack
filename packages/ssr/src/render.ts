@@ -157,25 +157,31 @@ export async function renderRequest(input: RenderRequestInput) {
       throw new Error(`Route "${route.id}" is missing a page module.`);
     }
 
+    const hydrationPolicy = route.hydrationPolicy ?? defaultHydrationPolicy;
     const data = loader ? await loader({ params: match.params }) : null;
     const meta = metaHandler
       ? await metaHandler({ params: match.params, data })
       : undefined;
     const body = wrapPageBody(
       renderPageOutput(await page({ data })),
-      route.hydrationPolicy ?? defaultHydrationPolicy,
+      hydrationPolicy,
     );
-    const bootstrap = JSON.stringify({
-      routeId: route.id,
-      path: requestPath.path,
-      pathname: requestPath.pathname,
-      params: match.params,
-      hydrationPolicy: route.hydrationPolicy ?? defaultHydrationPolicy,
-      data,
-    });
+    const bootstrap =
+      hydrationPolicy === "app"
+        ? `<script type="application/json" data-van-stack-bootstrap>${JSON.stringify(
+            {
+              routeId: route.id,
+              path: requestPath.path,
+              pathname: requestPath.pathname,
+              params: match.params,
+              hydrationPolicy,
+              data,
+            },
+          )}</script>`
+        : "";
 
     return new Response(
-      `<!doctype html><html><head>${buildHead(meta)}</head><body>${body}<script type="application/json" data-van-stack-bootstrap>${bootstrap}</script></body></html>`,
+      `<!doctype html><html><head>${buildHead(meta)}</head><body>${body}${bootstrap}</body></html>`,
       {
         status: 200,
         headers: {

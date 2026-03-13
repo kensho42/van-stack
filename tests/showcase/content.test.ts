@@ -22,9 +22,10 @@ type PostLike = {
 function expectArrayExport<T>(moduleValue: object, exportName: string): T[] {
   const value = (moduleValue as Record<string, unknown>)[exportName];
 
-  expect(Array.isArray(value), `${exportName} should be an exported array`).toBe(
-    true,
-  );
+  expect(
+    Array.isArray(value),
+    `${exportName} should be an exported array`,
+  ).toBe(true);
 
   return value as T[];
 }
@@ -83,13 +84,11 @@ function getPostTagSlugs(post: PostLike) {
 
 describe("showcase content", () => {
   test("defines the approved five showcase modes and canonical comparison targets", () => {
-    const showcaseModes = expectArrayExport<
-      {
-        id: string;
-        galleryPath: string;
-        walkthroughPath: string;
-      }
-    >(showcaseModesModule, "showcaseModes");
+    const showcaseModes = expectArrayExport<{
+      id: string;
+      galleryPath: string;
+      walkthroughPath: string;
+    }>(showcaseModesModule, "showcaseModes");
     const showcaseCanonicalPostSlug = expectStringExport(
       showcaseBlog,
       "showcaseCanonicalPostSlug",
@@ -112,7 +111,10 @@ describe("showcase content", () => {
   });
 
   test("ships the full showcase editorial graph", () => {
-    const showcasePosts = expectArrayExport<PostLike>(showcaseBlog, "showcasePosts");
+    const showcasePosts = expectArrayExport<PostLike>(
+      showcaseBlog,
+      "showcasePosts",
+    );
     const showcaseAuthors = expectArrayExport<SlugRecord>(
       showcaseBlog,
       "showcaseAuthors",
@@ -121,7 +123,10 @@ describe("showcase content", () => {
       showcaseBlog,
       "showcaseCategories",
     );
-    const showcaseTags = expectArrayExport<SlugRecord>(showcaseBlog, "showcaseTags");
+    const showcaseTags = expectArrayExport<SlugRecord>(
+      showcaseBlog,
+      "showcaseTags",
+    );
 
     expect(showcasePosts).toHaveLength(30);
     expect(showcaseAuthors).toHaveLength(8);
@@ -130,7 +135,10 @@ describe("showcase content", () => {
   });
 
   test("keeps post relationships and archive references coherent", () => {
-    const showcasePosts = expectArrayExport<PostLike>(showcaseBlog, "showcasePosts");
+    const showcasePosts = expectArrayExport<PostLike>(
+      showcaseBlog,
+      "showcasePosts",
+    );
     const showcaseAuthors = expectArrayExport<SlugRecord>(
       showcaseBlog,
       "showcaseAuthors",
@@ -139,7 +147,10 @@ describe("showcase content", () => {
       showcaseBlog,
       "showcaseCategories",
     );
-    const showcaseTags = expectArrayExport<SlugRecord>(showcaseBlog, "showcaseTags");
+    const showcaseTags = expectArrayExport<SlugRecord>(
+      showcaseBlog,
+      "showcaseTags",
+    );
     const getAuthorPosts = expectFunctionExport<(slug: string) => PostLike[]>(
       showcaseBlog,
       "getAuthorPosts",
@@ -155,7 +166,9 @@ describe("showcase content", () => {
 
     const postSlugs = new Set(showcasePosts.map((post) => post.slug));
     const authorSlugs = new Set(showcaseAuthors.map((author) => author.slug));
-    const categorySlugs = new Set(showcaseCategories.map((category) => category.slug));
+    const categorySlugs = new Set(
+      showcaseCategories.map((category) => category.slug),
+    );
     const tagSlugs = new Set(showcaseTags.map((tag) => tag.slug));
 
     expect(postSlugs.size).toBe(showcasePosts.length);
@@ -170,8 +183,11 @@ describe("showcase content", () => {
 
       expect(authorSlug).toBeTruthy();
       expect(categorySlug).toBeTruthy();
-      expect(authorSlugs.has(authorSlug!)).toBe(true);
-      expect(categorySlugs.has(categorySlug!)).toBe(true);
+      if (!authorSlug || !categorySlug) {
+        throw new Error(`Post relationships missing for ${post.slug}.`);
+      }
+      expect(authorSlugs.has(authorSlug)).toBe(true);
+      expect(categorySlugs.has(categorySlug)).toBe(true);
       expect(tagSlugsForPost.length).toBeGreaterThanOrEqual(2);
       expect(post.relatedSlugs?.length ?? 0).toBeGreaterThanOrEqual(2);
 

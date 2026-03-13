@@ -1,30 +1,37 @@
 import { van } from "van-stack/render";
-
-import { getPostByline, getPostEyebrow } from "../../../../../components/blog";
-import { getModeCallout } from "../../../../../components/chrome";
+import { renderShowcaseFrame } from "../../../../../components/chrome";
+import { renderArticleLayout } from "../../../../../components/editorial";
+import {
+  renderRuntimePanel,
+  renderSiblingModeLinks,
+} from "../../../../../components/runtime";
 import type { GalleryPostData } from "../../../../../runtime/data";
 
-const { article, aside, button, h1, h2, li, p, section, span, ul } = van.tags;
+const { button, h2, p, section, span } = van.tags;
 
 export default function page(input: { data: unknown }) {
   const data = input.data as GalleryPostData;
-  const callout = getModeCallout("hydrated");
 
-  return article(
-    p(getPostEyebrow(data.post)),
-    h1(data.post.title),
-    p(getPostByline(data.post)),
-    p(data.post.summary),
-    aside(h2(callout.title), p(callout.body)),
-    p("Hydrated Mode"),
-    p(
-      "This route starts from SSR HTML and keeps the same post alive on the client.",
-    ),
-    button({ "data-like-button": "" }, "Like this post"),
-    p(span({ "data-like-count": "" }, "3"), " readers found this helpful"),
-    section(
-      h2("Related posts"),
-      ul(...data.related.map((post) => li(post.title))),
-    ),
-  );
+  return renderShowcaseFrame({
+    currentPath: data.path,
+    currentModeId: data.mode.id,
+    children: [
+      renderRuntimePanel("hydrated"),
+      renderArticleLayout(data.post, data.mode.id, data.related),
+      section(
+        { class: "showcase-section-block" },
+        h2("Reader pulse"),
+        p(
+          "This interaction hydrates from the SSR document instead of replacing it.",
+        ),
+        button({ "data-like-button": "" }, "Like this post"),
+        p(span({ "data-like-count": "" }, "3"), " readers found this helpful"),
+      ),
+      renderSiblingModeLinks(data.mode.id, {
+        collection: "posts",
+        slug: data.post.slug,
+        label: data.post.title,
+      }),
+    ],
+  });
 }

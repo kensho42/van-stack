@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 
 import { describe, expect, test } from "vitest";
@@ -40,6 +41,18 @@ async function requestShowcase(path: string) {
 }
 
 describe("showcase app", () => {
+  test("roots bun run start in the showcase runtime entry", () => {
+    const rootPackage = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    ) as {
+      scripts?: Record<string, string>;
+    };
+
+    expect(rootPackage.scripts?.start).toContain(
+      "demo/showcase/src/runtime/start.ts",
+    );
+  });
+
   test("renders the landing page with both evaluator demo tracks", async () => {
     const { response, html } = await requestShowcase("/");
 
@@ -75,19 +88,21 @@ describe("showcase app", () => {
       expect(homepage.response.status).toBe(200);
 
       for (const family of contentFamilies) {
-        const listPage = await requestShowcase(`/gallery/${mode}/${family.collection}`);
-        expect(listPage.response.status).toBe(
-          200,
-          `${mode} list route missing: /gallery/${mode}/${family.collection}`,
+        const listPage = await requestShowcase(
+          `/gallery/${mode}/${family.collection}`,
         );
+        expect(
+          listPage.response.status,
+          `${mode} list route missing: /gallery/${mode}/${family.collection}`,
+        ).toBe(200);
 
         const detailPage = await requestShowcase(
           `/gallery/${mode}/${family.collection}/${family.slug}`,
         );
-        expect(detailPage.response.status).toBe(
-          200,
+        expect(
+          detailPage.response.status,
           `${mode} detail route missing: /gallery/${mode}/${family.collection}/${family.slug}`,
-        );
+        ).toBe(200);
       }
     });
   }
@@ -114,10 +129,13 @@ describe("showcase app", () => {
     expect(html).toContain('data-van-stack-app-root=""');
     expect(html).toContain("data-van-stack-bootstrap");
     expect(html).toContain("showcase-hydrated");
+    expect(html).toContain("/assets/showcase-hydrated.js");
   });
 
   test("renders shell and custom post pages as shell-first documents", async () => {
-    const shell = await requestShowcase("/gallery/shell/posts/runtime-gallery-tour");
+    const shell = await requestShowcase(
+      "/gallery/shell/posts/runtime-gallery-tour",
+    );
     const custom = await requestShowcase(
       "/gallery/custom/posts/runtime-gallery-tour",
     );
@@ -129,6 +147,8 @@ describe("showcase app", () => {
     expect(custom.html).toContain("showcase-custom");
     expect(shell.html).toContain("<script");
     expect(custom.html).toContain("<script");
+    expect(shell.html).toContain("/assets/showcase-shell.js");
+    expect(custom.html).toContain("/assets/showcase-custom.js");
     expect(shell.html).not.toContain("<article");
     expect(custom.html).not.toContain("<article");
     expect(shell.html).not.toContain("Runtime Gallery Tour");
@@ -150,6 +170,72 @@ describe("showcase app", () => {
     expect(html).not.toContain("showcase-hydrated");
     expect(html).not.toContain("showcase-shell");
     expect(html).not.toContain("showcase-custom");
+  });
+
+  test("serves bundled client entry assets for hydrated, shell, and custom modes", async () => {
+    const hydratedAsset = await handleShowcaseRequest(
+      new Request("https://example.com/assets/showcase-hydrated.js"),
+    );
+    const shellAsset = await handleShowcaseRequest(
+      new Request("https://example.com/assets/showcase-shell.js"),
+    );
+    const customAsset = await handleShowcaseRequest(
+      new Request("https://example.com/assets/showcase-custom.js"),
+    );
+
+    expect(hydratedAsset.status).toBe(200);
+    expect(shellAsset.status).toBe(200);
+    expect(customAsset.status).toBe(200);
+    expect(hydratedAsset.headers.get("content-type")).toContain("javascript");
+    expect(shellAsset.headers.get("content-type")).toContain("javascript");
+    expect(customAsset.headers.get("content-type")).toContain("javascript");
+    expect(await hydratedAsset.text()).toContain("hydrateApp");
+    expect(await shellAsset.text()).toContain("createRouter");
+    expect(await customAsset.text()).toContain("createRouter");
+  });
+
+  test("serves shell transport data from the internal van-stack data surface", async () => {
+    const response = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/_van-stack/data/gallery/shell/posts/runtime-gallery-tour",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    await expect(response.json()).resolves.toMatchObject({
+      mode: { id: "shell" },
+      post: { slug: "runtime-gallery-tour" },
+      related: expect.any(Array),
+    });
+  });
+
+  test("serves custom-mode blog entities from the demo JSON API", async () => {
+    const postResponse = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/api/showcase/posts/runtime-gallery-tour",
+      ),
+    );
+    const authorResponse = await handleShowcaseRequest(
+      new Request("https://example.com/api/showcase/authors/marta-solis"),
+    );
+
+    expect(postResponse.status).toBe(200);
+    expect(authorResponse.status).toBe(200);
+    expect(postResponse.headers.get("content-type")).toContain(
+      "application/json",
+    );
+    expect(authorResponse.headers.get("content-type")).toContain(
+      "application/json",
+    );
+    await expect(postResponse.json()).resolves.toMatchObject({
+      post: { slug: "runtime-gallery-tour" },
+      related: expect.any(Array),
+    });
+    await expect(authorResponse.json()).resolves.toMatchObject({
+      author: { slug: "marta-solis" },
+      posts: expect.any(Array),
+    });
   });
 
   test("starts an HTTP server that serves the showcase handler", async () => {

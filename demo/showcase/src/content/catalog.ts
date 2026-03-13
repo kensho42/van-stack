@@ -45,7 +45,8 @@ export type ShowcasePostSeed = {
 
 export const showcasePublication = {
   name: "Northstar Journal",
-  tagline: "A full editorial product used to compare every VanStack delivery mode.",
+  tagline:
+    "A full editorial product used to compare every VanStack delivery mode.",
   description:
     "Northstar Journal is the evaluator-facing blog app used to compare SSG, SSR, hydrated CSR, shell CSR, and custom CSR on the same editorial graph.",
   issue: "Spring 2026 Evaluator Edition",
@@ -58,7 +59,8 @@ export const showcaseAuthorCatalog = [
     role: "Editor in Chief",
     location: "Barcelona, Spain",
     bio: "Marta shapes the editorial product strategy behind Northstar Journal and keeps every route feeling like part of one publication instead of five disconnected demos.",
-    focus: "Editorial product strategy, archive design, and evaluator storytelling.",
+    focus:
+      "Editorial product strategy, archive design, and evaluator storytelling.",
   },
   {
     slug: "niko-drummond",
@@ -181,12 +183,14 @@ export const showcaseTagCatalog = [
   {
     slug: "runtime",
     name: "Runtime",
-    description: "Routes and pages whose core point is comparing delivery behavior.",
+    description:
+      "Routes and pages whose core point is comparing delivery behavior.",
   },
   {
     slug: "ssr",
     name: "SSR",
-    description: "Server-rendered pages and the guarantees they should provide.",
+    description:
+      "Server-rendered pages and the guarantees they should provide.",
   },
   {
     slug: "csr",
@@ -196,7 +200,8 @@ export const showcaseTagCatalog = [
   {
     slug: "ssg",
     name: "SSG",
-    description: "Pre-generated routes and the publishing workflows around them.",
+    description:
+      "Pre-generated routes and the publishing workflows around them.",
   },
   {
     slug: "hydration",
@@ -216,7 +221,8 @@ export const showcaseTagCatalog = [
   {
     slug: "taxonomy",
     name: "Taxonomy",
-    description: "Categories and tags that stay meaningful instead of decorative.",
+    description:
+      "Categories and tags that stay meaningful instead of decorative.",
   },
   {
     slug: "analytics",
@@ -236,7 +242,8 @@ export const showcaseTagCatalog = [
   {
     slug: "workflow",
     name: "Workflow",
-    description: "Editorial systems, authoring routines, and release coordination.",
+    description:
+      "Editorial systems, authoring routines, and release coordination.",
   },
 ] satisfies ShowcaseTagSeed[];
 
@@ -244,7 +251,8 @@ export const showcasePostCatalog = [
   {
     slug: "runtime-gallery-tour",
     title: "Runtime Gallery Tour",
-    summary: "The canonical article for comparing every delivery mode against one believable blog product.",
+    summary:
+      "The canonical article for comparing every delivery mode against one believable blog product.",
     excerpt:
       "This is the page evaluators should open first: the same editorial story rendered as SSG, SSR, hydrated CSR, shell CSR, and custom CSR.",
     authorSlug: "niko-drummond",
@@ -265,7 +273,8 @@ export const showcasePostCatalog = [
   {
     slug: "ssg-with-a-real-editorial-calendar",
     title: "SSG With A Real Editorial Calendar",
-    summary: "Static output feels more convincing when it is tied to an actual publishing cadence, not a toy page list.",
+    summary:
+      "Static output feels more convincing when it is tied to an actual publishing cadence, not a toy page list.",
     excerpt:
       "Northstar Journal treats SSG as a publishing channel with archive coverage, canonical posts, and pre-generated taxonomy pages.",
     authorSlug: "marta-solis",
@@ -286,7 +295,8 @@ export const showcasePostCatalog = [
   {
     slug: "shell-routing-with-real-content",
     title: "Shell Routing With Real Content",
-    summary: "A shell-first demo should still browse like a full product once the data starts loading.",
+    summary:
+      "A shell-first demo should still browse like a full product once the data starts loading.",
     excerpt:
       "The shell route boots from a tiny document, then fills in posts, archives, and taxonomy from transport responses.",
     authorSlug: "ivy-chen",
@@ -307,7 +317,8 @@ export const showcasePostCatalog = [
   {
     slug: "authorship-pages-that-feel-lived-in",
     title: "Authorship Pages That Feel Lived In",
-    summary: "Author pages matter once a demo stops being a screenshot and starts being something people actually navigate.",
+    summary:
+      "Author pages matter once a demo stops being a screenshot and starts being something people actually navigate.",
     excerpt:
       "A credible blog app needs authors with bios, beats, and enough posts to feel like recurring voices.",
     authorSlug: "zoe-washington",
@@ -328,7 +339,8 @@ export const showcasePostCatalog = [
   {
     slug: "category-pages-that-earn-the-click",
     title: "Category Pages That Earn The Click",
-    summary: "Category archives should help the reader decide what kind of reading session they are about to have.",
+    summary:
+      "Category archives should help the reader decide what kind of reading session they are about to have.",
     excerpt:
       "When categories have real descriptions and post density, they become navigation tools instead of decorative metadata.",
     authorSlug: "sana-malik",
@@ -339,7 +351,10 @@ export const showcasePostCatalog = [
     publishedAt: "March 8, 2026",
     heroNote:
       "A category page is an editorial promise, so the layout should explain its angle before the first card even loads into view.",
-    outline: ["Category pages as editorial surfaces", "Using hierarchy to build confidence"],
+    outline: [
+      "Category pages as editorial surfaces",
+      "Using hierarchy to build confidence",
+    ],
     highlights: [
       "A strapline gives each category a point of view.",
       "Archive cards should make scanning cadence and subject obvious.",
@@ -349,7 +364,8 @@ export const showcasePostCatalog = [
   {
     slug: "tag-archives-with-real-signals",
     title: "Tag Archives With Real Signals",
-    summary: "Tag pages stop feeling spammy when they collect true themes that cut across categories and authors.",
+    summary:
+      "Tag pages stop feeling spammy when they collect true themes that cut across categories and authors.",
     excerpt:
       "Runtime, taxonomy, and analytics tags should expose patterns that are hard to see from the homepage alone.",
     authorSlug: "omar-haddad",
@@ -370,7 +386,8 @@ export const showcasePostCatalog = [
   {
     slug: "shipping-ssr-with-confident-defaults",
     title: "Shipping SSR With Confident Defaults",
-    summary: "SSR should prove that the app can serve fully readable pages without depending on a client takeover.",
+    summary:
+      "SSR should prove that the app can serve fully readable pages without depending on a client takeover.",
     excerpt:
       "A true SSR pass renders the article body, taxonomy, and related reading before any browser-side routing enters the story.",
     authorSlug: "niko-drummond",
@@ -381,7 +398,10 @@ export const showcasePostCatalog = [
     publishedAt: "March 6, 2026",
     heroNote:
       "If the server output already feels publishable, hydration becomes a product choice rather than a rescue plan.",
-    outline: ["Start with readable HTML", "Deciding when takeover is warranted"],
+    outline: [
+      "Start with readable HTML",
+      "Deciding when takeover is warranted",
+    ],
     highlights: [
       "The SSR route should stand on its own without bootstrap markers.",
       "Page chrome, article body, and archives should all arrive together.",
@@ -391,7 +411,8 @@ export const showcasePostCatalog = [
   {
     slug: "a-custom-csr-story-without-framework-lock-in",
     title: "A Custom CSR Story Without Framework Lock In",
-    summary: "Custom mode matters when the app needs VanStack routing but wants to own data fetching on its own terms.",
+    summary:
+      "Custom mode matters when the app needs VanStack routing but wants to own data fetching on its own terms.",
     excerpt:
       "The demo should prove that component-driven or route-driven JSON fetching can live beside the router without special-case hacks.",
     authorSlug: "ivy-chen",
@@ -412,7 +433,8 @@ export const showcasePostCatalog = [
   {
     slug: "performance-budgets-for-editorial-apps",
     title: "Performance Budgets For Editorial Apps",
-    summary: "Payload discipline matters more when each page has rich metadata, cross-links, and long-form reading content.",
+    summary:
+      "Payload discipline matters more when each page has rich metadata, cross-links, and long-form reading content.",
     excerpt:
       "Editorial sites pay for every extra script and every oversized bootstrap payload, especially on archive-heavy journeys.",
     authorSlug: "pavel-ivanov",
@@ -423,7 +445,10 @@ export const showcasePostCatalog = [
     publishedAt: "March 4, 2026",
     heroNote:
       "A showcase stops being persuasive when the routes technically work but feel heavy under ordinary reading patterns.",
-    outline: ["Performance in a content-rich product", "Budgeting beyond first paint"],
+    outline: [
+      "Performance in a content-rich product",
+      "Budgeting beyond first paint",
+    ],
     highlights: [
       "Runtime comparisons should stay focused on meaningful payload differences.",
       "Archive pages often reveal bloat earlier than homepage demos do.",
@@ -433,7 +458,8 @@ export const showcasePostCatalog = [
   {
     slug: "designing-a-reading-homepage",
     title: "Designing A Reading Homepage",
-    summary: "The homepage should frame the publication, not just dump a list of routes or articles.",
+    summary:
+      "The homepage should frame the publication, not just dump a list of routes or articles.",
     excerpt:
       "A modern editorial homepage can explain the current issue, spotlight posts, and still leave room for runtime comparison cues.",
     authorSlug: "sana-malik",
@@ -444,7 +470,10 @@ export const showcasePostCatalog = [
     publishedAt: "March 3, 2026",
     heroNote:
       "The homepage is where the app earns the right to feel like a publication first and a framework demo second.",
-    outline: ["What the homepage needs to do", "Balancing product and evaluation cues"],
+    outline: [
+      "What the homepage needs to do",
+      "Balancing product and evaluation cues",
+    ],
     highlights: [
       "Lead with editorial intent, not framework jargon.",
       "Use layout contrast to separate features, archives, and runtime diagnostics.",
@@ -454,7 +483,8 @@ export const showcasePostCatalog = [
   {
     slug: "editorial-analytics-without-clutter",
     title: "Editorial Analytics Without Clutter",
-    summary: "Data should inform the interface without turning the whole app into a dashboard.",
+    summary:
+      "Data should inform the interface without turning the whole app into a dashboard.",
     excerpt:
       "Northstar Journal uses metrics to strengthen archive pages, but keeps the reader-facing surface focused on stories.",
     authorSlug: "omar-haddad",
@@ -465,7 +495,10 @@ export const showcasePostCatalog = [
     publishedAt: "March 2, 2026",
     heroNote:
       "The best editorial analytics vanish into better ranking, better labels, and better archive coverage rather than noisy widgets.",
-    outline: ["Measuring the right things", "Using signals without ruining the page"],
+    outline: [
+      "Measuring the right things",
+      "Using signals without ruining the page",
+    ],
     highlights: [
       "Counts and freshness matter most when they change navigation behavior.",
       "Archive pages should quietly reflect the strongest stories in a topic.",
@@ -475,7 +508,8 @@ export const showcasePostCatalog = [
   {
     slug: "inside-the-release-room",
     title: "Inside The Release Room",
-    summary: "A strong showcase release reads like a product launch with deliberate scope, not a pile of unrelated runtime tricks.",
+    summary:
+      "A strong showcase release reads like a product launch with deliberate scope, not a pile of unrelated runtime tricks.",
     excerpt:
       "The release story explains why the blog app exists, which routes matter first, and what evaluators should compare.",
     authorSlug: "leo-mercier",
@@ -486,7 +520,10 @@ export const showcasePostCatalog = [
     publishedAt: "March 1, 2026",
     heroNote:
       "Roadmap communication is part of the product surface once the demo becomes the main evaluator entrypoint.",
-    outline: ["Releasing with a point of view", "What deserves front-page status"],
+    outline: [
+      "Releasing with a point of view",
+      "What deserves front-page status",
+    ],
     highlights: [
       "Choose one canonical post for comparison and make it obvious.",
       "Separate the live gallery from the walkthrough so each has a clear job.",
@@ -496,7 +533,8 @@ export const showcasePostCatalog = [
   {
     slug: "writing-for-modes-not-marketing",
     title: "Writing For Modes, Not Marketing",
-    summary: "The copy around the demo should describe observable behavior, not pretend the product is something it is not.",
+    summary:
+      "The copy around the demo should describe observable behavior, not pretend the product is something it is not.",
     excerpt:
       "Evaluator-facing writing works best when it names the contract plainly and points people at routes they can inspect themselves.",
     authorSlug: "zoe-washington",
@@ -507,7 +545,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 28, 2026",
     heroNote:
       "Clear writing makes the runtime story easier to trust because the interface stops over-claiming and starts demonstrating.",
-    outline: ["Naming what the page actually proves", "Helping evaluators read quickly"],
+    outline: [
+      "Naming what the page actually proves",
+      "Helping evaluators read quickly",
+    ],
     highlights: [
       "Labels should point at concrete behavior like hydration or transport loading.",
       "Every walkthrough claim should link back to a live route.",
@@ -517,7 +558,8 @@ export const showcasePostCatalog = [
   {
     slug: "making-authors-discoverable",
     title: "Making Authors Discoverable",
-    summary: "Author routes deserve direct navigation, not just tiny bylines tucked under article headlines.",
+    summary:
+      "Author routes deserve direct navigation, not just tiny bylines tucked under article headlines.",
     excerpt:
       "When authors have focus areas, bios, and archives, the publication gains a second layer of navigation depth.",
     authorSlug: "marta-solis",
@@ -538,7 +580,8 @@ export const showcasePostCatalog = [
   {
     slug: "content-models-that-survive-every-renderer",
     title: "Content Models That Survive Every Renderer",
-    summary: "The content graph has to serve SSG, SSR, hydrated CSR, shell CSR, and custom CSR without forking into parallel schemas.",
+    summary:
+      "The content graph has to serve SSG, SSR, hydrated CSR, shell CSR, and custom CSR without forking into parallel schemas.",
     excerpt:
       "One post model, one set of authors, and one taxonomy graph make runtime differences inspectable instead of noisy.",
     authorSlug: "niko-drummond",
@@ -559,7 +602,8 @@ export const showcasePostCatalog = [
   {
     slug: "the-case-for-shell-first-navigation",
     title: "The Case For Shell First Navigation",
-    summary: "Shell mode proves its value when route transitions stay coherent after the tiny initial document gives way to real content.",
+    summary:
+      "Shell mode proves its value when route transitions stay coherent after the tiny initial document gives way to real content.",
     excerpt:
       "A lean entry HTML page is only half the story; the rest is how quickly and clearly the archive fills in afterwards.",
     authorSlug: "ivy-chen",
@@ -570,7 +614,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 25, 2026",
     heroNote:
       "Shell routing gets interesting when it stays readable and navigable after the first request, not when it merely boots fast in isolation.",
-    outline: ["Starting tiny without staying empty", "Reader experience after boot"],
+    outline: [
+      "Starting tiny without staying empty",
+      "Reader experience after boot",
+    ],
     highlights: [
       "A good shell route should immediately show where content will land.",
       "Archive navigation is where shell mode either earns trust or loses it.",
@@ -580,7 +627,8 @@ export const showcasePostCatalog = [
   {
     slug: "how-we-pick-canonical-demos",
     title: "How We Pick Canonical Demos",
-    summary: "Canonical routes help evaluators compare quickly because they remove the guesswork about where to begin.",
+    summary:
+      "Canonical routes help evaluators compare quickly because they remove the guesswork about where to begin.",
     excerpt:
       "A single post slug, shared across every mode, creates a stable point of comparison for performance, markup, and behavior.",
     authorSlug: "leo-mercier",
@@ -591,7 +639,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 24, 2026",
     heroNote:
       "The canonical route is a product decision, not just a test convenience, because it shapes the evaluator journey from the first click.",
-    outline: ["Choosing a comparison target", "Keeping the default path obvious"],
+    outline: [
+      "Choosing a comparison target",
+      "Keeping the default path obvious",
+    ],
     highlights: [
       "The gallery overview should send every mode to the same post slug.",
       "Sibling-mode links should make mode switching frictionless.",
@@ -601,7 +652,8 @@ export const showcasePostCatalog = [
   {
     slug: "the-hidden-cost-of-empty-tag-pages",
     title: "The Hidden Cost Of Empty Tag Pages",
-    summary: "Sparse tag pages make a blog app feel fake faster than almost any other route surface.",
+    summary:
+      "Sparse tag pages make a blog app feel fake faster than almost any other route surface.",
     excerpt:
       "Once a reader lands on a thin tag archive, the rest of the product starts to look like scaffolding instead of a publication.",
     authorSlug: "marta-solis",
@@ -612,7 +664,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 23, 2026",
     heroNote:
       "Dense tags are operational work, but they pay off immediately when evaluators wander off the happy path.",
-    outline: ["Why empty tags hurt trust", "Operational fixes that actually help"],
+    outline: [
+      "Why empty tags hurt trust",
+      "Operational fixes that actually help",
+    ],
     highlights: [
       "A tag should connect several posts before it appears in the UI.",
       "Archive depth is part of demo quality, not just content hygiene.",
@@ -622,7 +677,8 @@ export const showcasePostCatalog = [
   {
     slug: "fast-category-landing-pages",
     title: "Fast Category Landing Pages",
-    summary: "Category pages need to feel deliberate without turning into heavy dashboards.",
+    summary:
+      "Category pages need to feel deliberate without turning into heavy dashboards.",
     excerpt:
       "A light but expressive archive header, a confident card grid, and careful ordering can make category routes feel premium and fast.",
     authorSlug: "pavel-ivanov",
@@ -633,7 +689,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 22, 2026",
     heroNote:
       "Archive performance is often the first place where a beautifully styled demo quietly falls apart on real devices.",
-    outline: ["Performance on archive-heavy pages", "Keeping design intensity cheap"],
+    outline: [
+      "Performance on archive-heavy pages",
+      "Keeping design intensity cheap",
+    ],
     highlights: [
       "Card density is useful only if it still scrolls and paints well.",
       "Static generation can make category pages feel instant when the calendar allows it.",
@@ -643,7 +702,8 @@ export const showcasePostCatalog = [
   {
     slug: "data-contracts-for-custom-routes",
     title: "Data Contracts For Custom Routes",
-    summary: "Custom mode needs a believable JSON backend shape so the route component really is decoupled from the framework transport.",
+    summary:
+      "Custom mode needs a believable JSON backend shape so the route component really is decoupled from the framework transport.",
     excerpt:
       "The demo API should return post, author, category, and tag payloads that look like something an app team would actually ship.",
     authorSlug: "omar-haddad",
@@ -654,7 +714,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 21, 2026",
     heroNote:
       "If custom mode quietly depends on framework-owned transport, evaluators cannot tell what is really being demonstrated.",
-    outline: ["Designing a believable API", "Decoupling without losing coherence"],
+    outline: [
+      "Designing a believable API",
+      "Decoupling without losing coherence",
+    ],
     highlights: [
       "Custom responses should include related stories and taxonomy details, not just the post body.",
       "The JSON shape can mirror the editorial graph without mirroring internal framework types.",
@@ -664,7 +727,8 @@ export const showcasePostCatalog = [
   {
     slug: "design-tokens-for-a-newsroom-ui",
     title: "Design Tokens For A Newsroom UI",
-    summary: "A good showcase should look like a product with taste, not the first neutral component library theme that happened to compile.",
+    summary:
+      "A good showcase should look like a product with taste, not the first neutral component library theme that happened to compile.",
     excerpt:
       "Strong typography, warm surfaces, and a tight card system give Northstar Journal a clear identity without fighting readability.",
     authorSlug: "sana-malik",
@@ -675,7 +739,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 20, 2026",
     heroNote:
       "The visual system should make evaluators want to browse the app long enough to discover whether the routes really hold together.",
-    outline: ["Setting the visual direction", "Using tokens to keep pages coherent"],
+    outline: [
+      "Setting the visual direction",
+      "Using tokens to keep pages coherent",
+    ],
     highlights: [
       "Color and spacing need to help content hierarchy, not distract from it.",
       "A reusable token set keeps later route additions from drifting stylistically.",
@@ -685,7 +752,8 @@ export const showcasePostCatalog = [
   {
     slug: "when-hydration-actually-helps",
     title: "When Hydration Actually Helps",
-    summary: "Hydration is worth the extra machinery when the page already starts from complete HTML and then gains meaningful interaction.",
+    summary:
+      "Hydration is worth the extra machinery when the page already starts from complete HTML and then gains meaningful interaction.",
     excerpt:
       "The hydrated route should prove a real takeover path instead of merely shipping bootstrap JSON for no visible reason.",
     authorSlug: "niko-drummond",
@@ -706,7 +774,8 @@ export const showcasePostCatalog = [
   {
     slug: "keeping-shell-and-custom-honest",
     title: "Keeping Shell And Custom Honest",
-    summary: "Shell and custom modes look similar at first glance, so the demo has to make their data ownership boundaries unmistakable.",
+    summary:
+      "Shell and custom modes look similar at first glance, so the demo has to make their data ownership boundaries unmistakable.",
     excerpt:
       "One mode loads through framework transport while the other fetches from a separate JSON API owned by the route or app.",
     authorSlug: "ivy-chen",
@@ -717,7 +786,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 18, 2026",
     heroNote:
       "If evaluators cannot tell which layer owns data in each mode, the comparison loses most of its educational value.",
-    outline: ["Where shell and custom diverge", "Showing the difference on screen"],
+    outline: [
+      "Where shell and custom diverge",
+      "Showing the difference on screen",
+    ],
     highlights: [
       "The runtime panel should say who owns data loading on the current page.",
       "Network endpoints should differ cleanly between the two modes.",
@@ -727,7 +799,8 @@ export const showcasePostCatalog = [
   {
     slug: "editorial-workflows-for-thirty-posts",
     title: "Editorial Workflows For Thirty Posts",
-    summary: "A richer showcase needs enough volume to support archives, not just a few hand-picked routes.",
+    summary:
+      "A richer showcase needs enough volume to support archives, not just a few hand-picked routes.",
     excerpt:
       "Thirty posts create the minimum density needed for author pages, categories, tags, related stories, and homepage curation to feel real.",
     authorSlug: "marta-solis",
@@ -748,7 +821,8 @@ export const showcasePostCatalog = [
   {
     slug: "roadmap-notes-from-the-blog-team",
     title: "Roadmap Notes From The Blog Team",
-    summary: "The publication roadmap is as much about what not to demo as what to ship.",
+    summary:
+      "The publication roadmap is as much about what not to demo as what to ship.",
     excerpt:
       "A focused evaluator app works because it chooses routes that reinforce each other instead of scattering attention across unrelated tricks.",
     authorSlug: "leo-mercier",
@@ -769,7 +843,8 @@ export const showcasePostCatalog = [
   {
     slug: "field-report-on-mobile-reading",
     title: "Field Report On Mobile Reading",
-    summary: "A newsroom-style interface has to collapse gracefully on narrow screens without feeling like a stripped desktop layout.",
+    summary:
+      "A newsroom-style interface has to collapse gracefully on narrow screens without feeling like a stripped desktop layout.",
     excerpt:
       "Mobile readers care about hierarchy, rhythm, and payload discipline long before they care which runtime was involved.",
     authorSlug: "zoe-washington",
@@ -780,7 +855,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 15, 2026",
     heroNote:
       "Mobile browsing is where the app either starts to feel like a real publication or reveals itself as a desktop-only mockup.",
-    outline: ["Reading on small screens", "What responsive editorial design has to protect"],
+    outline: [
+      "Reading on small screens",
+      "What responsive editorial design has to protect",
+    ],
     highlights: [
       "Mode pills and runtime aids should still fit without swallowing the article.",
       "Card grids need to compress into confident single-column stacks.",
@@ -790,7 +868,8 @@ export const showcasePostCatalog = [
   {
     slug: "measuring-ssg-freshness",
     title: "Measuring SSG Freshness",
-    summary: "Static routes need a freshness story once the publication starts to look alive and current.",
+    summary:
+      "Static routes need a freshness story once the publication starts to look alive and current.",
     excerpt:
       "A startup-built SSG cache can still feel current when the app clearly communicates what was materialized and when.",
     authorSlug: "omar-haddad",
@@ -801,7 +880,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 14, 2026",
     heroNote:
       "SSG is easier to trust when freshness is explicit instead of implied by lucky timing.",
-    outline: ["Freshness as product context", "How to talk about generated output"],
+    outline: [
+      "Freshness as product context",
+      "How to talk about generated output",
+    ],
     highlights: [
       "Generated pages should be discoverable from the same gallery surface.",
       "The walkthrough can explain when static output is materialized.",
@@ -811,7 +893,8 @@ export const showcasePostCatalog = [
   {
     slug: "the-people-behind-the-taxonomy",
     title: "The People Behind The Taxonomy",
-    summary: "Taxonomy quality comes from editorial judgment, not just slug counts and auto-generated pages.",
+    summary:
+      "Taxonomy quality comes from editorial judgment, not just slug counts and auto-generated pages.",
     excerpt:
       "The people choosing category and tag structure shape how navigable the product feels across every route family.",
     authorSlug: "zoe-washington",
@@ -832,7 +915,8 @@ export const showcasePostCatalog = [
   {
     slug: "rendering-trust-through-consistency",
     title: "Rendering Trust Through Consistency",
-    summary: "Consistency across modes is what makes the runtime differences legible instead of chaotic.",
+    summary:
+      "Consistency across modes is what makes the runtime differences legible instead of chaotic.",
     excerpt:
       "When the layout, content graph, and navigation stay steady, evaluators can isolate what SSG, SSR, and CSR are actually doing.",
     authorSlug: "niko-drummond",
@@ -843,7 +927,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 12, 2026",
     heroNote:
       "Consistency is not aesthetic fussiness here; it is the condition that makes the framework story comparable.",
-    outline: ["Why visual consistency matters technically", "Protecting the shared experience"],
+    outline: [
+      "Why visual consistency matters technically",
+      "Protecting the shared experience",
+    ],
     highlights: [
       "A shared design language makes mode switching far easier to read.",
       "Inconsistent content would obscure whether the runtime or the page changed.",
@@ -853,7 +940,8 @@ export const showcasePostCatalog = [
   {
     slug: "why-this-demo-is-a-blog-app",
     title: "Why This Demo Is A Blog App",
-    summary: "A blog product has enough route depth, metadata, and browsing behavior to make runtime comparisons meaningful fast.",
+    summary:
+      "A blog product has enough route depth, metadata, and browsing behavior to make runtime comparisons meaningful fast.",
     excerpt:
       "Posts, authors, categories, and tags create a compact but realistic graph that can stress SSG, SSR, hydrated, shell, and custom delivery honestly.",
     authorSlug: "leo-mercier",
@@ -864,7 +952,10 @@ export const showcasePostCatalog = [
     publishedAt: "February 11, 2026",
     heroNote:
       "The blog shape is familiar enough that evaluators can orient immediately and deep enough that routing details matter.",
-    outline: ["Why a blog is the right proving ground", "What the format buys us"],
+    outline: [
+      "Why a blog is the right proving ground",
+      "What the format buys us",
+    ],
     highlights: [
       "Every entity family becomes navigable within minutes.",
       "The app can prove both static and dynamic delivery paths without changing domain.",

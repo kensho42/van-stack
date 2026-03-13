@@ -2,12 +2,27 @@
 
 The showcase is the evaluator-first demo entrypoint for `van-stack`.
 
-- `Runtime Gallery` compares supported runtime modes against the same blog app.
-- `Guided Walkthrough` explains those same capabilities with annotated pages.
-- the older demo folders remain focused references once you want to inspect one runtime area in isolation
+It ships one shared blog app, `Northstar Journal`, and presents it through two evaluator tracks:
+
+- `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `shell`, and `custom` routes
+- `Guided Walkthrough`: annotated evaluator pages for those same five modes
+
+The gallery route surface is:
+
+- `/gallery/<mode>/`
+- `/gallery/<mode>/posts`
+- `/gallery/<mode>/posts/:slug`
+- `/gallery/<mode>/authors`
+- `/gallery/<mode>/authors/:slug`
+- `/gallery/<mode>/categories`
+- `/gallery/<mode>/categories/:slug`
+- `/gallery/<mode>/tags`
+- `/gallery/<mode>/tags/:slug`
 
 Run it from the repo root:
 
 ```bash
 bun run start
 ```
+
+The older demo folders remain focused references once you want to inspect one runtime area in isolation.

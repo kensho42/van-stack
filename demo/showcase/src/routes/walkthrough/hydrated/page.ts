@@ -1,25 +1,23 @@
-import { van } from "van-stack/render";
-
-import { getShowcaseMode } from "../../../content/modes";
-
-const { a, article, h1, h2, li, p, ul } = van.tags;
+import { renderModeWalkthrough } from "../../../route-helpers/walkthrough";
 
 export default function page() {
-  const mode = getShowcaseMode("hydrated");
-  if (!mode) {
-    throw new Error("Missing hydrated showcase mode.");
-  }
-
-  return article(
-    h1("Hydrated Walkthrough"),
-    p(mode.summary),
-    p(mode.proves),
-    p(a({ href: mode.galleryPath }, "Live runtime page")),
-    h2("Route modules"),
-    ul(
-      li("loader.ts prepares the blog post data"),
-      li("page.ts renders the server HTML"),
-      li("hydrate.ts hydrates the interactive like affordance"),
-    ),
-  );
+  return renderModeWalkthrough({
+    modeId: "hydrated",
+    title: "Hydrated walkthrough",
+    checkpoints: [
+      "The first response is server-rendered HTML with a bootstrap payload and app root marker.",
+      "A small route-level interaction hydrates on the canonical post detail page.",
+      "Subsequent navigation uses the client router and internal transport data.",
+    ],
+    implementationNotes: [
+      "demo/showcase/src/routes/gallery/hydrated/posts/[slug]/page.ts",
+      "demo/showcase/src/routes/gallery/hydrated/posts/[slug]/hydrate.ts",
+      "demo/showcase/src/client/hydrated.ts",
+    ],
+    transportNotes: [
+      "SSR provides the initial payload and markup.",
+      "hydrateApp({ routes }) performs the takeover for in-app navigation.",
+      "Hydrated routes keep the same editorial chrome while adding client continuity.",
+    ],
+  });
 }

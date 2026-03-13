@@ -1,13 +1,13 @@
 import {
+  type ShowcaseAuthorSeed,
+  type ShowcaseCategorySeed,
+  type ShowcasePostSeed,
+  type ShowcaseTagSeed,
   showcaseAuthorCatalog,
   showcaseCategoryCatalog,
   showcasePostCatalog,
   showcasePublication,
   showcaseTagCatalog,
-  type ShowcaseAuthorSeed,
-  type ShowcaseCategorySeed,
-  type ShowcasePostSeed,
-  type ShowcaseTagSeed,
 } from "./catalog";
 
 export { showcasePublication };
@@ -61,7 +61,9 @@ const categoryBySlug = new Map(
   showcaseCategoryCatalog.map((category) => [category.slug, category]),
 );
 const tagBySlug = new Map(showcaseTagCatalog.map((tag) => [tag.slug, tag]));
-const postSeedBySlug = new Map(showcasePostCatalog.map((post) => [post.slug, post]));
+const postSeedBySlug = new Map(
+  showcasePostCatalog.map((post) => [post.slug, post]),
+);
 
 function buildPostSections(
   seed: ShowcasePostSeed,
@@ -110,7 +112,9 @@ function getRelatedCandidates(seed: ShowcasePostSeed) {
         return right.score - left.score;
       }
 
-      return right.candidate.publishedOn.localeCompare(left.candidate.publishedOn);
+      return right.candidate.publishedOn.localeCompare(
+        left.candidate.publishedOn,
+      );
     })
     .slice(0, 3)
     .map((entry) => entry.candidate.slug);
@@ -119,7 +123,9 @@ function getRelatedCandidates(seed: ShowcasePostSeed) {
 function buildShowcasePost(seed: ShowcasePostSeed): ShowcasePost {
   const author = authorBySlug.get(seed.authorSlug);
   const category = categoryBySlug.get(seed.categorySlug);
-  const tags = seed.tagSlugs.map((slug) => tagBySlug.get(slug)).filter(Boolean);
+  const tags = seed.tagSlugs
+    .map((slug) => tagBySlug.get(slug))
+    .filter((tag): tag is ShowcaseTag => tag !== undefined);
 
   if (!author) {
     throw new Error(`Missing showcase author: ${seed.authorSlug}`);
@@ -169,9 +175,12 @@ export function getShowcasePost(slug: string) {
 }
 
 export function requireShowcasePost(slug: string) {
-  return getShowcasePost(slug) ?? (() => {
-    throw createShowcaseNotFoundError("post", slug);
-  })();
+  return (
+    getShowcasePost(slug) ??
+    (() => {
+      throw createShowcaseNotFoundError("post", slug);
+    })()
+  );
 }
 
 export function getShowcaseAuthor(slug: string) {
@@ -179,9 +188,12 @@ export function getShowcaseAuthor(slug: string) {
 }
 
 export function requireShowcaseAuthor(slug: string) {
-  return getShowcaseAuthor(slug) ?? (() => {
-    throw createShowcaseNotFoundError("author", slug);
-  })();
+  return (
+    getShowcaseAuthor(slug) ??
+    (() => {
+      throw createShowcaseNotFoundError("author", slug);
+    })()
+  );
 }
 
 export function getShowcaseCategory(slug: string) {
@@ -189,9 +201,12 @@ export function getShowcaseCategory(slug: string) {
 }
 
 export function requireShowcaseCategory(slug: string) {
-  return getShowcaseCategory(slug) ?? (() => {
-    throw createShowcaseNotFoundError("category", slug);
-  })();
+  return (
+    getShowcaseCategory(slug) ??
+    (() => {
+      throw createShowcaseNotFoundError("category", slug);
+    })()
+  );
 }
 
 export function getShowcaseTag(slug: string) {
@@ -199,9 +214,12 @@ export function getShowcaseTag(slug: string) {
 }
 
 export function requireShowcaseTag(slug: string) {
-  return getShowcaseTag(slug) ?? (() => {
-    throw createShowcaseNotFoundError("tag", slug);
-  })();
+  return (
+    getShowcaseTag(slug) ??
+    (() => {
+      throw createShowcaseNotFoundError("tag", slug);
+    })()
+  );
 }
 
 export function getAuthorPosts(slug: string) {

@@ -1,25 +1,23 @@
-import { van } from "van-stack/render";
-
-import { getShowcaseMode } from "../../../content/modes";
-
-const { a, article, h1, h2, li, p, ul } = van.tags;
+import { renderModeWalkthrough } from "../../../route-helpers/walkthrough";
 
 export default function page() {
-  const mode = getShowcaseMode("custom");
-  if (!mode) {
-    throw new Error("Missing custom showcase mode.");
-  }
-
-  return article(
-    h1("Custom Walkthrough"),
-    p(mode.summary),
-    p(mode.proves),
-    p(a({ href: mode.galleryPath }, "Live runtime page")),
-    h2("What to look for"),
-    ul(
-      li("The app shell owns resolution."),
-      li("Framework routing is still available."),
-      li("The same blog data model still drives the page."),
-    ),
-  );
+  return renderModeWalkthrough({
+    modeId: "custom",
+    title: "Custom walkthrough",
+    checkpoints: [
+      "The route shell still comes from the client, but data is fetched from /api/showcase/... instead of the internal transport surface.",
+      "VanStack still owns route matching, navigation, params, and history.",
+      "The same blog graph renders after the JSON response comes back.",
+    ],
+    implementationNotes: [
+      "demo/showcase/src/runtime/api.ts",
+      "demo/showcase/src/client/custom.ts",
+      "demo/showcase/src/runtime/data.ts",
+    ],
+    transportNotes: [
+      "The router does not preload data in custom mode.",
+      "Route rendering performs app-owned fetches against the demo API.",
+      "This keeps the showcase honest about where data ownership lives.",
+    ],
+  });
 }

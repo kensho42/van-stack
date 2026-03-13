@@ -48,11 +48,15 @@ export async function buildStaticRoutes(input: BuildStaticRoutesInput) {
       route.entries,
       route.files?.entries,
     );
-    if (!entriesFactory) {
+    const entries = entriesFactory
+      ? await entriesFactory()
+      : route.path.includes(":")
+        ? null
+        : [{}];
+
+    if (!entries) {
       throw new Error(`Route "${route.id}" is missing an entries module.`);
     }
-
-    const entries = await entriesFactory();
 
     for (const entry of entries) {
       let path = route.path;

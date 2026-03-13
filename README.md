@@ -381,8 +381,8 @@ bun run start
 ```
 
 - `demo/showcase`: evaluator-first demo workspace for the shared blog app
-  - `Runtime Gallery`: live `hydrated`, `shell`, `custom`, `ssg`, and adaptive comparisons
-  - `Guided Walkthrough`: annotated pages that explain the same blog app and link back to the live routes
+  - `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `shell`, and `custom` comparisons against one Northstar Journal blog app
+  - `Guided Walkthrough`: annotated evaluator pages that explain those same five modes and link back to the live routes
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
 - `demo/ssg-site`: focused reference for static generation from route entries

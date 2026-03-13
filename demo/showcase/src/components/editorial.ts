@@ -4,8 +4,8 @@ import {
   type ShowcaseAuthor,
   type ShowcaseCategory,
   type ShowcasePost,
-  showcasePublication,
   type ShowcaseTag,
+  showcasePublication,
 } from "../content/blog";
 import {
   buildShowcaseGalleryPath,
@@ -156,7 +156,9 @@ export function renderPostGrid(
       p({ class: "showcase-subtle" }, showcasePublication.tagline),
     ),
     div(
-      { class: tone === "feature" ? "card-grid" : "card-grid card-grid--tight" },
+      {
+        class: tone === "feature" ? "card-grid" : "card-grid card-grid--tight",
+      },
       ...posts.map((post) => renderPostCard(post, modeId, tone)),
     ),
   );
@@ -165,7 +167,7 @@ export function renderPostGrid(
 export function renderCollectionGrid(
   title: string,
   subtitle: string,
-  cards: Array<ReturnType<typeof article>>,
+  cards: unknown[],
 ) {
   return section(
     { class: "editorial-section" },
@@ -191,7 +193,10 @@ export function renderArticleLayout(
       h1(post.title),
       p({ class: "showcase-lede" }, post.summary),
       p({ class: "showcase-subtle" }, getPostByline(post)),
-      div({ class: "taxonomy-row" }, ...post.tags.map((tag) => renderTagChip(tag, modeId))),
+      div(
+        { class: "taxonomy-row" },
+        ...post.tags.map((tag) => renderTagChip(tag, modeId)),
+      ),
     ),
     ...post.sections.map((sectionData) =>
       section(

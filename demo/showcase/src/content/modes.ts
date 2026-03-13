@@ -10,7 +10,7 @@ export const showcaseLiveModeIds = [
 
 export type ShowcaseLiveModeId = (typeof showcaseLiveModeIds)[number];
 
-export type ShowcaseModeId = ShowcaseLiveModeId | "adaptive";
+export type ShowcaseModeId = ShowcaseLiveModeId;
 
 export type ShowcaseMode = {
   id: ShowcaseLiveModeId;
@@ -38,13 +38,15 @@ export const showcaseModes = [
   {
     id: "ssr",
     title: "SSR",
-    summary: "Render complete article pages on the server with no client takeover.",
+    summary:
+      "Render complete article pages on the server with no client takeover.",
     proves:
       "Shows the publication as traditional server-rendered HTML, including full post, author, category, and tag routes.",
     galleryPath: `/gallery/ssr/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/ssr",
     deliveryLabel: "Server-rendered HTML",
-    dataBoundary: "The server resolves route data and sends finished documents.",
+    dataBoundary:
+      "The server resolves route data and sends finished documents.",
   },
   {
     id: "hydrated",
@@ -55,7 +57,8 @@ export const showcaseModes = [
     galleryPath: `/gallery/hydrated/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/hydrated",
     deliveryLabel: "SSR plus client takeover",
-    dataBoundary: "Bootstrap state and route hydration continue from the server document.",
+    dataBoundary:
+      "Bootstrap state and route hydration continue from the server document.",
   },
   {
     id: "shell",
@@ -66,7 +69,8 @@ export const showcaseModes = [
     galleryPath: `/gallery/shell/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/shell",
     deliveryLabel: "Client shell plus transport",
-    dataBoundary: "VanStack-owned transport resolves page data after the shell loads.",
+    dataBoundary:
+      "VanStack-owned transport resolves page data after the shell loads.",
   },
   {
     id: "custom",
@@ -77,7 +81,8 @@ export const showcaseModes = [
     galleryPath: `/gallery/custom/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/custom",
     deliveryLabel: "Client shell plus custom JSON API",
-    dataBoundary: "The app or route component owns data loading through demo API endpoints.",
+    dataBoundary:
+      "The app or route component owns data loading through demo API endpoints.",
   },
 ] satisfies ShowcaseMode[];
 

@@ -3,6 +3,29 @@ import { describe, expect, test } from "vitest";
 import { buildStaticRoutes } from "../../packages/ssg/src/index";
 
 describe("ssg builder", () => {
+  test("builds static routes without requiring entries for non-dynamic paths", async () => {
+    const output = await buildStaticRoutes({
+      routes: [
+        {
+          id: "about",
+          path: "/about",
+          hydrationPolicy: "document-only",
+          page() {
+            return `<article><h1>About</h1></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(output).toEqual([
+      {
+        path: "/about",
+        html: expect.stringContaining("<article><h1>About</h1></article>"),
+      },
+    ]);
+    expect(output[0]?.html).not.toContain("data-van-stack-bootstrap");
+  });
+
   test("builds concrete HTML pages from entries", async () => {
     const output = await buildStaticRoutes({
       routes: [
@@ -32,6 +55,8 @@ describe("ssg builder", () => {
         ),
       },
     ]);
+    expect(output[0]?.html).not.toContain("data-van-stack-bootstrap");
+    expect(output[0]?.html).not.toContain('data-van-stack-app-root=""');
   });
 
   test("builds concrete pages from a manifest-style route definition", async () => {
@@ -40,6 +65,7 @@ describe("ssg builder", () => {
         {
           id: "posts/[slug]",
           path: "/posts/:slug",
+          hydrationPolicy: "document-only",
           files: {
             async entries() {
               return {
@@ -78,5 +104,7 @@ describe("ssg builder", () => {
         ),
       },
     ]);
+    expect(output[0]?.html).not.toContain("data-van-stack-bootstrap");
+    expect(output[0]?.html).not.toContain('data-van-stack-app-root=""');
   });
 });
