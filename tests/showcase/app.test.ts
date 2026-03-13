@@ -8,149 +8,148 @@ import {
   startShowcaseServerWithFallback,
 } from "../../demo/showcase/src/runtime/server";
 
+const modeIds = ["ssg", "ssr", "hydrated", "shell", "custom"] as const;
+const contentFamilies = [
+  {
+    collection: "posts",
+    slug: "runtime-gallery-tour",
+  },
+  {
+    collection: "authors",
+    slug: "marta-solis",
+  },
+  {
+    collection: "categories",
+    slug: "engineering",
+  },
+  {
+    collection: "tags",
+    slug: "runtime",
+  },
+] as const;
+
+async function requestShowcase(path: string) {
+  const response = await handleShowcaseRequest(
+    new Request(`https://example.com${path}`),
+  );
+
+  return {
+    response,
+    html: await response.text(),
+  };
+}
+
 describe("showcase app", () => {
   test("renders the landing page with both evaluator demo tracks", async () => {
-    const response = await handleShowcaseRequest(
-      new Request("https://example.com/"),
-    );
+    const { response, html } = await requestShowcase("/");
 
     expect(response.status).toBe(200);
-
-    const html = await response.text();
-
     expect(html).toContain("Runtime Gallery");
     expect(html).toContain("Guided Walkthrough");
   });
 
-  test("renders a blog-style missing-post state for unknown post slugs", async () => {
-    const response = await handleShowcaseRequest(
-      new Request("https://example.com/gallery/hydrated/posts/missing-post"),
-    );
-
-    expect(response.status).toBe(404);
-    expect(await response.text()).toContain("Post not found");
-  });
-
   test("renders a coherent 404 page for unknown showcase routes", async () => {
-    const response = await handleShowcaseRequest(
-      new Request("https://example.com/not-a-real-showcase-page"),
+    const { response, html } = await requestShowcase(
+      "/not-a-real-showcase-page",
     );
 
     expect(response.status).toBe(404);
-    expect(await response.text()).toContain("Showcase page not found");
+    expect(html).toContain("Showcase page not found");
   });
 
-  test("lists all supported modes on the gallery overview page", async () => {
-    const response = await handleShowcaseRequest(
-      new Request("https://example.com/gallery"),
+  test("lists only the approved five showcase modes on the gallery overview", async () => {
+    const { response, html } = await requestShowcase("/gallery");
+
+    expect(response.status).toBe(200);
+    expect(html).toContain("/gallery/ssg/posts/runtime-gallery-tour");
+    expect(html).toContain("/gallery/ssr/posts/runtime-gallery-tour");
+    expect(html).toContain("/gallery/hydrated/posts/runtime-gallery-tour");
+    expect(html).toContain("/gallery/shell/posts/runtime-gallery-tour");
+    expect(html).toContain("/gallery/custom/posts/runtime-gallery-tour");
+    expect(html).not.toContain("Adaptive");
+  });
+
+  for (const mode of modeIds) {
+    test(`${mode} exposes the full gallery route surface`, async () => {
+      const homepage = await requestShowcase(`/gallery/${mode}/`);
+      expect(homepage.response.status).toBe(200);
+
+      for (const family of contentFamilies) {
+        const listPage = await requestShowcase(`/gallery/${mode}/${family.collection}`);
+        expect(listPage.response.status).toBe(
+          200,
+          `${mode} list route missing: /gallery/${mode}/${family.collection}`,
+        );
+
+        const detailPage = await requestShowcase(
+          `/gallery/${mode}/${family.collection}/${family.slug}`,
+        );
+        expect(detailPage.response.status).toBe(
+          200,
+          `${mode} detail route missing: /gallery/${mode}/${family.collection}/${family.slug}`,
+        );
+      }
+    });
+  }
+
+  test("renders SSR post pages without hydration handoff markers", async () => {
+    const { response, html } = await requestShowcase(
+      "/gallery/ssr/posts/runtime-gallery-tour",
     );
 
     expect(response.status).toBe(200);
-
-    const html = await response.text();
-
-    expect(html).toContain("Hydrated");
-    expect(html).toContain("Shell");
-    expect(html).toContain("Custom");
-    expect(html).toContain("SSG");
-    expect(html).toContain("Adaptive");
+    expect(html).toContain("Runtime Gallery Tour");
+    expect(html).not.toContain('data-van-stack-app-root=""');
+    expect(html).not.toContain("data-van-stack-bootstrap");
+    expect(html).not.toContain("showcase-hydrated");
   });
 
-  test("renders a hydrated gallery page with app bootstrap markers", async () => {
-    const response = await handleShowcaseRequest(
-      new Request(
-        "https://example.com/gallery/hydrated/posts/runtime-gallery-tour",
-      ),
+  test("renders hydrated post pages with SSR content and explicit client takeover", async () => {
+    const { response, html } = await requestShowcase(
+      "/gallery/hydrated/posts/runtime-gallery-tour",
     );
 
     expect(response.status).toBe(200);
-
-    const html = await response.text();
-
-    expect(html).toContain("Hydrated Mode");
+    expect(html).toContain("Runtime Gallery Tour");
     expect(html).toContain('data-van-stack-app-root=""');
     expect(html).toContain("data-van-stack-bootstrap");
+    expect(html).toContain("showcase-hydrated");
   });
 
-  test("renders shell and custom gallery pages with mode-specific callouts", async () => {
-    const shellResponse = await handleShowcaseRequest(
-      new Request(
-        "https://example.com/gallery/shell/posts/runtime-gallery-tour",
-      ),
-    );
-    const customResponse = await handleShowcaseRequest(
-      new Request(
-        "https://example.com/gallery/custom/posts/runtime-gallery-tour",
-      ),
+  test("renders shell and custom post pages as shell-first documents", async () => {
+    const shell = await requestShowcase("/gallery/shell/posts/runtime-gallery-tour");
+    const custom = await requestShowcase(
+      "/gallery/custom/posts/runtime-gallery-tour",
     );
 
-    expect(await shellResponse.text()).toContain("transport-backed");
-    expect(await customResponse.text()).toContain("app-owned resolution");
+    expect(shell.response.status).toBe(200);
+    expect(custom.response.status).toBe(200);
+
+    expect(shell.html).toContain("showcase-shell");
+    expect(custom.html).toContain("showcase-custom");
+    expect(shell.html).toContain("<script");
+    expect(custom.html).toContain("<script");
+    expect(shell.html).not.toContain("<article");
+    expect(custom.html).not.toContain("<article");
+    expect(shell.html).not.toContain("Runtime Gallery Tour");
+    expect(custom.html).not.toContain("Runtime Gallery Tour");
+    expect(shell.html).not.toContain("Related posts");
+    expect(custom.html).not.toContain("Related posts");
+    expect(custom.html).not.toContain("/_van-stack/data/");
   });
 
-  test("renders the SSG gallery page as a static-capable route", async () => {
-    const response = await handleShowcaseRequest(
-      new Request("https://example.com/gallery/ssg/posts/runtime-gallery-tour"),
+  test("renders SSG post pages as fully rendered static HTML", async () => {
+    const { response, html } = await requestShowcase(
+      "/gallery/ssg/posts/runtime-gallery-tour",
     );
 
     expect(response.status).toBe(200);
-    expect(await response.text()).toContain("Static-capable");
-  });
-
-  test("renders the adaptive gallery page with replace and stack framing", async () => {
-    const response = await handleShowcaseRequest(
-      new Request(
-        "https://example.com/gallery/adaptive/posts/adaptive-threads-in-practice",
-      ),
-    );
-
-    expect(response.status).toBe(200);
-
-    const html = await response.text();
-
-    expect(html).toContain("replace");
-    expect(html).toContain("stack");
-  });
-
-  test("lists annotated runtime pages on the walkthrough overview", async () => {
-    const response = await handleShowcaseRequest(
-      new Request("https://example.com/walkthrough"),
-    );
-
-    expect(response.status).toBe(200);
-
-    const html = await response.text();
-
-    expect(html).toContain("Guided Walkthrough");
-    expect(html).toContain("Hydrated");
-    expect(html).toContain("Shell");
-    expect(html).toContain("Adaptive");
-  });
-
-  test("links walkthrough pages back to the matching live gallery route", async () => {
-    const response = await handleShowcaseRequest(
-      new Request("https://example.com/walkthrough/hydrated"),
-    );
-
-    expect(response.status).toBe(200);
-
-    const html = await response.text();
-
-    expect(html).toContain("/gallery/hydrated/posts/runtime-gallery-tour");
-    expect(html).toContain("Live runtime page");
-  });
-
-  test("shows generated SSG example output on the walkthrough page", async () => {
-    const response = await handleShowcaseRequest(
-      new Request("https://example.com/walkthrough/ssg"),
-    );
-
-    expect(response.status).toBe(200);
-
-    const html = await response.text();
-
-    expect(html).toContain("Generated sample output");
     expect(html).toContain("Runtime Gallery Tour");
+    expect(html).not.toContain('data-van-stack-app-root=""');
+    expect(html).not.toContain("data-van-stack-bootstrap");
+    expect(html).not.toContain("showcase-hydrated");
+    expect(html).not.toContain("showcase-shell");
+    expect(html).not.toContain("showcase-custom");
   });
 
   test("starts an HTTP server that serves the showcase handler", async () => {
@@ -163,7 +162,7 @@ describe("showcase app", () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:${address.port}/`);
+      const response = await fetch(`http://127.0.0.1:${address.port}/gallery`);
 
       expect(response.status).toBe(200);
       expect(await response.text()).toContain("Runtime Gallery");
@@ -210,7 +209,7 @@ describe("showcase app", () => {
     try {
       expect(address.port).not.toBe(blockerAddress.port);
 
-      const response = await fetch(`http://127.0.0.1:${address.port}/`);
+      const response = await fetch(`http://127.0.0.1:${address.port}/gallery`);
 
       expect(response.status).toBe(200);
       expect(await response.text()).toContain("Runtime Gallery");
