@@ -7,12 +7,7 @@ import type {
 import { van } from "van-stack/render";
 
 import { renderGalleryPage } from "../route-helpers/gallery";
-import {
-  type CustomApiPayload,
-  createCustomGalleryPageData,
-  type GalleryPageData,
-  resolveCustomApiPath,
-} from "../runtime/data";
+import type { GalleryPageData } from "../runtime/data";
 
 type HistoryLike = {
   pushState: (state: unknown, unused: string, url?: string) => void;
@@ -504,18 +499,4 @@ export function wireClientNavigation(
     options.document.removeEventListener("click", clickHandler);
     options.window.removeEventListener("popstate", popstateHandler);
   };
-}
-
-export async function fetchCustomPageData(path: string) {
-  const response = await fetch(resolveCustomApiPath(path));
-  if (!response.ok) {
-    throw new Error(
-      `Custom showcase API failed for ${path}: ${response.status}`,
-    );
-  }
-
-  return createCustomGalleryPageData(
-    path,
-    (await response.json()) as CustomApiPayload,
-  );
 }

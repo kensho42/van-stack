@@ -1,12 +1,12 @@
 import { van } from "van-stack/render";
 
-import {
-  type ShowcaseAuthor,
-  type ShowcaseCategory,
-  type ShowcasePost,
-  type ShowcaseTag,
-  showcasePublication,
+import type {
+  ShowcaseAuthor,
+  ShowcaseCategory,
+  ShowcasePost,
+  ShowcaseTag,
 } from "../content/blog";
+import { showcasePublication } from "../content/publication";
 import { getPostByline, getPostEyebrow } from "./blog";
 
 const {

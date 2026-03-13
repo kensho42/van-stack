@@ -1,4 +1,4 @@
-import { showcaseCanonicalPostSlug } from "./blog";
+const showcaseCanonicalPostSlug = "runtime-gallery-tour";
 
 export const showcaseLiveModeIds = [
   "ssg",

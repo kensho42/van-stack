@@ -1,10 +1,10 @@
 import { applyRouteHead, createRouter } from "van-stack/csr";
 
 import type { GalleryPageData } from "../runtime/data";
+import { fetchCustomPageData } from "./custom-data";
 import { mountShowcasePostInteractions } from "./post-interactions";
 import {
   customClientRoutes,
-  fetchCustomPageData,
   getClientRoot,
   renderClientLoading,
   renderClientPage,

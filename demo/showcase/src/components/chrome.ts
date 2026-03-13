@@ -1,7 +1,6 @@
 import { van } from "van-stack/render";
-
-import { showcasePublication } from "../content/blog";
 import { type ShowcaseLiveModeId, showcaseModes } from "../content/modes";
+import { showcasePublication } from "../content/publication";
 import { getModeCallout, renderModePill } from "./runtime";
 
 export { getModeCallout };

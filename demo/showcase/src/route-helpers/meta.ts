@@ -1,11 +1,5 @@
 import type { RouteMeta } from "van-stack";
 
-import {
-  requireShowcaseAuthor,
-  requireShowcaseCategory,
-  requireShowcasePost,
-  requireShowcaseTag,
-} from "../content/blog";
 import { getShowcaseMode, type ShowcaseModeId } from "../content/modes";
 
 function getMode(modeId: ShowcaseModeId) {
@@ -30,6 +24,98 @@ function createMeta(
       title,
       description,
     },
+  };
+}
+
+function slugToLabel(slug: string) {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((segment) => `${segment[0]?.toUpperCase() ?? ""}${segment.slice(1)}`)
+    .join(" ");
+}
+
+function readObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" ? value : null;
+}
+
+function readPost(data: unknown) {
+  const payload = readObject(data);
+  if (!payload || readString(payload.pageType) !== "post-detail") {
+    return null;
+  }
+
+  const post = readObject(payload.post);
+  if (!post) {
+    return null;
+  }
+
+  return {
+    slug: readString(post.slug),
+    summary: readString(post.summary),
+    title: readString(post.title),
+  };
+}
+
+function readAuthor(data: unknown) {
+  const payload = readObject(data);
+  if (!payload || readString(payload.pageType) !== "author-detail") {
+    return null;
+  }
+
+  const author = readObject(payload.author);
+  if (!author) {
+    return null;
+  }
+
+  return {
+    bio: readString(author.bio),
+    name: readString(author.name),
+    slug: readString(author.slug),
+  };
+}
+
+function readCategory(data: unknown) {
+  const payload = readObject(data);
+  if (!payload || readString(payload.pageType) !== "category-detail") {
+    return null;
+  }
+
+  const category = readObject(payload.category);
+  if (!category) {
+    return null;
+  }
+
+  return {
+    description: readString(category.description),
+    name: readString(category.name),
+    slug: readString(category.slug),
+  };
+}
+
+function readTag(data: unknown) {
+  const payload = readObject(data);
+  if (!payload || readString(payload.pageType) !== "tag-detail") {
+    return null;
+  }
+
+  const tag = readObject(payload.tag);
+  if (!tag) {
+    return null;
+  }
+
+  return {
+    description: readString(tag.description),
+    name: readString(tag.name),
+    slug: readString(tag.slug),
   };
 }
 
@@ -95,14 +181,22 @@ export function createPostsIndexMeta(modeId: ShowcaseModeId) {
   );
 }
 
-export function createPostMeta(modeId: ShowcaseModeId, slug: string) {
+export function createPostMeta(
+  modeId: ShowcaseModeId,
+  slug: string,
+  data?: unknown,
+) {
   const mode = getMode(modeId);
-  const post = requireShowcasePost(slug);
+  const post = readPost(data);
+  const resolvedSlug = post?.slug ?? slug;
+  const title = post?.title ?? slugToLabel(slug);
+  const description =
+    post?.summary ?? "Read this Northstar Journal story in the selected mode.";
 
   return createMeta(
-    `${post.title} · ${mode.title} · Northstar Journal`,
-    post.summary,
-    `/gallery/${mode.id}/posts/${post.slug}`,
+    `${title} · ${mode.title} · Northstar Journal`,
+    description,
+    `/gallery/${mode.id}/posts/${resolvedSlug}`,
   );
 }
 
@@ -116,14 +210,23 @@ export function createAuthorsIndexMeta(modeId: ShowcaseModeId) {
   );
 }
 
-export function createAuthorMeta(modeId: ShowcaseModeId, slug: string) {
+export function createAuthorMeta(
+  modeId: ShowcaseModeId,
+  slug: string,
+  data?: unknown,
+) {
   const mode = getMode(modeId);
-  const author = requireShowcaseAuthor(slug);
+  const author = readAuthor(data);
+  const resolvedSlug = author?.slug ?? slug;
+  const title = author?.name ?? slugToLabel(slug);
+  const description =
+    author?.bio ??
+    "Browse this contributor archive in the selected Northstar Journal mode.";
 
   return createMeta(
-    `${author.name} · ${mode.title} · Northstar Journal`,
-    author.bio,
-    `/gallery/${mode.id}/authors/${author.slug}`,
+    `${title} · ${mode.title} · Northstar Journal`,
+    description,
+    `/gallery/${mode.id}/authors/${resolvedSlug}`,
   );
 }
 
@@ -137,14 +240,23 @@ export function createCategoriesIndexMeta(modeId: ShowcaseModeId) {
   );
 }
 
-export function createCategoryMeta(modeId: ShowcaseModeId, slug: string) {
+export function createCategoryMeta(
+  modeId: ShowcaseModeId,
+  slug: string,
+  data?: unknown,
+) {
   const mode = getMode(modeId);
-  const category = requireShowcaseCategory(slug);
+  const category = readCategory(data);
+  const resolvedSlug = category?.slug ?? slug;
+  const title = category?.name ?? slugToLabel(slug);
+  const description =
+    category?.description ??
+    "Browse this editorial desk archive in the selected Northstar Journal mode.";
 
   return createMeta(
-    `${category.name} · ${mode.title} · Northstar Journal`,
-    category.description,
-    `/gallery/${mode.id}/categories/${category.slug}`,
+    `${title} · ${mode.title} · Northstar Journal`,
+    description,
+    `/gallery/${mode.id}/categories/${resolvedSlug}`,
   );
 }
 
@@ -158,14 +270,23 @@ export function createTagsIndexMeta(modeId: ShowcaseModeId) {
   );
 }
 
-export function createTagMeta(modeId: ShowcaseModeId, slug: string) {
+export function createTagMeta(
+  modeId: ShowcaseModeId,
+  slug: string,
+  data?: unknown,
+) {
   const mode = getMode(modeId);
-  const tag = requireShowcaseTag(slug);
+  const tag = readTag(data);
+  const resolvedSlug = tag?.slug ?? slug;
+  const title = tag?.name ?? slugToLabel(slug);
+  const description =
+    tag?.description ??
+    "Browse this cross-cutting topic archive in the selected Northstar Journal mode.";
 
   return createMeta(
-    `${tag.name} · ${mode.title} · Northstar Journal`,
-    tag.description,
-    `/gallery/${mode.id}/tags/${tag.slug}`,
+    `${title} · ${mode.title} · Northstar Journal`,
+    description,
+    `/gallery/${mode.id}/tags/${resolvedSlug}`,
   );
 }
 
@@ -185,13 +306,18 @@ export function createAdaptivePostsIndexMeta() {
   );
 }
 
-export function createAdaptivePostMeta(slug: string) {
-  const post = requireShowcasePost(slug);
+export function createAdaptivePostMeta(slug: string, data?: unknown) {
+  const post = readPost(data);
+  const resolvedSlug = post?.slug ?? slug;
+  const title = post?.title ?? slugToLabel(slug);
+  const description =
+    post?.summary ??
+    "Read this Northstar Journal story in adaptive stack mode.";
 
   return createMeta(
-    `${post.title} · Adaptive Stack · Northstar Journal`,
-    post.summary,
-    `/adaptive/posts/${post.slug}`,
+    `${title} · Adaptive Stack · Northstar Journal`,
+    description,
+    `/adaptive/posts/${resolvedSlug}`,
   );
 }
 
@@ -203,13 +329,17 @@ export function createAdaptiveAuthorsIndexMeta() {
   );
 }
 
-export function createAdaptiveAuthorMeta(slug: string) {
-  const author = requireShowcaseAuthor(slug);
+export function createAdaptiveAuthorMeta(slug: string, data?: unknown) {
+  const author = readAuthor(data);
+  const resolvedSlug = author?.slug ?? slug;
+  const title = author?.name ?? slugToLabel(slug);
+  const description =
+    author?.bio ?? "Browse this contributor archive in adaptive stack mode.";
 
   return createMeta(
-    `${author.name} · Adaptive Stack · Northstar Journal`,
-    author.bio,
-    `/adaptive/authors/${author.slug}`,
+    `${title} · Adaptive Stack · Northstar Journal`,
+    description,
+    `/adaptive/authors/${resolvedSlug}`,
   );
 }
 
@@ -221,13 +351,18 @@ export function createAdaptiveCategoriesIndexMeta() {
   );
 }
 
-export function createAdaptiveCategoryMeta(slug: string) {
-  const category = requireShowcaseCategory(slug);
+export function createAdaptiveCategoryMeta(slug: string, data?: unknown) {
+  const category = readCategory(data);
+  const resolvedSlug = category?.slug ?? slug;
+  const title = category?.name ?? slugToLabel(slug);
+  const description =
+    category?.description ??
+    "Browse this editorial desk archive in adaptive stack mode.";
 
   return createMeta(
-    `${category.name} · Adaptive Stack · Northstar Journal`,
-    category.description,
-    `/adaptive/categories/${category.slug}`,
+    `${title} · Adaptive Stack · Northstar Journal`,
+    description,
+    `/adaptive/categories/${resolvedSlug}`,
   );
 }
 
@@ -239,12 +374,16 @@ export function createAdaptiveTagsIndexMeta() {
   );
 }
 
-export function createAdaptiveTagMeta(slug: string) {
-  const tag = requireShowcaseTag(slug);
+export function createAdaptiveTagMeta(slug: string, data?: unknown) {
+  const tag = readTag(data);
+  const resolvedSlug = tag?.slug ?? slug;
+  const title = tag?.name ?? slugToLabel(slug);
+  const description =
+    tag?.description ?? "Browse this topic archive in adaptive stack mode.";
 
   return createMeta(
-    `${tag.name} · Adaptive Stack · Northstar Journal`,
-    tag.description,
-    `/adaptive/tags/${tag.slug}`,
+    `${title} · Adaptive Stack · Northstar Journal`,
+    description,
+    `/adaptive/tags/${resolvedSlug}`,
   );
 }

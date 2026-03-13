@@ -1,9 +1,5 @@
 import { van } from "van-stack/render";
 
-import {
-  getShowcaseInitialLikeCount,
-  type ShowcasePost,
-} from "../content/blog";
 import type { ShowcasePostInteractionBinding } from "../post-interactions";
 import type { ShowcaseInteractionState } from "../runtime/interactions";
 
@@ -20,6 +16,10 @@ type ButtonLike = {
 
 type TextLike = {
   textContent: string | null;
+};
+
+type LikeCounterPost = {
+  readTimeMinutes: number;
 };
 
 function isQueryRootLike(value: unknown): value is QueryRootLike {
@@ -41,8 +41,12 @@ function isTextLike(value: unknown): value is TextLike {
   return Boolean(value && typeof value === "object" && "textContent" in value);
 }
 
+function getInitialLikeCount(post: LikeCounterPost) {
+  return post.readTimeMinutes + 2;
+}
+
 export function renderLikeCounter(
-  post: ShowcasePost,
+  post: LikeCounterPost,
   interactions?: ShowcaseInteractionState,
 ) {
   return section(
@@ -52,7 +56,7 @@ export function renderLikeCounter(
     p(
       span(
         { "data-like-count": "" },
-        String(interactions?.likes ?? getShowcaseInitialLikeCount(post)),
+        String(interactions?.likes ?? getInitialLikeCount(post)),
       ),
       " readers found this helpful",
     ),
