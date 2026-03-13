@@ -1,68 +1,102 @@
-export type ShowcaseModeId =
-  | "hydrated"
-  | "shell"
-  | "custom"
-  | "ssg"
-  | "adaptive";
+import { showcaseCanonicalPostSlug } from "./blog";
+
+export const showcaseLiveModeIds = [
+  "ssg",
+  "ssr",
+  "hydrated",
+  "shell",
+  "custom",
+] as const;
+
+export type ShowcaseLiveModeId = (typeof showcaseLiveModeIds)[number];
+
+export type ShowcaseModeId = ShowcaseLiveModeId | "adaptive";
 
 export type ShowcaseMode = {
-  id: ShowcaseModeId;
+  id: ShowcaseLiveModeId;
   title: string;
   summary: string;
   proves: string;
   galleryPath: string;
   walkthroughPath: string;
+  deliveryLabel: string;
+  dataBoundary: string;
 };
 
 export const showcaseModes = [
+  {
+    id: "ssg",
+    title: "SSG",
+    summary: "Serve fully materialized blog pages generated ahead of time.",
+    proves:
+      "Shows that the same publication graph can be pre-rendered into static homepage, archive, and detail routes.",
+    galleryPath: `/gallery/ssg/posts/${showcaseCanonicalPostSlug}`,
+    walkthroughPath: "/walkthrough/ssg",
+    deliveryLabel: "Pre-generated HTML",
+    dataBoundary: "Build-time entries expand dynamic routes into static pages.",
+  },
+  {
+    id: "ssr",
+    title: "SSR",
+    summary: "Render complete article pages on the server with no client takeover.",
+    proves:
+      "Shows the publication as traditional server-rendered HTML, including full post, author, category, and tag routes.",
+    galleryPath: `/gallery/ssr/posts/${showcaseCanonicalPostSlug}`,
+    walkthroughPath: "/walkthrough/ssr",
+    deliveryLabel: "Server-rendered HTML",
+    dataBoundary: "The server resolves route data and sends finished documents.",
+  },
   {
     id: "hydrated",
     title: "Hydrated",
     summary: "Start from SSR HTML, then continue the blog on the client.",
     proves:
-      "Shows server-first rendering with app handoff for the same post detail view.",
-    galleryPath: "/gallery/hydrated/posts/runtime-gallery-tour",
+      "Shows SSR output handing off to a real client router that keeps the same blog app interactive after first paint.",
+    galleryPath: `/gallery/hydrated/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/hydrated",
+    deliveryLabel: "SSR plus client takeover",
+    dataBoundary: "Bootstrap state and route hydration continue from the server document.",
   },
   {
     id: "shell",
     title: "Shell",
     summary: "Boot from a minimal shell and load blog data through transport.",
     proves:
-      "Shows route-driven loading without needing SSR HTML as the starting point.",
-    galleryPath: "/gallery/shell/posts/runtime-gallery-tour",
+      "Shows route-driven loading without SSR article HTML by letting the client fetch framework transport data after startup.",
+    galleryPath: `/gallery/shell/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/shell",
+    deliveryLabel: "Client shell plus transport",
+    dataBoundary: "VanStack-owned transport resolves page data after the shell loads.",
   },
   {
     id: "custom",
     title: "Custom",
     summary: "Keep data ownership inside the app while still using the router.",
     proves:
-      "Shows app-owned resolution and component interactions for the blog detail page.",
-    galleryPath: "/gallery/custom/posts/runtime-gallery-tour",
+      "Shows route components fetching from a custom JSON surface while still using the same route graph and chrome.",
+    galleryPath: `/gallery/custom/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/custom",
-  },
-  {
-    id: "ssg",
-    title: "SSG",
-    summary: "Materialize blog routes into static pages ahead of time.",
-    proves:
-      "Shows that the same content model can be emitted as prebuilt blog pages.",
-    galleryPath: "/gallery/ssg/posts/runtime-gallery-tour",
-    walkthroughPath: "/walkthrough/ssg",
-  },
-  {
-    id: "adaptive",
-    title: "Adaptive",
-    summary:
-      "Swap between replace and stack presentation for the same reading flow.",
-    proves:
-      "Shows how navigation presentation changes the reader experience without changing content.",
-    galleryPath: "/gallery/adaptive/posts/adaptive-threads-in-practice",
-    walkthroughPath: "/walkthrough/adaptive",
+    deliveryLabel: "Client shell plus custom JSON API",
+    dataBoundary: "The app or route component owns data loading through demo API endpoints.",
   },
 ] satisfies ShowcaseMode[];
 
 export function getShowcaseMode(id: ShowcaseModeId) {
   return showcaseModes.find((mode) => mode.id === id);
+}
+
+export function getSiblingShowcaseModes(currentModeId: ShowcaseLiveModeId) {
+  return showcaseModes.filter((mode) => mode.id !== currentModeId);
+}
+
+export function buildShowcaseGalleryPath(
+  modeId: ShowcaseLiveModeId,
+  collection: "posts" | "authors" | "categories" | "tags" = "posts",
+  slug = showcaseCanonicalPostSlug,
+) {
+  if (collection === "posts") {
+    return `/gallery/${modeId}/posts/${slug}`;
+  }
+
+  return `/gallery/${modeId}/${collection}/${slug}`;
 }
