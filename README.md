@@ -205,6 +205,22 @@ app.router.subscribe((entry) => {
 
 `hydrateApp(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, waits for that route-level DOM hydration to finish via `app.ready`, then creates a `hydrated` router, intercepts same-origin in-app link clicks, and listens for `popstate`.
 
+### Islands Hydration
+
+For SSR branches using `hydrationPolicy: "islands"`, you can hydrate focused route islands without creating a client router:
+
+```ts
+import { loadRoutes } from "van-stack/compiler";
+import { hydrateIslands } from "van-stack/csr";
+
+const routes = await loadRoutes({ root: "src/routes" });
+
+const hydration = hydrateIslands({ routes });
+await hydration.ready;
+```
+
+`hydrateIslands(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, and runs that route-level hydration against the server-owned document without taking over navigation.
+
 ## API Tour
 
 ### `van-stack/compiler`
@@ -381,8 +397,8 @@ bun run start
 ```
 
 - `demo/showcase`: evaluator-first demo workspace for the shared blog app
-  - `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `shell`, and `custom` comparisons against one Northstar Journal blog app
-  - `Guided Walkthrough`: annotated evaluator pages that explain those same five modes and link back to the live routes
+  - `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, and `custom` comparisons against one Northstar Journal blog app
+  - `Guided Walkthrough`: annotated evaluator pages that explain those same six modes and link back to the live routes
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
 - `demo/ssg-site`: focused reference for static generation from route entries

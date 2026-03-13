@@ -83,7 +83,7 @@ function getPostTagSlugs(post: PostLike) {
 }
 
 describe("showcase content", () => {
-  test("defines the approved five showcase modes and canonical comparison targets", () => {
+  test("defines the approved showcase modes and canonical comparison targets", () => {
     const showcaseModes = expectArrayExport<{
       id: string;
       galleryPath: string;
@@ -98,6 +98,7 @@ describe("showcase content", () => {
       "ssg",
       "ssr",
       "hydrated",
+      "islands",
       "shell",
       "custom",
     ]);

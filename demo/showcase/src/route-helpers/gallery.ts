@@ -13,6 +13,7 @@ import {
   renderTagDetail,
 } from "../components/editorial";
 import {
+  renderReaderPulse,
   renderRuntimePanel,
   renderSiblingModeLinks,
 } from "../components/runtime";
@@ -89,6 +90,7 @@ export function renderGalleryPage(data: GalleryPageData) {
         children: [
           renderRuntimePanel(data.mode.id),
           renderArticleLayout(data.post, data.mode.id, data.related),
+          renderReaderPulse(data.post, data.mode.id),
           renderSiblingModeLinks(data.mode.id, {
             collection: "posts",
             slug: data.post.slug,

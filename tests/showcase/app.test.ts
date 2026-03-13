@@ -9,7 +9,14 @@ import {
   startShowcaseServerWithFallback,
 } from "../../demo/showcase/src/runtime/server";
 
-const modeIds = ["ssg", "ssr", "hydrated", "shell", "custom"] as const;
+const modeIds = [
+  "ssg",
+  "ssr",
+  "hydrated",
+  "islands",
+  "shell",
+  "custom",
+] as const;
 const contentFamilies = [
   {
     collection: "posts",
@@ -77,6 +84,7 @@ describe("showcase app", () => {
     expect(html).toContain("/gallery/ssg/posts/runtime-gallery-tour");
     expect(html).toContain("/gallery/ssr/posts/runtime-gallery-tour");
     expect(html).toContain("/gallery/hydrated/posts/runtime-gallery-tour");
+    expect(html).toContain("/gallery/islands/posts/runtime-gallery-tour");
     expect(html).toContain("/gallery/shell/posts/runtime-gallery-tour");
     expect(html).toContain("/gallery/custom/posts/runtime-gallery-tour");
     expect(html).not.toContain("Adaptive");
@@ -132,6 +140,21 @@ describe("showcase app", () => {
     expect(html).toContain("/assets/showcase-hydrated.js");
   });
 
+  test("renders islands post pages with SSR content and island hydration markers", async () => {
+    const { response, html } = await requestShowcase(
+      "/gallery/islands/posts/runtime-gallery-tour",
+    );
+
+    expect(response.status).toBe(200);
+    expect(html).toContain("Runtime Gallery Tour");
+    expect(html).toContain("Like this post");
+    expect(html).toContain("Save for later");
+    expect(html).not.toContain('data-van-stack-app-root=""');
+    expect(html).toContain("data-van-stack-bootstrap");
+    expect(html).toContain("showcase-islands");
+    expect(html).toContain("/assets/showcase-islands.js");
+  });
+
   test("renders shell and custom post pages as shell-first documents", async () => {
     const shell = await requestShowcase(
       "/gallery/shell/posts/runtime-gallery-tour",
@@ -151,8 +174,8 @@ describe("showcase app", () => {
     expect(custom.html).toContain("/assets/showcase-custom.js");
     expect(shell.html).not.toContain("<article");
     expect(custom.html).not.toContain("<article");
-    expect(shell.html).not.toContain("Runtime Gallery Tour");
-    expect(custom.html).not.toContain("Runtime Gallery Tour");
+    expect(shell.html).not.toContain("<h1>Runtime Gallery Tour</h1>");
+    expect(custom.html).not.toContain("<h1>Runtime Gallery Tour</h1>");
     expect(shell.html).not.toContain("Related posts");
     expect(custom.html).not.toContain("Related posts");
     expect(custom.html).not.toContain("/_van-stack/data/");
@@ -172,9 +195,12 @@ describe("showcase app", () => {
     expect(html).not.toContain("showcase-custom");
   });
 
-  test("serves bundled client entry assets for hydrated, shell, and custom modes", async () => {
+  test("serves bundled client entry assets for hydrated, islands, shell, and custom modes", async () => {
     const hydratedAsset = await handleShowcaseRequest(
       new Request("https://example.com/assets/showcase-hydrated.js"),
+    );
+    const islandsAsset = await handleShowcaseRequest(
+      new Request("https://example.com/assets/showcase-islands.js"),
     );
     const shellAsset = await handleShowcaseRequest(
       new Request("https://example.com/assets/showcase-shell.js"),
@@ -184,14 +210,60 @@ describe("showcase app", () => {
     );
 
     expect(hydratedAsset.status).toBe(200);
+    expect(islandsAsset.status).toBe(200);
     expect(shellAsset.status).toBe(200);
     expect(customAsset.status).toBe(200);
     expect(hydratedAsset.headers.get("content-type")).toContain("javascript");
+    expect(islandsAsset.headers.get("content-type")).toContain("javascript");
     expect(shellAsset.headers.get("content-type")).toContain("javascript");
     expect(customAsset.headers.get("content-type")).toContain("javascript");
     expect(await hydratedAsset.text()).toContain("hydrateApp");
+    expect(await islandsAsset.text()).toContain("hydrateIslands");
     expect(await shellAsset.text()).toContain("createRouter");
     expect(await customAsset.text()).toContain("createRouter");
+  });
+
+  test("serves route metadata from meta.ts for interactive routes", async () => {
+    const shell = await requestShowcase(
+      "/gallery/shell/posts/runtime-gallery-tour",
+    );
+    const islands = await requestShowcase(
+      "/gallery/islands/posts/runtime-gallery-tour",
+    );
+    const walkthrough = await requestShowcase("/walkthrough/islands");
+
+    expect(shell.html).toContain(
+      "<title>Runtime Gallery Tour · Shell · Northstar Journal</title>",
+    );
+    expect(shell.html).toContain(
+      '<link rel="canonical" href="/gallery/shell/posts/runtime-gallery-tour">',
+    );
+    expect(islands.html).toContain(
+      "<title>Runtime Gallery Tour · Hydrated Islands · Northstar Journal</title>",
+    );
+    expect(walkthrough.html).toContain(
+      "<title>Hydrated Islands Walkthrough · Northstar Journal</title>",
+    );
+  });
+
+  test("demonstrates raw content routes for robots and sitemap", async () => {
+    const robots = await handleShowcaseRequest(
+      new Request("https://example.com/robots.txt"),
+    );
+    const sitemap = await handleShowcaseRequest(
+      new Request("https://example.com/sitemap.xml"),
+    );
+
+    expect(robots.status).toBe(200);
+    expect(sitemap.status).toBe(200);
+    expect(robots.headers.get("content-type")).toContain("text/plain");
+    expect(sitemap.headers.get("content-type")).toContain("application/xml");
+    expect(await robots.text()).toContain(
+      "Sitemap: https://example.com/sitemap.xml",
+    );
+    expect(await sitemap.text()).toContain(
+      "<loc>https://example.com/gallery/islands/posts/runtime-gallery-tour</loc>",
+    );
   });
 
   test("serves shell transport data from the internal van-stack data surface", async () => {

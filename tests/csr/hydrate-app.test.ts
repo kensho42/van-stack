@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { bindRenderEnv, van } from "../../packages/core/src/render";
-import { hydrateApp } from "../../packages/csr/src/index";
+import { hydrateApp, hydrateIslands } from "../../packages/csr/src/index";
 
 const routes = [{ id: "posts/[slug]", path: "/posts/:slug" }];
 
@@ -268,5 +268,124 @@ describe("csr hydrate app", () => {
     ).toThrow(
       'Cannot hydrate a bootstrap payload unless hydrationPolicy is "app".',
     );
+  });
+
+  test("skips unmatched or opted-out links during hydrated navigation", async () => {
+    const env = createHydrationEnv();
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/runtime-gallery-tour",
+      pathname: "/posts/runtime-gallery-tour",
+      params: { slug: "runtime-gallery-tour" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "runtime-gallery-tour" } },
+    });
+
+    const load = vi.fn(async (match: { params: Record<string, string> }) => ({
+      post: { slug: match.params.slug },
+    }));
+
+    const app = hydrateApp({
+      routes,
+      history: env.history,
+      transport: { load },
+      document: env.document as never,
+      window: env.window as never,
+    });
+    await app.ready;
+
+    const clickHandler = env.getClickHandler();
+    expect(clickHandler).toBeTypeOf("function");
+
+    const unmatchedPreventDefault = vi.fn();
+    await clickHandler?.({
+      button: 0,
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: unmatchedPreventDefault,
+      target: {
+        closest() {
+          return {
+            href: "https://example.com/gallery",
+            target: "",
+            download: "",
+            getAttribute() {
+              return null;
+            },
+          };
+        },
+      },
+    });
+
+    expect(unmatchedPreventDefault).not.toHaveBeenCalled();
+    expect(load).not.toHaveBeenCalled();
+    expect(env.history.pushState).not.toHaveBeenCalled();
+
+    const ignoredPreventDefault = vi.fn();
+    await clickHandler?.({
+      button: 0,
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: ignoredPreventDefault,
+      target: {
+        closest() {
+          return {
+            href: "https://example.com/posts/when-hydration-actually-helps",
+            target: "",
+            download: "",
+            getAttribute(name: string) {
+              return name === "data-van-stack-ignore" ? "" : null;
+            },
+          };
+        },
+      },
+    });
+
+    expect(ignoredPreventDefault).not.toHaveBeenCalled();
+    expect(load).not.toHaveBeenCalled();
+    expect(env.history.pushState).not.toHaveBeenCalled();
+
+    app.dispose();
+  });
+
+  test("hydrates islands routes without attaching router navigation", async () => {
+    const env = createHydrationEnv();
+    const routeHydrate = vi.fn();
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/runtime-gallery-tour",
+      pathname: "/posts/runtime-gallery-tour",
+      params: { slug: "runtime-gallery-tour" },
+      hydrationPolicy: "islands",
+      data: { post: { slug: "runtime-gallery-tour" } },
+    });
+
+    const hydration = hydrateIslands({
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          files: {
+            hydrate: async () => ({ default: routeHydrate }),
+          },
+        },
+      ],
+      document: env.document as never,
+    });
+
+    await hydration.ready;
+
+    expect(routeHydrate).toHaveBeenCalledWith({
+      root: env.document,
+      data: { post: { slug: "runtime-gallery-tour" } },
+      params: { slug: "runtime-gallery-tour" },
+      path: "/posts/runtime-gallery-tour",
+    });
+    expect(env.document.addEventListener).not.toHaveBeenCalled();
+    expect(env.window.addEventListener).not.toHaveBeenCalled();
   });
 });

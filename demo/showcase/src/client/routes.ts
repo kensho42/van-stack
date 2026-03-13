@@ -19,6 +19,18 @@ type RouterLike = {
   navigate: (path: string) => Promise<unknown>;
 };
 
+type ClientRouteDefinition = {
+  id: string;
+  path: string;
+};
+
+type AnchorLike = {
+  href: string;
+  target?: string | null;
+  download?: string | null;
+  getAttribute?: (name: string) => string | null;
+};
+
 type WindowLike = Window & {
   history: HistoryLike;
 };
@@ -53,7 +65,35 @@ export const hydratedClientRoutes: HydratableRoute[] = [
   { id: "gallery/hydrated/tags/[slug]", path: "/gallery/hydrated/tags/:slug" },
 ] as const;
 
-export const shellClientRoutes: Array<{ id: string; path: string }> = [
+export const islandsClientRoutes: HydratableRoute[] = [
+  { id: "gallery/islands/index", path: "/gallery/islands" },
+  { id: "gallery/islands/posts", path: "/gallery/islands/posts" },
+  {
+    id: "gallery/islands/posts/[slug]",
+    path: "/gallery/islands/posts/:slug",
+    files: {
+      hydrate: async () => ({
+        default: (
+          await import("../routes/gallery/islands/posts/[slug]/hydrate")
+        ).default as RouteHydrateModule,
+      }),
+    },
+  },
+  { id: "gallery/islands/authors", path: "/gallery/islands/authors" },
+  {
+    id: "gallery/islands/authors/[slug]",
+    path: "/gallery/islands/authors/:slug",
+  },
+  { id: "gallery/islands/categories", path: "/gallery/islands/categories" },
+  {
+    id: "gallery/islands/categories/[slug]",
+    path: "/gallery/islands/categories/:slug",
+  },
+  { id: "gallery/islands/tags", path: "/gallery/islands/tags" },
+  { id: "gallery/islands/tags/[slug]", path: "/gallery/islands/tags/:slug" },
+] as const;
+
+export const shellClientRoutes: ClientRouteDefinition[] = [
   { id: "gallery/shell/index", path: "/gallery/shell" },
   { id: "gallery/shell/posts", path: "/gallery/shell/posts" },
   { id: "gallery/shell/posts/[slug]", path: "/gallery/shell/posts/:slug" },
@@ -68,7 +108,7 @@ export const shellClientRoutes: Array<{ id: string; path: string }> = [
   { id: "gallery/shell/tags/[slug]", path: "/gallery/shell/tags/:slug" },
 ] as const;
 
-export const customClientRoutes: Array<{ id: string; path: string }> = [
+export const customClientRoutes: ClientRouteDefinition[] = [
   { id: "gallery/custom/index", path: "/gallery/custom" },
   { id: "gallery/custom/posts", path: "/gallery/custom/posts" },
   { id: "gallery/custom/posts/[slug]", path: "/gallery/custom/posts/:slug" },
@@ -116,16 +156,21 @@ function getAnchor(event: MouseEvent) {
   return (event.target as Element | null)?.closest?.("a[href]") ?? null;
 }
 
+function isAnchorLike(value: unknown): value is AnchorLike {
+  return Boolean(value && typeof value === "object" && "href" in value);
+}
+
 export function wireClientNavigation(
   router: RouterLike,
   options: {
     document: Document;
+    routes: ClientRouteDefinition[];
     window: WindowLike;
   },
 ) {
   const clickHandler = async (event: MouseEvent) => {
     const anchor = getAnchor(event);
-    if (!(anchor instanceof HTMLAnchorElement)) {
+    if (!isAnchorLike(anchor)) {
       return;
     }
     if (event.defaultPrevented || event.button !== 0) {
@@ -140,20 +185,19 @@ export function wireClientNavigation(
     if (anchor.download) {
       return;
     }
+    if ((anchor.getAttribute?.("data-van-stack-ignore") ?? null) !== null) {
+      return;
+    }
 
     const url = new URL(anchor.href, options.window.location.origin);
     if (url.origin !== options.window.location.origin) {
       return;
     }
 
-    const inGallery = [
-      hydratedClientRoutes,
-      shellClientRoutes,
-      customClientRoutes,
-    ]
-      .flat()
-      .some((route) => Boolean(matchPath(route.path, url.pathname)));
-    if (!inGallery) {
+    const isOwnedRoute = options.routes.some((route) =>
+      Boolean(matchPath(route.path, url.pathname)),
+    );
+    if (!isOwnedRoute) {
       return;
     }
 

@@ -167,7 +167,7 @@ export async function renderRequest(input: RenderRequestInput) {
       hydrationPolicy,
     );
     const bootstrap =
-      hydrationPolicy === "app"
+      hydrationPolicy !== "document-only"
         ? `<script type="application/json" data-van-stack-bootstrap>${JSON.stringify(
             {
               routeId: route.id,

@@ -1,5 +1,7 @@
 import { createRouter } from "van-stack/csr";
 
+import type { GalleryPageData } from "../runtime/data";
+import { mountShowcasePostInteractions } from "./post-interactions";
 import {
   customClientRoutes,
   fetchCustomPageData,
@@ -16,7 +18,11 @@ const router = createRouter({
   history: window.history,
 });
 
-wireClientNavigation(router, { document, window });
+wireClientNavigation(router, {
+  document,
+  routes: customClientRoutes,
+  window,
+});
 
 router.subscribe(async (entry) => {
   renderClientLoading(
@@ -28,6 +34,7 @@ router.subscribe(async (entry) => {
   try {
     const data = await fetchCustomPageData(entry.path);
     renderClientPage(root, data);
+    mountShowcasePostInteractions(root, data as GalleryPageData);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Custom showcase API failed.";

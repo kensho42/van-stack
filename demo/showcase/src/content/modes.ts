@@ -4,6 +4,7 @@ export const showcaseLiveModeIds = [
   "ssg",
   "ssr",
   "hydrated",
+  "islands",
   "shell",
   "custom",
 ] as const;
@@ -59,6 +60,19 @@ export const showcaseModes = [
     deliveryLabel: "SSR plus client takeover",
     dataBoundary:
       "Bootstrap state and route hydration continue from the server document.",
+  },
+  {
+    id: "islands",
+    title: "Hydrated Islands",
+    summary:
+      "Keep the document server-rendered, then hydrate only focused interactive islands.",
+    proves:
+      "Shows route-level hydration without a client router takeover by wiring small post interactions onto an otherwise server-owned page.",
+    galleryPath: `/gallery/islands/posts/${showcaseCanonicalPostSlug}`,
+    walkthroughPath: "/walkthrough/islands",
+    deliveryLabel: "SSR plus island hydration",
+    dataBoundary:
+      "The server owns navigation while focused client islands attach to marked DOM.",
   },
   {
     id: "shell",

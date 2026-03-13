@@ -29,9 +29,18 @@ function renderModeCard(modeId: ShowcaseLiveModeId) {
     p({ class: "editorial-summary" }, mode.proves),
     p({ class: "showcase-subtle" }, mode.dataBoundary),
     p(
-      a({ href: mode.galleryPath }, "Open live route"),
+      a(
+        { href: mode.galleryPath, "data-van-stack-ignore": "" },
+        "Open live route",
+      ),
       " ",
-      a({ href: `/gallery/${mode.id}` }, "Open mode landing"),
+      a(
+        {
+          href: `/gallery/${mode.id}`,
+          "data-van-stack-ignore": "",
+        },
+        "Open mode landing",
+      ),
     ),
   );
 }
@@ -115,12 +124,57 @@ export function renderModeWalkthrough(input: {
         { class: "showcase-section-block" },
         h2("Route surface to click"),
         ul(
-          li(a({ href: `/gallery/${mode.id}` }, `${mode.title} homepage`)),
-          li(a({ href: `/gallery/${mode.id}/posts` }, "Posts index")),
-          li(a({ href: `/gallery/${mode.id}/authors` }, "Authors index")),
-          li(a({ href: `/gallery/${mode.id}/categories` }, "Categories index")),
-          li(a({ href: `/gallery/${mode.id}/tags` }, "Tags index")),
-          li(a({ href: mode.galleryPath }, "Canonical comparison post")),
+          li(
+            a(
+              {
+                href: `/gallery/${mode.id}`,
+                "data-van-stack-ignore": "",
+              },
+              `${mode.title} homepage`,
+            ),
+          ),
+          li(
+            a(
+              {
+                href: `/gallery/${mode.id}/posts`,
+                "data-van-stack-ignore": "",
+              },
+              "Posts index",
+            ),
+          ),
+          li(
+            a(
+              {
+                href: `/gallery/${mode.id}/authors`,
+                "data-van-stack-ignore": "",
+              },
+              "Authors index",
+            ),
+          ),
+          li(
+            a(
+              {
+                href: `/gallery/${mode.id}/categories`,
+                "data-van-stack-ignore": "",
+              },
+              "Categories index",
+            ),
+          ),
+          li(
+            a(
+              {
+                href: `/gallery/${mode.id}/tags`,
+                "data-van-stack-ignore": "",
+              },
+              "Tags index",
+            ),
+          ),
+          li(
+            a(
+              { href: mode.galleryPath, "data-van-stack-ignore": "" },
+              "Canonical comparison post",
+            ),
+          ),
         ),
       ),
       section(

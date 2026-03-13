@@ -182,4 +182,29 @@ describe("ssr renderer", () => {
     expect(html).not.toContain('data-van-stack-app-root=""');
     expect(html).not.toContain("data-van-stack-bootstrap");
   });
+
+  test("keeps bootstrap markup for islands routes without app-root takeover", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/islands"),
+      routes: [
+        {
+          id: "islands",
+          path: "/islands",
+          hydrationPolicy: "islands",
+          page() {
+            return `<article><h1>Islands</h1></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain("<article><h1>Islands</h1></article>");
+    expect(html).not.toContain('data-van-stack-app-root=""');
+    expect(html).toContain("data-van-stack-bootstrap");
+    expect(html).toContain('"hydrationPolicy":"islands"');
+  });
 });

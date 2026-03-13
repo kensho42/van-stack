@@ -16,6 +16,7 @@ type AnchorLike = {
   href: string;
   target?: string | null;
   download?: string | null;
+  getAttribute?: (name: string) => string | null;
 };
 
 type EventTargetLike = {
@@ -73,6 +74,17 @@ export type HydratedApp = {
   dispose: () => void;
   ready: Promise<void>;
   router: Router;
+};
+
+export type HydrateIslandsOptions = {
+  bootstrapSelector?: string;
+  document?: DocumentLike;
+  routes: HydratableRoute[];
+};
+
+export type HydratedIslands = {
+  bootstrap: BootstrapPayload;
+  ready: Promise<void>;
 };
 
 const defaultBootstrapSelector = "script[data-van-stack-bootstrap]";
@@ -170,6 +182,14 @@ function getMatchedRoute(
   throw new Error(`No route matched bootstrap path: ${bootstrap.pathname}`);
 }
 
+function hasMatchingRoute(routes: HydratableRoute[], path: string) {
+  const pathname = new URL(path, "https://van-stack.local").pathname;
+
+  return routes.some((route) =>
+    Boolean(matchCanonicalPath(route.path, pathname)),
+  );
+}
+
 async function hydrateRouteRoot(
   route: HydratableRoute,
   bootstrap: BootstrapPayload,
@@ -195,6 +215,7 @@ function shouldInterceptNavigation(
   event: ClickEventLike,
   anchor: AnchorLike,
   window: WindowLike,
+  routes: HydratableRoute[],
 ) {
   if (event.defaultPrevented) return false;
   if ((event.button ?? 0) !== 0) return false;
@@ -203,9 +224,14 @@ function shouldInterceptNavigation(
   }
   if (anchor.target && anchor.target !== "_self") return false;
   if (anchor.download) return false;
+  if ((anchor.getAttribute?.("data-van-stack-ignore") ?? null) !== null) {
+    return false;
+  }
 
   const url = new URL(anchor.href, window.location.origin);
-  return url.origin === window.location.origin;
+  if (url.origin !== window.location.origin) return false;
+
+  return hasMatchingRoute(routes, `${url.pathname}${url.search}`);
 }
 
 export function hydrateApp(options: HydrateAppOptions): HydratedApp {
@@ -236,7 +262,10 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
 
   const clickHandler = async (event: ClickEventLike) => {
     const anchor = getAnchor(event);
-    if (!anchor || !shouldInterceptNavigation(event, anchor, window)) {
+    if (
+      !anchor ||
+      !shouldInterceptNavigation(event, anchor, window, options.routes)
+    ) {
       return;
     }
 
@@ -261,5 +290,33 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
       document.removeEventListener("click", clickHandler);
       window.removeEventListener("popstate", popstateHandler);
     },
+  };
+}
+
+export function hydrateIslands(
+  options: HydrateIslandsOptions,
+): HydratedIslands {
+  const document = getDocument(options.document);
+  const bootstrap = readBootstrapPayload(
+    document,
+    options.bootstrapSelector ?? defaultBootstrapSelector,
+  );
+
+  if (bootstrap.hydrationPolicy !== "islands") {
+    throw new Error(
+      'Cannot hydrate islands unless hydrationPolicy is "islands".',
+    );
+  }
+
+  const matchedRoute = getMatchedRoute(options.routes, bootstrap);
+  const ready = hydrateRouteRoot(
+    matchedRoute,
+    bootstrap,
+    document as unknown as AppRootLike,
+  ).then(() => {});
+
+  return {
+    bootstrap,
+    ready,
   };
 }

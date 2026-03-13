@@ -356,6 +356,7 @@ export function renderShowcaseFrame(input: {
           a(
             {
               href: "/",
+              "data-van-stack-ignore": "",
               "data-active": isActiveSection(input.currentPath, "/"),
             },
             "Home",
@@ -363,6 +364,7 @@ export function renderShowcaseFrame(input: {
           a(
             {
               href: "/gallery",
+              "data-van-stack-ignore": "",
               "data-active": isActiveSection(input.currentPath, "/gallery"),
             },
             "Runtime Gallery",
@@ -370,6 +372,7 @@ export function renderShowcaseFrame(input: {
           a(
             {
               href: "/walkthrough",
+              "data-van-stack-ignore": "",
               "data-active": isActiveSection(input.currentPath, "/walkthrough"),
             },
             "Guided Walkthrough",
@@ -382,6 +385,7 @@ export function renderShowcaseFrame(input: {
                 a(
                   {
                     href: mode.galleryPath,
+                    "data-van-stack-ignore": "",
                     "data-active": input.currentModeId === mode.id,
                   },
                   mode.title,

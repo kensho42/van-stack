@@ -6,10 +6,7 @@ import { loadRoutes } from "../../../../packages/compiler/src/index";
 import { renderRequest } from "../../../../packages/ssr/src/index";
 import { handleCustomApiRequest, handleInternalDataRequest } from "./api";
 import { createShowcaseAssetResponse } from "./assets";
-import {
-  createGalleryPageDataFromPath,
-  ShowcaseRouteNotFoundError,
-} from "./data";
+import { ShowcaseRouteNotFoundError } from "./data";
 import { getShowcaseSsgPage } from "./ssg-cache";
 
 type ShowcaseRenderRoutes = Parameters<typeof renderRequest>[0]["routes"];
@@ -63,7 +60,9 @@ async function getShowcaseRoutes() {
           ...route,
           hydrationPolicy: route.id.startsWith("gallery/hydrated/")
             ? "app"
-            : "document-only",
+            : route.id.startsWith("gallery/islands/")
+              ? "islands"
+              : "document-only",
         })) as ShowcaseRenderRoutes,
     );
   }
@@ -71,45 +70,21 @@ async function getShowcaseRoutes() {
   return routesPromise;
 }
 
-function renderClientShell(pathname: string, mode: "shell" | "custom") {
-  const assetPath =
-    mode === "shell"
-      ? "/assets/showcase-shell.js"
-      : "/assets/showcase-custom.js";
-  const shellId = mode === "shell" ? "showcase-shell" : "showcase-custom";
-  const loadingCopy =
-    mode === "shell"
-      ? "Loading route data through the internal VanStack transport surface."
-      : "Loading route data through the showcase JSON API.";
+function getClientAssetTag(pathname: string) {
+  if (pathname.startsWith("/gallery/hydrated")) {
+    return '<script type="module" src="/assets/showcase-hydrated.js" data-showcase-hydrated=""></script>';
+  }
+  if (pathname.startsWith("/gallery/islands")) {
+    return '<script type="module" src="/assets/showcase-islands.js" data-showcase-islands=""></script>';
+  }
+  if (pathname.startsWith("/gallery/shell")) {
+    return '<script type="module" src="/assets/showcase-shell.js" data-showcase-shell=""></script>';
+  }
+  if (pathname.startsWith("/gallery/custom")) {
+    return '<script type="module" src="/assets/showcase-custom.js" data-showcase-custom=""></script>';
+  }
 
-  return createHtml(
-    `Northstar Journal ${mode}`,
-    `
-      <div
-        id="${shellId}"
-        data-showcase-client-root=""
-        data-showcase-path="${pathname}"
-        data-showcase-mode="${mode}"
-      >
-        <main>
-          <h1>Northstar Journal</h1>
-          <p>${loadingCopy}</p>
-        </main>
-      </div>
-      <script type="module" src="${assetPath}" data-${shellId}=""></script>
-    `,
-  );
-}
-
-function isShellOrCustomPath(pathname: string) {
-  return (
-    pathname.startsWith("/gallery/shell") ||
-    pathname.startsWith("/gallery/custom")
-  );
-}
-
-function isHydratedPath(pathname: string) {
-  return pathname.startsWith("/gallery/hydrated");
+  return null;
 }
 
 async function renderFrameworkRoute(request: Request, pathname: string) {
@@ -122,25 +97,20 @@ async function renderFrameworkRoute(request: Request, pathname: string) {
     return renderRouteNotFound();
   }
 
-  if (!isHydratedPath(pathname)) {
+  const assetTag = getClientAssetTag(pathname);
+  if (!assetTag) {
     return response;
   }
 
   const html = await response.text();
 
-  return new Response(
-    html.replace(
-      "</body>",
-      '<script type="module" src="/assets/showcase-hydrated.js" data-showcase-hydrated=""></script></body>',
-    ),
-    {
-      status: response.status,
-      headers: {
-        "content-type":
-          response.headers.get("content-type") ?? "text/html; charset=utf-8",
-      },
+  return new Response(html.replace("</body>", `${assetTag}</body>`), {
+    status: response.status,
+    headers: {
+      "content-type":
+        response.headers.get("content-type") ?? "text/html; charset=utf-8",
     },
-  );
+  });
 }
 
 export async function handleShowcaseRequest(request: Request) {
@@ -169,22 +139,6 @@ export async function handleShowcaseRequest(request: Request) {
           },
         })
       : renderRouteNotFound();
-  }
-
-  if (isShellOrCustomPath(pathname)) {
-    try {
-      createGalleryPageDataFromPath(pathname);
-      return renderClientShell(
-        pathname,
-        pathname.startsWith("/gallery/shell") ? "shell" : "custom",
-      );
-    } catch (error) {
-      if (error instanceof ShowcaseRouteNotFoundError) {
-        return renderEntityNotFound();
-      }
-
-      throw error;
-    }
   }
 
   try {

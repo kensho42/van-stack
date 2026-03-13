@@ -7,12 +7,16 @@ import { promisify } from "node:util";
 
 type ShowcaseAssetPath =
   | "/assets/showcase-hydrated.js"
+  | "/assets/showcase-islands.js"
   | "/assets/showcase-shell.js"
   | "/assets/showcase-custom.js";
 
 const assetEntrypoints = {
   "/assets/showcase-hydrated.js": fileURLToPath(
     new URL("../client/hydrated.ts", import.meta.url),
+  ),
+  "/assets/showcase-islands.js": fileURLToPath(
+    new URL("../client/islands.ts", import.meta.url),
   ),
   "/assets/showcase-shell.js": fileURLToPath(
     new URL("../client/shell.ts", import.meta.url),

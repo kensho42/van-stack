@@ -4,8 +4,8 @@ The showcase is the evaluator-first demo entrypoint for `van-stack`.
 
 It ships one shared blog app, `Northstar Journal`, and presents it through two evaluator tracks:
 
-- `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `shell`, and `custom` routes
-- `Guided Walkthrough`: annotated evaluator pages for those same five modes
+- `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, and `custom` routes
+- `Guided Walkthrough`: annotated evaluator pages for those same six modes
 
 The gallery route surface is:
 

@@ -41,13 +41,14 @@ describe("docs and demos", () => {
     expect(readme).toContain("ssg");
     expect(readme).toContain("ssr");
     expect(readme).toContain("hydrated");
+    expect(readme).toContain("islands");
     expect(readme).toContain("shell");
     expect(readme).toContain("custom");
     expect(readme).toContain("demo/adaptive-nav");
     expect(readme).not.toMatch(/demo\/showcase[\s\S]{0,160}adaptive/i);
   });
 
-  test("describes the showcase gallery as a five-mode blog app", () => {
+  test("describes the showcase gallery as a six-mode blog app", () => {
     const showcaseReadme = readFileSync("demo/showcase/README.md", "utf8");
 
     expect(showcaseReadme).toContain("bun run start");
@@ -56,6 +57,7 @@ describe("docs and demos", () => {
     expect(showcaseReadme).toContain("ssg");
     expect(showcaseReadme).toContain("ssr");
     expect(showcaseReadme).toContain("hydrated");
+    expect(showcaseReadme).toContain("islands");
     expect(showcaseReadme).toContain("shell");
     expect(showcaseReadme).toContain("custom");
     expect(showcaseReadme).not.toContain("adaptive");
@@ -73,6 +75,7 @@ describe("docs and demos", () => {
     expect(demos).toContain("ssg");
     expect(demos).toContain("ssr");
     expect(demos).toContain("hydrated");
+    expect(demos).toContain("islands");
     expect(demos).toContain("shell");
     expect(demos).toContain("custom");
     expect(demos).not.toMatch(/demo\/showcase[\s\S]{0,160}adaptive/i);

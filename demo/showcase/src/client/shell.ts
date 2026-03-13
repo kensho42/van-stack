@@ -1,6 +1,7 @@
 import { createRouter } from "van-stack/csr";
 
 import type { GalleryPageData } from "../runtime/data";
+import { mountShowcasePostInteractions } from "./post-interactions";
 import {
   getClientRoot,
   renderClientLoading,
@@ -16,10 +17,10 @@ const router = createRouter({
   history: window.history,
 });
 
-wireClientNavigation(router, { document, window });
-
+wireClientNavigation(router, { document, routes: shellClientRoutes, window });
 router.subscribe((entry) => {
   renderClientPage(root, entry.data as GalleryPageData);
+  mountShowcasePostInteractions(root, entry.data as GalleryPageData);
 });
 
 renderClientLoading(
