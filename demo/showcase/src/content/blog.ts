@@ -253,6 +253,10 @@ export function getFeaturedPosts(limit = 4) {
   ].slice(0, limit);
 }
 
+export function getShowcaseInitialLikeCount(post: ShowcasePost) {
+  return post.readTimeMinutes + 2;
+}
+
 export function getHomepageCollections() {
   return {
     featuredPosts: getFeaturedPosts(4),

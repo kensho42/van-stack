@@ -3,5 +3,8 @@ import { mountShowcasePostInteractions } from "../../../../../client/post-intera
 import type { GalleryPageData } from "../../../../../runtime/data";
 
 export default function hydrate(input: RouteHydrateInput) {
-  mountShowcasePostInteractions(input.root, input.data as GalleryPageData);
+  return mountShowcasePostInteractions(
+    input.root,
+    input.data as GalleryPageData,
+  );
 }

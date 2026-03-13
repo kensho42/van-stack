@@ -48,19 +48,19 @@ describe("docs and demos", () => {
     expect(readme).not.toMatch(/demo\/showcase[\s\S]{0,160}adaptive/i);
   });
 
-  test("describes the showcase gallery as a six-mode blog app", () => {
+  test("describes the showcase as a blog app with gallery, walkthrough, and adaptive tracks", () => {
     const showcaseReadme = readFileSync("demo/showcase/README.md", "utf8");
 
     expect(showcaseReadme).toContain("bun run start");
     expect(showcaseReadme).toContain("Runtime Gallery");
     expect(showcaseReadme).toContain("Guided Walkthrough");
+    expect(showcaseReadme).toContain("Adaptive Navigation");
     expect(showcaseReadme).toContain("ssg");
     expect(showcaseReadme).toContain("ssr");
     expect(showcaseReadme).toContain("hydrated");
     expect(showcaseReadme).toContain("islands");
     expect(showcaseReadme).toContain("shell");
     expect(showcaseReadme).toContain("custom");
-    expect(showcaseReadme).not.toContain("adaptive");
   });
 
   test("keeps adaptive navigation documented as a separate focused demo", () => {

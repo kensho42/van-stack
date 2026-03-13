@@ -11,15 +11,20 @@ import {
   renderPostGrid,
   renderTagCard,
   renderTagDetail,
+  type ShowcaseLinkBuilder,
 } from "../components/editorial";
 import {
   renderReaderPulse,
   renderRuntimePanel,
   renderSiblingModeLinks,
 } from "../components/runtime";
+import { buildShowcaseGalleryPath } from "../content/modes";
 import type { GalleryPageData } from "../runtime/data";
 
 export function renderGalleryPage(data: GalleryPageData) {
+  const buildPath: ShowcaseLinkBuilder = (collection, slug) =>
+    buildShowcaseGalleryPath(data.mode.id, collection, slug);
+
   switch (data.pageType) {
     case "home":
       return renderShowcaseFrame({
@@ -34,25 +39,25 @@ export function renderGalleryPage(data: GalleryPageData) {
             detail: data.mode.proves,
           }),
           renderRuntimePanel(data.mode.id),
-          renderPostGrid("Featured stories", data.featuredPosts, data.mode.id),
+          renderPostGrid("Featured stories", data.featuredPosts, buildPath),
           renderPostGrid(
             "Latest from the newsroom",
             data.recentPosts,
-            data.mode.id,
+            buildPath,
             "compact",
           ),
           renderCollectionGrid(
             "Authors",
             "Recurring voices make the demo feel like a real publication.",
             data.authors.map((item) =>
-              renderAuthorCard(item.author, data.mode.id, item.postCount),
+              renderAuthorCard(item.author, buildPath, item.postCount),
             ),
           ),
           renderCollectionGrid(
             "Categories",
             "Every category stays navigable in every runtime mode.",
             data.categories.map((item) =>
-              renderCategoryCard(item.category, data.mode.id, item.postCount),
+              renderCategoryCard(item.category, buildPath, item.postCount),
             ),
           ),
           renderCollectionGrid(
@@ -61,7 +66,7 @@ export function renderGalleryPage(data: GalleryPageData) {
             data.tags
               .slice(0, 8)
               .map((item) =>
-                renderTagCard(item.tag, data.mode.id, item.postCount),
+                renderTagCard(item.tag, buildPath, item.postCount),
               ),
           ),
         ],
@@ -79,8 +84,8 @@ export function renderGalleryPage(data: GalleryPageData) {
             detail: data.mode.dataBoundary,
           }),
           renderRuntimePanel(data.mode.id),
-          renderPostGrid("Editor picks", data.featuredPosts, data.mode.id),
-          renderPostGrid("All stories", data.posts, data.mode.id, "compact"),
+          renderPostGrid("Editor picks", data.featuredPosts, buildPath),
+          renderPostGrid("All stories", data.posts, buildPath, "compact"),
         ],
       });
     case "post-detail":
@@ -89,7 +94,7 @@ export function renderGalleryPage(data: GalleryPageData) {
         currentModeId: data.mode.id,
         children: [
           renderRuntimePanel(data.mode.id),
-          renderArticleLayout(data.post, data.mode.id, data.related),
+          renderArticleLayout(data.post, buildPath, data.related),
           renderReaderPulse(data.post, data.mode.id),
           renderSiblingModeLinks(data.mode.id, {
             collection: "posts",
@@ -115,7 +120,7 @@ export function renderGalleryPage(data: GalleryPageData) {
             "Contributors",
             "Each author has enough volume to support real browsing.",
             data.authors.map((item) =>
-              renderAuthorCard(item.author, data.mode.id, item.postCount),
+              renderAuthorCard(item.author, buildPath, item.postCount),
             ),
           ),
         ],
@@ -126,7 +131,7 @@ export function renderGalleryPage(data: GalleryPageData) {
         currentModeId: data.mode.id,
         children: [
           renderRuntimePanel(data.mode.id),
-          renderAuthorDetail(data.author, data.posts, data.mode.id),
+          renderAuthorDetail(data.author, data.posts, buildPath),
           renderSiblingModeLinks(data.mode.id, {
             collection: "authors",
             slug: data.author.slug,
@@ -151,7 +156,7 @@ export function renderGalleryPage(data: GalleryPageData) {
             "Editorial desks",
             "Each category has a strapline and a meaningful archive depth.",
             data.categories.map((item) =>
-              renderCategoryCard(item.category, data.mode.id, item.postCount),
+              renderCategoryCard(item.category, buildPath, item.postCount),
             ),
           ),
         ],
@@ -162,7 +167,7 @@ export function renderGalleryPage(data: GalleryPageData) {
         currentModeId: data.mode.id,
         children: [
           renderRuntimePanel(data.mode.id),
-          renderCategoryDetail(data.category, data.posts, data.mode.id),
+          renderCategoryDetail(data.category, data.posts, buildPath),
           renderSiblingModeLinks(data.mode.id, {
             collection: "categories",
             slug: data.category.slug,
@@ -187,7 +192,7 @@ export function renderGalleryPage(data: GalleryPageData) {
             "Cross-cutting topics",
             "Tag pages are one of the quickest ways to verify archive richness.",
             data.tags.map((item) =>
-              renderTagCard(item.tag, data.mode.id, item.postCount),
+              renderTagCard(item.tag, buildPath, item.postCount),
             ),
           ),
         ],
@@ -198,7 +203,7 @@ export function renderGalleryPage(data: GalleryPageData) {
         currentModeId: data.mode.id,
         children: [
           renderRuntimePanel(data.mode.id),
-          renderTagDetail(data.tag, data.posts, data.mode.id),
+          renderTagDetail(data.tag, data.posts, buildPath),
           renderSiblingModeLinks(data.mode.id, {
             collection: "tags",
             slug: data.tag.slug,

@@ -1,5 +1,9 @@
 import { matchPath } from "van-stack";
-import type { HydratableRoute, RouteHydrateModule } from "van-stack/csr";
+import type {
+  ClientRouteDefinition,
+  HydratableRoute,
+  RouteHydrateModule,
+} from "van-stack/csr";
 import { van } from "van-stack/render";
 
 import { renderGalleryPage } from "../route-helpers/gallery";
@@ -19,11 +23,6 @@ type RouterLike = {
   navigate: (path: string) => Promise<unknown>;
 };
 
-type ClientRouteDefinition = {
-  id: string;
-  path: string;
-};
-
 type AnchorLike = {
   href: string;
   target?: string | null;
@@ -38,12 +37,34 @@ type WindowLike = Window & {
 const { div, h1, p } = van.tags;
 
 export const hydratedClientRoutes: HydratableRoute[] = [
-  { id: "gallery/hydrated/index", path: "/gallery/hydrated" },
-  { id: "gallery/hydrated/posts", path: "/gallery/hydrated/posts" },
+  {
+    id: "gallery/hydrated/index",
+    path: "/gallery/hydrated",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/hydrated/index/meta"))
+          .default,
+      }),
+    },
+  },
+  {
+    id: "gallery/hydrated/posts",
+    path: "/gallery/hydrated/posts",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/hydrated/posts/meta"))
+          .default,
+      }),
+    },
+  },
   {
     id: "gallery/hydrated/posts/[slug]",
     path: "/gallery/hydrated/posts/:slug",
     files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/hydrated/posts/[slug]/meta"))
+          .default,
+      }),
       hydrate: async () => ({
         default: (
           await import("../routes/gallery/hydrated/posts/[slug]/hydrate")
@@ -51,27 +72,96 @@ export const hydratedClientRoutes: HydratableRoute[] = [
       }),
     },
   },
-  { id: "gallery/hydrated/authors", path: "/gallery/hydrated/authors" },
+  {
+    id: "gallery/hydrated/authors",
+    path: "/gallery/hydrated/authors",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/hydrated/authors/meta"))
+          .default,
+      }),
+    },
+  },
   {
     id: "gallery/hydrated/authors/[slug]",
     path: "/gallery/hydrated/authors/:slug",
+    files: {
+      meta: async () => ({
+        default: (
+          await import("../routes/gallery/hydrated/authors/[slug]/meta")
+        ).default,
+      }),
+    },
   },
-  { id: "gallery/hydrated/categories", path: "/gallery/hydrated/categories" },
+  {
+    id: "gallery/hydrated/categories",
+    path: "/gallery/hydrated/categories",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/hydrated/categories/meta"))
+          .default,
+      }),
+    },
+  },
   {
     id: "gallery/hydrated/categories/[slug]",
     path: "/gallery/hydrated/categories/:slug",
+    files: {
+      meta: async () => ({
+        default: (
+          await import("../routes/gallery/hydrated/categories/[slug]/meta")
+        ).default,
+      }),
+    },
   },
-  { id: "gallery/hydrated/tags", path: "/gallery/hydrated/tags" },
-  { id: "gallery/hydrated/tags/[slug]", path: "/gallery/hydrated/tags/:slug" },
+  {
+    id: "gallery/hydrated/tags",
+    path: "/gallery/hydrated/tags",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/hydrated/tags/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/hydrated/tags/[slug]",
+    path: "/gallery/hydrated/tags/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/hydrated/tags/[slug]/meta"))
+          .default,
+      }),
+    },
+  },
 ] as const;
 
 export const islandsClientRoutes: HydratableRoute[] = [
-  { id: "gallery/islands/index", path: "/gallery/islands" },
-  { id: "gallery/islands/posts", path: "/gallery/islands/posts" },
+  {
+    id: "gallery/islands/index",
+    path: "/gallery/islands",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/islands/index/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/islands/posts",
+    path: "/gallery/islands/posts",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/islands/posts/meta")).default,
+      }),
+    },
+  },
   {
     id: "gallery/islands/posts/[slug]",
     path: "/gallery/islands/posts/:slug",
     files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/islands/posts/[slug]/meta"))
+          .default,
+      }),
       hydrate: async () => ({
         default: (
           await import("../routes/gallery/islands/posts/[slug]/hydrate")
@@ -79,51 +169,247 @@ export const islandsClientRoutes: HydratableRoute[] = [
       }),
     },
   },
-  { id: "gallery/islands/authors", path: "/gallery/islands/authors" },
+  {
+    id: "gallery/islands/authors",
+    path: "/gallery/islands/authors",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/islands/authors/meta"))
+          .default,
+      }),
+    },
+  },
   {
     id: "gallery/islands/authors/[slug]",
     path: "/gallery/islands/authors/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/islands/authors/[slug]/meta"))
+          .default,
+      }),
+    },
   },
-  { id: "gallery/islands/categories", path: "/gallery/islands/categories" },
+  {
+    id: "gallery/islands/categories",
+    path: "/gallery/islands/categories",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/islands/categories/meta"))
+          .default,
+      }),
+    },
+  },
   {
     id: "gallery/islands/categories/[slug]",
     path: "/gallery/islands/categories/:slug",
+    files: {
+      meta: async () => ({
+        default: (
+          await import("../routes/gallery/islands/categories/[slug]/meta")
+        ).default,
+      }),
+    },
   },
-  { id: "gallery/islands/tags", path: "/gallery/islands/tags" },
-  { id: "gallery/islands/tags/[slug]", path: "/gallery/islands/tags/:slug" },
+  {
+    id: "gallery/islands/tags",
+    path: "/gallery/islands/tags",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/islands/tags/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/islands/tags/[slug]",
+    path: "/gallery/islands/tags/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/islands/tags/[slug]/meta"))
+          .default,
+      }),
+    },
+  },
 ] as const;
 
 export const shellClientRoutes: ClientRouteDefinition[] = [
-  { id: "gallery/shell/index", path: "/gallery/shell" },
-  { id: "gallery/shell/posts", path: "/gallery/shell/posts" },
-  { id: "gallery/shell/posts/[slug]", path: "/gallery/shell/posts/:slug" },
-  { id: "gallery/shell/authors", path: "/gallery/shell/authors" },
-  { id: "gallery/shell/authors/[slug]", path: "/gallery/shell/authors/:slug" },
-  { id: "gallery/shell/categories", path: "/gallery/shell/categories" },
+  {
+    id: "gallery/shell/index",
+    path: "/gallery/shell",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/shell/index/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/shell/posts",
+    path: "/gallery/shell/posts",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/shell/posts/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/shell/posts/[slug]",
+    path: "/gallery/shell/posts/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/shell/posts/[slug]/meta"))
+          .default,
+      }),
+    },
+  },
+  {
+    id: "gallery/shell/authors",
+    path: "/gallery/shell/authors",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/shell/authors/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/shell/authors/[slug]",
+    path: "/gallery/shell/authors/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/shell/authors/[slug]/meta"))
+          .default,
+      }),
+    },
+  },
+  {
+    id: "gallery/shell/categories",
+    path: "/gallery/shell/categories",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/shell/categories/meta"))
+          .default,
+      }),
+    },
+  },
   {
     id: "gallery/shell/categories/[slug]",
     path: "/gallery/shell/categories/:slug",
+    files: {
+      meta: async () => ({
+        default: (
+          await import("../routes/gallery/shell/categories/[slug]/meta")
+        ).default,
+      }),
+    },
   },
-  { id: "gallery/shell/tags", path: "/gallery/shell/tags" },
-  { id: "gallery/shell/tags/[slug]", path: "/gallery/shell/tags/:slug" },
+  {
+    id: "gallery/shell/tags",
+    path: "/gallery/shell/tags",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/shell/tags/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/shell/tags/[slug]",
+    path: "/gallery/shell/tags/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/shell/tags/[slug]/meta"))
+          .default,
+      }),
+    },
+  },
 ] as const;
 
 export const customClientRoutes: ClientRouteDefinition[] = [
-  { id: "gallery/custom/index", path: "/gallery/custom" },
-  { id: "gallery/custom/posts", path: "/gallery/custom/posts" },
-  { id: "gallery/custom/posts/[slug]", path: "/gallery/custom/posts/:slug" },
-  { id: "gallery/custom/authors", path: "/gallery/custom/authors" },
+  {
+    id: "gallery/custom/index",
+    path: "/gallery/custom",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/custom/index/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/custom/posts",
+    path: "/gallery/custom/posts",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/custom/posts/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/custom/posts/[slug]",
+    path: "/gallery/custom/posts/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/custom/posts/[slug]/meta"))
+          .default,
+      }),
+    },
+  },
+  {
+    id: "gallery/custom/authors",
+    path: "/gallery/custom/authors",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/custom/authors/meta"))
+          .default,
+      }),
+    },
+  },
   {
     id: "gallery/custom/authors/[slug]",
     path: "/gallery/custom/authors/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/custom/authors/[slug]/meta"))
+          .default,
+      }),
+    },
   },
-  { id: "gallery/custom/categories", path: "/gallery/custom/categories" },
+  {
+    id: "gallery/custom/categories",
+    path: "/gallery/custom/categories",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/custom/categories/meta"))
+          .default,
+      }),
+    },
+  },
   {
     id: "gallery/custom/categories/[slug]",
     path: "/gallery/custom/categories/:slug",
+    files: {
+      meta: async () => ({
+        default: (
+          await import("../routes/gallery/custom/categories/[slug]/meta")
+        ).default,
+      }),
+    },
   },
-  { id: "gallery/custom/tags", path: "/gallery/custom/tags" },
-  { id: "gallery/custom/tags/[slug]", path: "/gallery/custom/tags/:slug" },
+  {
+    id: "gallery/custom/tags",
+    path: "/gallery/custom/tags",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/custom/tags/meta")).default,
+      }),
+    },
+  },
+  {
+    id: "gallery/custom/tags/[slug]",
+    path: "/gallery/custom/tags/:slug",
+    files: {
+      meta: async () => ({
+        default: (await import("../routes/gallery/custom/tags/[slug]/meta"))
+          .default,
+      }),
+    },
+  },
 ] as const;
 
 export function getClientRoot(document: Document) {

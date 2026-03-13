@@ -5,7 +5,7 @@ type QueryRootLike = {
 };
 
 type ButtonLike = {
-  onclick?: ((event?: unknown) => void) | null;
+  onclick?: ((event?: unknown) => Promise<void> | void) | null;
   textContent: string | null;
 };
 
@@ -13,22 +13,33 @@ type TextLike = {
   textContent: string | null;
 };
 
-export type SessionStorageLike = {
-  getItem: (key: string) => string | null;
-  setItem: (key: string, value: string) => void;
+type FetchLike = (
+  input: string | URL | Request,
+  init?: RequestInit,
+) => Promise<Response>;
+
+export type MountShowcasePostInteractionsOptions = {
+  fetch?: FetchLike;
+};
+
+type ShowcaseInteractionState = {
+  bookmarked: boolean;
+  likes: number;
 };
 
 const interactiveModeIds = new Set(["hydrated", "islands", "shell", "custom"]);
 
-function getSessionStorage(storage: SessionStorageLike | undefined) {
-  if (storage) {
-    return storage;
+function getFetch(fetchImpl: FetchLike | undefined) {
+  if (fetchImpl) {
+    return fetchImpl;
   }
-  if (typeof globalThis.sessionStorage !== "undefined") {
-    return globalThis.sessionStorage;
+  if (typeof fetch === "function") {
+    return fetch;
   }
 
-  return null;
+  throw new Error(
+    "No fetch implementation is available for post interactions.",
+  );
 }
 
 function isQueryRootLike(value: unknown): value is QueryRootLike {
@@ -50,27 +61,8 @@ function isTextLike(value: unknown): value is TextLike {
   return Boolean(value && typeof value === "object" && "textContent" in value);
 }
 
-function getLikeStorageKey(slug: string) {
-  return `showcase:likes:${slug}`;
-}
-
-function getBookmarkStorageKey(slug: string) {
-  return `showcase:bookmark:${slug}`;
-}
-
-function readStoredLikeCount(
-  storage: SessionStorageLike | null,
-  slug: string,
-  fallback: string,
-) {
-  const stored = storage?.getItem(getLikeStorageKey(slug));
-  const parsed = Number(stored ?? fallback);
-
-  return Number.isFinite(parsed) ? parsed : Number(fallback) || 0;
-}
-
-function readStoredBookmark(storage: SessionStorageLike | null, slug: string) {
-  return storage?.getItem(getBookmarkStorageKey(slug)) === "saved";
+function getInteractionApiPath(slug: string) {
+  return `/api/showcase/posts/${slug}/interactions`;
 }
 
 function setBookmarkCopy(button: ButtonLike, state: TextLike, saved: boolean) {
@@ -78,10 +70,25 @@ function setBookmarkCopy(button: ButtonLike, state: TextLike, saved: boolean) {
   state.textContent = saved ? "Saved for this session" : "Not saved";
 }
 
-export function mountShowcasePostInteractions(
+async function requestInteractionState(
+  fetchImpl: FetchLike,
+  slug: string,
+  init?: RequestInit,
+) {
+  const response = await fetchImpl(getInteractionApiPath(slug), init);
+  if (!response.ok) {
+    throw new Error(
+      `Showcase interaction request failed for ${slug}: ${response.status}`,
+    );
+  }
+
+  return (await response.json()) as ShowcaseInteractionState;
+}
+
+export async function mountShowcasePostInteractions(
   root: unknown,
   data: GalleryPageData,
-  storage?: SessionStorageLike,
+  options?: MountShowcasePostInteractionsOptions,
 ) {
   if (
     data.pageType !== "post-detail" ||
@@ -105,31 +112,33 @@ export function mountShowcasePostInteractions(
     return false;
   }
 
-  const sessionStorage = getSessionStorage(storage);
-  let likes = readStoredLikeCount(
-    sessionStorage,
-    data.post.slug,
-    likeCount.textContent ?? "0",
-  );
-  let bookmarked = readStoredBookmark(sessionStorage, data.post.slug);
+  const fetchImpl = getFetch(options?.fetch);
+  let state = await requestInteractionState(fetchImpl, data.post.slug);
 
   const sync = () => {
-    likeCount.textContent = String(likes);
-    setBookmarkCopy(bookmarkButton, bookmarkState, bookmarked);
+    likeCount.textContent = String(state.likes);
+    setBookmarkCopy(bookmarkButton, bookmarkState, state.bookmarked);
   };
 
-  likeButton.onclick = () => {
-    likes += 1;
-    sessionStorage?.setItem(getLikeStorageKey(data.post.slug), String(likes));
+  likeButton.onclick = async () => {
+    state = await requestInteractionState(fetchImpl, data.post.slug, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+      },
+      body: JSON.stringify({ action: "like" }),
+    });
     sync();
   };
 
-  bookmarkButton.onclick = () => {
-    bookmarked = !bookmarked;
-    sessionStorage?.setItem(
-      getBookmarkStorageKey(data.post.slug),
-      bookmarked ? "saved" : "idle",
-    );
+  bookmarkButton.onclick = async () => {
+    state = await requestInteractionState(fetchImpl, data.post.slug, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+      },
+      body: JSON.stringify({ action: "bookmark" }),
+    });
     sync();
   };
 

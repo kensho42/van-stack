@@ -1,12 +1,15 @@
 import type {
   BootstrapPayload,
   HistoryLike,
-  RouteDefinition,
   Router,
   Transport,
 } from "../../core/src/index";
 import { matchPath as matchCanonicalPath } from "../../core/src/index";
-import { createRouter } from "./router";
+import {
+  applyRouteHead,
+  type ClientRouteDefinition,
+  createRouter,
+} from "./router";
 
 type BootstrapElementLike = {
   textContent: string | null;
@@ -99,9 +102,14 @@ export type RouteHydrateInput = {
 
 export type RouteHydrateModule = (input: RouteHydrateInput) => unknown;
 
-export type HydratableRoute = RouteDefinition & {
+export type HydratableRoute = ClientRouteDefinition & {
   files?: {
     hydrate?: () => Promise<{ default: RouteHydrateModule }>;
+    meta?: ClientRouteDefinition["files"] extends infer Files
+      ? Files extends { meta?: infer Meta }
+        ? Meta
+        : never
+      : never;
   };
 };
 
@@ -255,10 +263,19 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     history,
     bootstrap,
     transport: options.transport,
+    document: document as never,
   });
   const root = getAppRoot(document);
   const matchedRoute = getMatchedRoute(options.routes, bootstrap);
-  const ready = hydrateRouteRoot(matchedRoute, bootstrap, root).then(() => {});
+  const ready = Promise.all([
+    hydrateRouteRoot(matchedRoute, bootstrap, root),
+    applyRouteHead({
+      routes: options.routes,
+      path: bootstrap.path ?? bootstrap.pathname,
+      data: bootstrap.data,
+      document: document as never,
+    }),
+  ]).then(() => {});
 
   const clickHandler = async (event: ClickEventLike) => {
     const anchor = getAnchor(event);

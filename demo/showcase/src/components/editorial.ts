@@ -7,10 +7,6 @@ import {
   type ShowcaseTag,
   showcasePublication,
 } from "../content/blog";
-import {
-  buildShowcaseGalleryPath,
-  type ShowcaseLiveModeId,
-} from "../content/modes";
 import { getPostByline, getPostEyebrow } from "./blog";
 
 const {
@@ -30,6 +26,13 @@ const {
   ul,
 } = van.tags;
 
+export type ShowcaseCollection = "posts" | "authors" | "categories" | "tags";
+
+export type ShowcaseLinkBuilder = (
+  collection: ShowcaseCollection,
+  slug: string,
+) => string;
+
 export function renderEditorialHero(input: {
   eyebrow: string;
   title: string;
@@ -47,7 +50,7 @@ export function renderEditorialHero(input: {
 
 export function renderPostCard(
   post: ShowcasePost,
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
   tone: "feature" | "compact" = "feature",
 ) {
   return article(
@@ -58,12 +61,7 @@ export function renderPostCard(
           : "editorial-card editorial-card--compact",
     },
     p({ class: "showcase-eyebrow" }, getPostEyebrow(post)),
-    h3(
-      a(
-        { href: buildShowcaseGalleryPath(modeId, "posts", post.slug) },
-        post.title,
-      ),
-    ),
+    h3(a({ href: buildPath("posts", post.slug) }, post.title)),
     p({ class: "editorial-summary" }, post.summary),
     div(
       { class: "editorial-meta" },
@@ -73,25 +71,20 @@ export function renderPostCard(
     ),
     div(
       { class: "taxonomy-row" },
-      ...post.tags.map((tag) => renderTagChip(tag, modeId)),
+      ...post.tags.map((tag) => renderTagChip(tag, buildPath)),
     ),
   );
 }
 
 export function renderAuthorCard(
   author: ShowcaseAuthor,
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
   postCount: number,
 ) {
   return article(
     { class: "editorial-card editorial-card--compact" },
     p({ class: "showcase-eyebrow" }, author.role),
-    h3(
-      a(
-        { href: buildShowcaseGalleryPath(modeId, "authors", author.slug) },
-        author.name,
-      ),
-    ),
+    h3(a({ href: buildPath("authors", author.slug) }, author.name)),
     p({ class: "editorial-summary" }, author.bio),
     p({ class: "showcase-subtle" }, `${author.location} · ${postCount} posts`),
   );
@@ -99,28 +92,26 @@ export function renderAuthorCard(
 
 export function renderCategoryCard(
   category: ShowcaseCategory,
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
   postCount: number,
 ) {
   return article(
     { class: "editorial-card editorial-card--compact" },
     p({ class: "showcase-eyebrow" }, category.strapline),
-    h3(
-      a(
-        { href: buildShowcaseGalleryPath(modeId, "categories", category.slug) },
-        category.name,
-      ),
-    ),
+    h3(a({ href: buildPath("categories", category.slug) }, category.name)),
     p({ class: "editorial-summary" }, category.description),
     p({ class: "showcase-subtle" }, `${postCount} stories in ${category.name}`),
   );
 }
 
-export function renderTagChip(tag: ShowcaseTag, modeId: ShowcaseLiveModeId) {
+export function renderTagChip(
+  tag: ShowcaseTag,
+  buildPath: ShowcaseLinkBuilder,
+) {
   return a(
     {
       class: "taxonomy-chip",
-      href: buildShowcaseGalleryPath(modeId, "tags", tag.slug),
+      href: buildPath("tags", tag.slug),
     },
     `#${tag.name}`,
   );
@@ -128,15 +119,13 @@ export function renderTagChip(tag: ShowcaseTag, modeId: ShowcaseLiveModeId) {
 
 export function renderTagCard(
   tag: ShowcaseTag,
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
   postCount: number,
 ) {
   return article(
     { class: "editorial-card editorial-card--compact" },
     p({ class: "showcase-eyebrow" }, "Cross-cutting tag"),
-    h3(
-      a({ href: buildShowcaseGalleryPath(modeId, "tags", tag.slug) }, tag.name),
-    ),
+    h3(a({ href: buildPath("tags", tag.slug) }, tag.name)),
     p({ class: "editorial-summary" }, tag.description),
     p({ class: "showcase-subtle" }, `${postCount} connected stories`),
   );
@@ -145,7 +134,7 @@ export function renderTagCard(
 export function renderPostGrid(
   title: string,
   posts: ShowcasePost[],
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
   tone: "feature" | "compact" = "feature",
 ) {
   return section(
@@ -159,7 +148,7 @@ export function renderPostGrid(
       {
         class: tone === "feature" ? "card-grid" : "card-grid card-grid--tight",
       },
-      ...posts.map((post) => renderPostCard(post, modeId, tone)),
+      ...posts.map((post) => renderPostCard(post, buildPath, tone)),
     ),
   );
 }
@@ -182,7 +171,7 @@ export function renderCollectionGrid(
 
 export function renderArticleLayout(
   post: ShowcasePost,
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
   relatedPosts: ShowcasePost[],
 ) {
   return article(
@@ -195,7 +184,7 @@ export function renderArticleLayout(
       p({ class: "showcase-subtle" }, getPostByline(post)),
       div(
         { class: "taxonomy-row" },
-        ...post.tags.map((tag) => renderTagChip(tag, modeId)),
+        ...post.tags.map((tag) => renderTagChip(tag, buildPath)),
       ),
     ),
     ...post.sections.map((sectionData) =>
@@ -216,7 +205,7 @@ export function renderArticleLayout(
       div(
         { class: "card-grid card-grid--tight" },
         ...relatedPosts.map((relatedPost) =>
-          renderPostCard(relatedPost, modeId, "compact"),
+          renderPostCard(relatedPost, buildPath, "compact"),
         ),
       ),
     ),
@@ -241,7 +230,7 @@ export function renderArchiveIntro(input: {
 export function renderAuthorDetail(
   author: ShowcaseAuthor,
   posts: ShowcasePost[],
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
 ) {
   return div(
     renderArchiveIntro({
@@ -250,14 +239,14 @@ export function renderAuthorDetail(
       summary: author.bio,
       metric: `${author.location} · ${posts.length} published stories`,
     }),
-    renderPostGrid("Recent stories", posts, modeId, "compact"),
+    renderPostGrid("Recent stories", posts, buildPath, "compact"),
   );
 }
 
 export function renderCategoryDetail(
   category: ShowcaseCategory,
   posts: ShowcasePost[],
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
 ) {
   return div(
     renderArchiveIntro({
@@ -266,14 +255,14 @@ export function renderCategoryDetail(
       summary: category.description,
       metric: `${posts.length} stories · ${category.strapline}`,
     }),
-    renderPostGrid("Stories in this category", posts, modeId, "compact"),
+    renderPostGrid("Stories in this category", posts, buildPath, "compact"),
   );
 }
 
 export function renderTagDetail(
   tag: ShowcaseTag,
   posts: ShowcasePost[],
-  modeId: ShowcaseLiveModeId,
+  buildPath: ShowcaseLinkBuilder,
 ) {
   return div(
     renderArchiveIntro({
@@ -282,7 +271,7 @@ export function renderTagDetail(
       summary: tag.description,
       metric: `${posts.length} connected stories`,
     }),
-    renderPostGrid("Stories carrying this tag", posts, modeId, "compact"),
+    renderPostGrid("Stories carrying this tag", posts, buildPath, "compact"),
   );
 }
 

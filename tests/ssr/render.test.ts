@@ -207,4 +207,51 @@ describe("ssr renderer", () => {
     expect(html).toContain("data-van-stack-bootstrap");
     expect(html).toContain('"hydrationPolicy":"islands"');
   });
+
+  test("wraps matched pages through the discovered layout chain", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/posts/runtime-gallery-tour"),
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          async loader({ params }) {
+            return {
+              post: {
+                slug: params.slug,
+                title: "Runtime Gallery Tour",
+              },
+            };
+          },
+          layoutChain: [
+            async () => ({
+              default({
+                children,
+                data,
+              }: {
+                children: unknown;
+                data: unknown;
+              }) {
+                const typedData = data as { post: { title: string } };
+
+                return `<section data-presentation="stack"><header>${typedData.post.title}</header>${children}</section>`;
+              },
+            }),
+          ],
+          page({ data }) {
+            const typedData = data as { post: { title: string } };
+            return `<article><h1>${typedData.post.title}</h1></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain('<section data-presentation="stack">');
+    expect(html).toContain("<header>Runtime Gallery Tour</header>");
+    expect(html).toContain("<article><h1>Runtime Gallery Tour</h1></article>");
+  });
 });

@@ -60,12 +60,13 @@ describe("showcase app", () => {
     );
   });
 
-  test("renders the landing page with both evaluator demo tracks", async () => {
+  test("renders the landing page with all evaluator demo tracks", async () => {
     const { response, html } = await requestShowcase("/");
 
     expect(response.status).toBe(200);
     expect(html).toContain("Runtime Gallery");
     expect(html).toContain("Guided Walkthrough");
+    expect(html).toContain("Adaptive Navigation");
   });
 
   test("renders a coherent 404 page for unknown showcase routes", async () => {
@@ -87,7 +88,7 @@ describe("showcase app", () => {
     expect(html).toContain("/gallery/islands/posts/runtime-gallery-tour");
     expect(html).toContain("/gallery/shell/posts/runtime-gallery-tour");
     expect(html).toContain("/gallery/custom/posts/runtime-gallery-tour");
-    expect(html).not.toContain("Adaptive");
+    expect(html).not.toContain("/gallery/adaptive");
   });
 
   for (const mode of modeIds) {
@@ -114,6 +115,29 @@ describe("showcase app", () => {
       }
     });
   }
+
+  test("adaptive navigation exposes the shared blog graph under stack presentation", async () => {
+    const homepage = await requestShowcase("/adaptive");
+    expect(homepage.response.status).toBe(200);
+    expect(homepage.html).toContain('data-presentation="stack"');
+
+    for (const family of contentFamilies) {
+      const listPage = await requestShowcase(`/adaptive/${family.collection}`);
+      expect(
+        listPage.response.status,
+        `adaptive list route missing: /adaptive/${family.collection}`,
+      ).toBe(200);
+
+      const detailPage = await requestShowcase(
+        `/adaptive/${family.collection}/${family.slug}`,
+      );
+      expect(
+        detailPage.response.status,
+        `adaptive detail route missing: /adaptive/${family.collection}/${family.slug}`,
+      ).toBe(200);
+      expect(detailPage.html).toContain('data-presentation="stack"');
+    }
+  });
 
   test("renders SSR post pages without hydration handoff markers", async () => {
     const { response, html } = await requestShowcase(
@@ -310,6 +334,77 @@ describe("showcase app", () => {
     });
   });
 
+  test("persists likes and bookmarks on the server for the current session", async () => {
+    const initial = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/api/showcase/posts/runtime-gallery-tour/interactions",
+      ),
+    );
+
+    expect(initial.status).toBe(200);
+    expect(initial.headers.get("content-type")).toContain("application/json");
+    expect(initial.headers.get("set-cookie")).toContain("showcase-session=");
+    await expect(initial.json()).resolves.toMatchObject({
+      likes: expect.any(Number),
+      bookmarked: false,
+    });
+
+    const cookie = initial.headers.get("set-cookie")?.split(";")[0];
+    if (!cookie) {
+      throw new Error("Interaction endpoint did not return a session cookie.");
+    }
+
+    const liked = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/api/showcase/posts/runtime-gallery-tour/interactions",
+        {
+          method: "POST",
+          headers: {
+            cookie,
+            "content-type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify({ action: "like" }),
+        },
+      ),
+    );
+    const bookmarked = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/api/showcase/posts/runtime-gallery-tour/interactions",
+        {
+          method: "POST",
+          headers: {
+            cookie,
+            "content-type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify({ action: "bookmark" }),
+        },
+      ),
+    );
+    const persisted = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/api/showcase/posts/runtime-gallery-tour/interactions",
+        {
+          headers: {
+            cookie,
+          },
+        },
+      ),
+    );
+
+    await expect(liked.json()).resolves.toMatchObject({
+      likes: expect.any(Number),
+      bookmarked: false,
+    });
+    await expect(bookmarked.json()).resolves.toMatchObject({
+      likes: expect.any(Number),
+      bookmarked: true,
+    });
+    await expect(persisted.json()).resolves.toMatchObject({
+      likes: expect.any(Number),
+      bookmarked: true,
+    });
+  });
+
   test("starts an HTTP server that serves the showcase handler", async () => {
     const server = startShowcaseServer(0);
     const address = server.address();
@@ -321,9 +416,16 @@ describe("showcase app", () => {
 
     try {
       const response = await fetch(`http://127.0.0.1:${address.port}/gallery`);
+      const interaction = await fetch(
+        `http://127.0.0.1:${address.port}/api/showcase/posts/runtime-gallery-tour/interactions`,
+      );
 
       expect(response.status).toBe(200);
       expect(await response.text()).toContain("Runtime Gallery");
+      expect(interaction.status).toBe(200);
+      expect(interaction.headers.get("set-cookie")).toContain(
+        "showcase-session=",
+      );
     } finally {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => {

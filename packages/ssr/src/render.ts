@@ -10,11 +10,18 @@ type RouteHandler = (input: {
   request: Request;
   params: Record<string, string>;
 }) => Promise<Response> | Response;
+type RouteLayout = (input: {
+  children: unknown;
+  data: unknown;
+  params: Record<string, string>;
+  path: string;
+}) => Promise<string> | string;
 
 type RouteDefinition = {
   id: string;
   path: string;
   hydrationPolicy?: string;
+  layoutChain?: ModuleLoader<RouteLayout>[];
   route?: RouteHandler;
   loader?: (input: {
     params: Record<string, string>;
@@ -130,6 +137,28 @@ function renderPageOutput(output: unknown): string {
   return String(output ?? "");
 }
 
+async function applyLayouts(
+  body: unknown,
+  route: RouteDefinition,
+  data: unknown,
+  params: Record<string, string>,
+  path: string,
+) {
+  let output = body;
+
+  for (const layoutLoader of [...(route.layoutChain ?? [])].reverse()) {
+    const module = await layoutLoader();
+    output = await module.default({
+      children: output,
+      data,
+      params,
+      path,
+    });
+  }
+
+  return renderPageOutput(output);
+}
+
 export async function renderRequest(input: RenderRequestInput) {
   bindServerRenderEnv();
   const requestPath = getRequestPath(input.request);
@@ -162,8 +191,15 @@ export async function renderRequest(input: RenderRequestInput) {
     const meta = metaHandler
       ? await metaHandler({ params: match.params, data })
       : undefined;
+    const pageOutput = await page({ data });
     const body = wrapPageBody(
-      renderPageOutput(await page({ data })),
+      await applyLayouts(
+        pageOutput,
+        route,
+        data,
+        match.params,
+        requestPath.path,
+      ),
       hydrationPolicy,
     );
     const bootstrap =

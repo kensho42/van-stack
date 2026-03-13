@@ -20,13 +20,19 @@ const showcaseTracks = [
     label: "Runtime Gallery",
     href: "/gallery",
     description:
-      "Live mode comparisons for the same blog app across ssg, ssr, hydrated, shell, and custom delivery.",
+      "Live mode comparisons for the same blog app across ssg, ssr, hydrated, islands, shell, and custom delivery.",
   },
   {
     label: "Guided Walkthrough",
     href: "/walkthrough",
     description:
       "Narrated evaluator pages that explain each runtime path and link back into the live routes.",
+  },
+  {
+    label: "Adaptive Navigation",
+    href: "/adaptive",
+    description:
+      "A separate stack-oriented track that proves adaptive presentation against the same blog graph.",
   },
 ] satisfies ShowcaseTrack[];
 
@@ -377,6 +383,14 @@ export function renderShowcaseFrame(input: {
             },
             "Guided Walkthrough",
           ),
+          a(
+            {
+              href: "/adaptive",
+              "data-van-stack-ignore": "",
+              "data-active": isActiveSection(input.currentPath, "/adaptive"),
+            },
+            "Adaptive Navigation",
+          ),
         ),
         input.currentPath.startsWith("/gallery/")
           ? nav(
@@ -413,7 +427,7 @@ export function renderShowcaseFrame(input: {
       footer(
         { class: "showcase-footer" },
         small(
-          "Northstar Journal is the shared blog app used to compare SSG, SSR, hydrated, shell, and custom delivery.",
+          "Northstar Journal is the shared blog app used to compare runtime delivery and adaptive navigation on one route graph.",
         ),
       ),
     ),

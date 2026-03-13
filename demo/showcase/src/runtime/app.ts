@@ -126,7 +126,7 @@ export async function handleShowcaseRequest(request: Request) {
   }
 
   if (pathname.startsWith("/api/showcase")) {
-    return handleCustomApiRequest(pathname);
+    return handleCustomApiRequest(request);
   }
 
   if (pathname.startsWith("/gallery/ssg")) {

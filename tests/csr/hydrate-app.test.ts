@@ -17,9 +17,20 @@ function createHydrationEnv() {
   const appRoot = {
     querySelector: vi.fn(),
   };
+  const createHeadNode = () => ({
+    textContent: "",
+    setAttribute: vi.fn(),
+    remove: vi.fn(),
+    getAttribute: vi.fn(() => null),
+  });
   let bootstrapScript: { textContent: string | null } | null = null;
 
   const document = {
+    title: "",
+    createElement: vi.fn(() => createHeadNode()),
+    head: {
+      appendChild: vi.fn(),
+    },
     querySelector: vi.fn((selector: string) => {
       if (selector === "script[data-van-stack-bootstrap]") {
         return bootstrapScript;

@@ -1,6 +1,9 @@
 import { van } from "van-stack/render";
 
-import type { ShowcasePost } from "../content/blog";
+import {
+  getShowcaseInitialLikeCount,
+  type ShowcasePost,
+} from "../content/blog";
 import {
   buildShowcaseGalleryPath,
   getShowcaseMode,
@@ -67,10 +70,6 @@ export function renderRuntimePanel(modeId: ShowcaseLiveModeId) {
   );
 }
 
-function getInitialLikeCount(post: ShowcasePost) {
-  return String(post.readTimeMinutes + 2);
-}
-
 export function renderReaderPulse(
   post: ShowcasePost,
   modeId: ShowcaseLiveModeId,
@@ -109,7 +108,10 @@ export function renderReaderPulse(
         p({ class: "showcase-eyebrow" }, "Reaction"),
         strong("Session likes"),
         p(
-          span({ "data-like-count": "" }, getInitialLikeCount(post)),
+          span(
+            { "data-like-count": "" },
+            String(getShowcaseInitialLikeCount(post)),
+          ),
           " readers found this helpful",
         ),
         // Buttons stay in normal flow so shell/custom/islands all share the same DOM markers.

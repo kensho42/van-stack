@@ -22,9 +22,9 @@ export default function page() {
         eyebrow: showcasePublication.issue,
         title: "Northstar Journal Showcase",
         summary:
-          "One shared blog app, two evaluator tracks, and five runtime modes you can compare route by route.",
+          "One shared blog app, three evaluator tracks, and six runtime modes you can compare route by route.",
         detail:
-          "Use the Runtime Gallery for live behavior and the Guided Walkthrough for implementation context.",
+          "Use the Runtime Gallery for live behavior, the Guided Walkthrough for implementation context, and Adaptive Navigation for the stack track.",
       }),
       section(
         { class: "editorial-section" },
@@ -33,7 +33,7 @@ export default function page() {
           h2("Choose a track"),
           p(
             { class: "showcase-subtle" },
-            "Both tracks point at the same publication. They just optimize for different evaluator workflows.",
+            "All three tracks point at the same publication. They just optimize for different evaluator workflows.",
           ),
         ),
         div(

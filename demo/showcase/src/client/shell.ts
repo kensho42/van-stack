@@ -15,12 +15,13 @@ const router = createRouter({
   mode: "shell",
   routes: [...shellClientRoutes],
   history: window.history,
+  document: document as never,
 });
 
 wireClientNavigation(router, { document, routes: shellClientRoutes, window });
-router.subscribe((entry) => {
+router.subscribe(async (entry) => {
   renderClientPage(root, entry.data as GalleryPageData);
-  mountShowcasePostInteractions(root, entry.data as GalleryPageData);
+  await mountShowcasePostInteractions(root, entry.data as GalleryPageData);
 });
 
 renderClientLoading(

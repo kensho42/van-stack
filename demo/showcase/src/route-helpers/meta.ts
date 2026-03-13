@@ -36,7 +36,7 @@ function createMeta(
 export function createLandingMeta() {
   return createMeta(
     "Northstar Journal Showcase · van-stack",
-    "Evaluator-first showcase for one shared blog app across SSG, SSR, hydrated, islands, shell, and custom delivery.",
+    "Evaluator-first showcase for one shared blog app across runtime gallery, guided walkthrough, and adaptive stack tracks.",
     "/",
   );
 }
@@ -54,6 +54,14 @@ export function createWalkthroughOverviewMeta() {
     "Guided Walkthrough · Northstar Journal",
     "Evaluator walkthrough pages for each Northstar Journal runtime mode.",
     "/walkthrough",
+  );
+}
+
+export function createAdaptiveOverviewMeta() {
+  return createMeta(
+    "Adaptive Navigation · Northstar Journal",
+    "Inspect the shared Northstar Journal blog graph through a stack-oriented adaptive navigation track.",
+    "/adaptive",
   );
 }
 
@@ -158,5 +166,85 @@ export function createTagMeta(modeId: ShowcaseModeId, slug: string) {
     `${tag.name} · ${mode.title} · Northstar Journal`,
     tag.description,
     `/gallery/${mode.id}/tags/${tag.slug}`,
+  );
+}
+
+export function createAdaptiveHomeMeta() {
+  return createMeta(
+    "Adaptive Stack · Northstar Journal",
+    "Browse the shared Northstar Journal graph through the adaptive stack track.",
+    "/adaptive",
+  );
+}
+
+export function createAdaptivePostsIndexMeta() {
+  return createMeta(
+    "All Posts · Adaptive Stack · Northstar Journal",
+    "Browse the Northstar Journal post archive through the adaptive stack track.",
+    "/adaptive/posts",
+  );
+}
+
+export function createAdaptivePostMeta(slug: string) {
+  const post = requireShowcasePost(slug);
+
+  return createMeta(
+    `${post.title} · Adaptive Stack · Northstar Journal`,
+    post.summary,
+    `/adaptive/posts/${post.slug}`,
+  );
+}
+
+export function createAdaptiveAuthorsIndexMeta() {
+  return createMeta(
+    "Authors · Adaptive Stack · Northstar Journal",
+    "Browse contributor archives through the adaptive stack track.",
+    "/adaptive/authors",
+  );
+}
+
+export function createAdaptiveAuthorMeta(slug: string) {
+  const author = requireShowcaseAuthor(slug);
+
+  return createMeta(
+    `${author.name} · Adaptive Stack · Northstar Journal`,
+    author.bio,
+    `/adaptive/authors/${author.slug}`,
+  );
+}
+
+export function createAdaptiveCategoriesIndexMeta() {
+  return createMeta(
+    "Categories · Adaptive Stack · Northstar Journal",
+    "Browse editorial desks through the adaptive stack track.",
+    "/adaptive/categories",
+  );
+}
+
+export function createAdaptiveCategoryMeta(slug: string) {
+  const category = requireShowcaseCategory(slug);
+
+  return createMeta(
+    `${category.name} · Adaptive Stack · Northstar Journal`,
+    category.description,
+    `/adaptive/categories/${category.slug}`,
+  );
+}
+
+export function createAdaptiveTagsIndexMeta() {
+  return createMeta(
+    "Tags · Adaptive Stack · Northstar Journal",
+    "Browse cross-cutting topic archives through the adaptive stack track.",
+    "/adaptive/tags",
+  );
+}
+
+export function createAdaptiveTagMeta(slug: string) {
+  const tag = requireShowcaseTag(slug);
+
+  return createMeta(
+    `${tag.name} · Adaptive Stack · Northstar Journal`,
+    tag.description,
+    `/adaptive/tags/${tag.slug}`,
   );
 }

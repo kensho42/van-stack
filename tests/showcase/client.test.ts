@@ -3,29 +3,13 @@ import { mountShowcasePostInteractions } from "../../demo/showcase/src/client/po
 import { createGalleryPostData } from "../../demo/showcase/src/runtime/data";
 import { bindRenderEnv } from "../../packages/core/src/render";
 
-type StorageLike = {
-  getItem: (key: string) => string | null;
-  setItem: (key: string, value: string) => void;
-};
-
 type ClickHandler = (event: Record<string, unknown>) => Promise<void>;
-
-function createSessionStorage(): StorageLike {
-  const values = new Map<string, string>();
-
-  return {
-    getItem(key) {
-      return values.get(key) ?? null;
-    },
-    setItem(key, value) {
-      values.set(key, value);
-    },
-  };
-}
 
 function createInteractionRoot() {
   const likeButton = {
-    onclick: undefined as ((event?: unknown) => void) | undefined,
+    onclick: undefined as
+      | ((event?: unknown) => Promise<void> | void)
+      | undefined,
     textContent: "Like this post",
   };
   const likeCount = {
@@ -64,28 +48,70 @@ function createInteractionRoot() {
 }
 
 describe("showcase client helpers", () => {
-  test("persists post interaction state within a browser session", () => {
-    const storage = createSessionStorage();
+  test("syncs post interaction state through the showcase server API", async () => {
     const data = createGalleryPostData("custom", "runtime-gallery-tour");
+    let likes = 7;
+    let bookmarked = false;
+    const fetch = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        const url = String(input);
+        if (
+          !url.endsWith("/api/showcase/posts/runtime-gallery-tour/interactions")
+        ) {
+          throw new Error(`Unexpected interaction request: ${url}`);
+        }
+
+        const action =
+          typeof init?.body === "string"
+            ? (JSON.parse(init.body) as { action?: string }).action
+            : undefined;
+
+        if ((init?.method ?? "GET") === "POST" && action === "like") {
+          likes += 1;
+        }
+
+        if ((init?.method ?? "GET") === "POST" && action === "bookmark") {
+          bookmarked = !bookmarked;
+        }
+
+        return new Response(
+          JSON.stringify({
+            likes,
+            bookmarked,
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+            },
+          },
+        );
+      },
+    );
     const firstMount = createInteractionRoot();
 
-    mountShowcasePostInteractions(firstMount.root, data, storage);
-    firstMount.likeButton.onclick?.();
-    firstMount.likeButton.onclick?.();
-    firstMount.bookmarkButton.onclick?.();
+    await mountShowcasePostInteractions(firstMount.root, data, {
+      fetch: fetch as never,
+    });
+    await firstMount.likeButton.onclick?.();
+    await firstMount.likeButton.onclick?.();
+    await firstMount.bookmarkButton.onclick?.();
 
-    expect(firstMount.likeCount.textContent).toBe("5");
+    expect(firstMount.likeCount.textContent).toBe("9");
     expect(firstMount.bookmarkState.textContent).toBe("Saved for this session");
     expect(firstMount.bookmarkButton.textContent).toBe("Remove bookmark");
 
     const secondMount = createInteractionRoot();
-    mountShowcasePostInteractions(secondMount.root, data, storage);
+    await mountShowcasePostInteractions(secondMount.root, data, {
+      fetch: fetch as never,
+    });
 
-    expect(secondMount.likeCount.textContent).toBe("5");
+    expect(secondMount.likeCount.textContent).toBe("9");
     expect(secondMount.bookmarkState.textContent).toBe(
       "Saved for this session",
     );
     expect(secondMount.bookmarkButton.textContent).toBe("Remove bookmark");
+    expect(fetch).toHaveBeenCalledTimes(5);
   });
 
   test("intercepts only current-app links unless a link opts out", async () => {

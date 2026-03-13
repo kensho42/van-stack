@@ -2,11 +2,18 @@ import { renderRequest } from "../../ssr/src/render";
 import { bindStaticRenderEnv } from "./render-env";
 
 type ModuleLoader<T> = () => Promise<{ default: T }>;
+type RouteLayout = (input: {
+  children: unknown;
+  data: unknown;
+  params: Record<string, string>;
+  path: string;
+}) => Promise<string> | string;
 
 type StaticRouteDefinition = {
   id: string;
   path: string;
   hydrationPolicy?: string;
+  layoutChain?: ModuleLoader<RouteLayout>[];
   entries?: () => Promise<Record<string, string>[]> | Record<string, string>[];
   loader?: (input: {
     params: Record<string, string>;
