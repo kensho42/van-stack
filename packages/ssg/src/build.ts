@@ -17,6 +17,7 @@ type StaticRouteDefinition = {
   entries?: () => Promise<Record<string, string>[]> | Record<string, string>[];
   loader?: (input: {
     params: Record<string, string>;
+    request: Request;
   }) => Promise<unknown> | unknown;
   page?: (input: { data: unknown }) => Promise<string> | string;
   files?: {
@@ -24,7 +25,10 @@ type StaticRouteDefinition = {
       () => Promise<Record<string, string>[]> | Record<string, string>[]
     >;
     loader?: ModuleLoader<
-      (input: { params: Record<string, string> }) => Promise<unknown> | unknown
+      (input: {
+        params: Record<string, string>;
+        request: Request;
+      }) => Promise<unknown> | unknown
     >;
     page?: ModuleLoader<(input: { data: unknown }) => Promise<string> | string>;
   };

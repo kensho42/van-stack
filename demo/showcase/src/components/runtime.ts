@@ -11,6 +11,7 @@ import {
   type ShowcaseLiveModeId,
   type ShowcaseModeId,
 } from "../content/modes";
+import type { ShowcaseInteractionState } from "../runtime/interactions";
 
 const { a, button, div, h2, li, p, section, span, strong, ul } = van.tags;
 const interactiveModeIds = new Set<ShowcaseModeId>([
@@ -73,6 +74,7 @@ export function renderRuntimePanel(modeId: ShowcaseLiveModeId) {
 export function renderReaderPulse(
   post: ShowcasePost,
   modeId: ShowcaseLiveModeId,
+  interactions?: ShowcaseInteractionState,
 ) {
   if (!modeHasReaderPulse(modeId)) {
     return null;
@@ -110,7 +112,7 @@ export function renderReaderPulse(
         p(
           span(
             { "data-like-count": "" },
-            String(getShowcaseInitialLikeCount(post)),
+            String(interactions?.likes ?? getShowcaseInitialLikeCount(post)),
           ),
           " readers found this helpful",
         ),
@@ -121,10 +123,13 @@ export function renderReaderPulse(
         { class: "runtime-panel" },
         p({ class: "showcase-eyebrow" }, "Save state"),
         strong("Reading list"),
-        p({ "data-bookmark-state": "" }, "Not saved"),
+        p(
+          { "data-bookmark-state": "" },
+          interactions?.bookmarked ? "Saved for this session" : "Not saved",
+        ),
         button(
           { "data-bookmark-button": "", type: "button" },
-          "Save for later",
+          interactions?.bookmarked ? "Remove bookmark" : "Save for later",
         ),
       ),
     ),

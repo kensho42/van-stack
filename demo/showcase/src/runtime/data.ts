@@ -25,6 +25,11 @@ import {
   type ShowcaseMode,
   showcaseLiveModeIds,
 } from "../content/modes";
+import {
+  readShowcaseInteractionState,
+  readShowcaseSessionId,
+  type ShowcaseInteractionState,
+} from "./interactions";
 
 export type GalleryAuthorSummary = {
   author: ShowcaseAuthor;
@@ -69,6 +74,7 @@ export type GalleryPostData = GalleryBaseData & {
   pageType: "post-detail";
   post: ShowcasePost;
   related: ShowcasePost[];
+  interactions?: ShowcaseInteractionState;
 };
 
 export type GalleryAuthorsIndexData = GalleryBaseData & {
@@ -254,11 +260,18 @@ export function createPostsIndexData(
 export function createGalleryPostData(
   modeId: ShowcaseLiveModeId,
   slug: string,
+  options?: {
+    request?: Request;
+  },
 ): GalleryPostData {
   const post = getShowcasePost(slug);
   if (!post) {
     throw new ShowcaseRouteNotFoundError(createPath(modeId, `posts/${slug}`));
   }
+
+  const sessionId = options?.request
+    ? readShowcaseSessionId(options.request)
+    : null;
 
   return {
     pageType: "post-detail",
@@ -266,6 +279,9 @@ export function createGalleryPostData(
     path: createPath(modeId, `posts/${slug}`),
     post,
     related: getRelatedPosts(post),
+    interactions: sessionId
+      ? readShowcaseInteractionState(sessionId, slug)
+      : undefined,
   };
 }
 
@@ -354,6 +370,9 @@ export function createGalleryTagData(
 export function createGalleryPageData(
   modeId: ShowcaseLiveModeId,
   pathname: string,
+  options?: {
+    request?: Request;
+  },
 ): GalleryPageData {
   const normalized = pathname.replace(/\/+$/, "") || "/";
   const segments = normalized.split("/").filter(Boolean);
@@ -372,7 +391,7 @@ export function createGalleryPageData(
   switch (collection) {
     case "posts":
       return slug
-        ? createGalleryPostData(modeId, slug)
+        ? createGalleryPostData(modeId, slug, options)
         : createPostsIndexData(modeId);
     case "authors":
       return slug
@@ -391,7 +410,12 @@ export function createGalleryPageData(
   }
 }
 
-export function createGalleryPageDataFromPath(pathname: string) {
+export function createGalleryPageDataFromPath(
+  pathname: string,
+  options?: {
+    request?: Request;
+  },
+) {
   const normalized = pathname.replace(/\/+$/, "") || "/";
   const segments = normalized.split("/").filter(Boolean);
   const modeId = segments[1];
@@ -400,7 +424,7 @@ export function createGalleryPageDataFromPath(pathname: string) {
     throw new ShowcaseRouteNotFoundError(pathname);
   }
 
-  return createGalleryPageData(modeId, pathname);
+  return createGalleryPageData(modeId, pathname, options);
 }
 
 export function createShowcaseEntries() {

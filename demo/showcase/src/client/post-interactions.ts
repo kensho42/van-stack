@@ -113,7 +113,9 @@ export async function mountShowcasePostInteractions(
   }
 
   const fetchImpl = getFetch(options?.fetch);
-  let state = await requestInteractionState(fetchImpl, data.post.slug);
+  let state = data.interactions
+    ? data.interactions
+    : await requestInteractionState(fetchImpl, data.post.slug);
 
   const sync = () => {
     likeCount.textContent = String(state.likes);

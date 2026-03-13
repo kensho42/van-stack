@@ -36,6 +36,11 @@ function parseCookieHeader(header: string | null) {
   return values;
 }
 
+export function readShowcaseSessionId(request: Request) {
+  const cookies = parseCookieHeader(request.headers.get("cookie"));
+  return cookies.get(showcaseSessionCookieName) ?? null;
+}
+
 function getSessionMap(sessionId: string) {
   const existing = interactionStore.get(sessionId);
   if (existing) {
@@ -69,8 +74,7 @@ function getInteractionState(sessionId: string, slug: string) {
 }
 
 export function resolveShowcaseSession(request: Request) {
-  const cookies = parseCookieHeader(request.headers.get("cookie"));
-  const existing = cookies.get(showcaseSessionCookieName);
+  const existing = readShowcaseSessionId(request);
 
   if (existing) {
     return {

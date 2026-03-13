@@ -25,6 +25,7 @@ type RouteDefinition = {
   route?: RouteHandler;
   loader?: (input: {
     params: Record<string, string>;
+    request: Request;
   }) => Promise<unknown> | unknown;
   meta?: (input: {
     params: Record<string, string>;
@@ -34,7 +35,10 @@ type RouteDefinition = {
   files?: {
     route?: ModuleLoader<RouteHandler>;
     loader?: ModuleLoader<
-      (input: { params: Record<string, string> }) => Promise<unknown> | unknown
+      (input: {
+        params: Record<string, string>;
+        request: Request;
+      }) => Promise<unknown> | unknown
     >;
     meta?: ModuleLoader<
       (input: {
@@ -187,7 +191,9 @@ export async function renderRequest(input: RenderRequestInput) {
     }
 
     const hydrationPolicy = route.hydrationPolicy ?? defaultHydrationPolicy;
-    const data = loader ? await loader({ params: match.params }) : null;
+    const data = loader
+      ? await loader({ params: match.params, request: input.request })
+      : null;
     const meta = metaHandler
       ? await metaHandler({ params: match.params, data })
       : undefined;

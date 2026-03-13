@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import { van } from "../../packages/core/src/render";
 import { renderRequest } from "../../packages/ssr/src/index";
@@ -253,5 +253,44 @@ describe("ssr renderer", () => {
     expect(html).toContain('<section data-presentation="stack">');
     expect(html).toContain("<header>Runtime Gallery Tour</header>");
     expect(html).toContain("<article><h1>Runtime Gallery Tour</h1></article>");
+  });
+
+  test("passes the request into loaders so server rendering can depend on session state", async () => {
+    const loader = vi.fn(
+      async ({
+        params,
+        request,
+      }: {
+        params: Record<string, string>;
+        request: Request;
+      }) => ({
+        cookie: request.headers.get("cookie"),
+        slug: params.slug,
+      }),
+    );
+    const response = await renderRequest({
+      request: new Request("https://example.com/posts/runtime-gallery-tour", {
+        headers: {
+          cookie: "showcase-session=test-session",
+        },
+      }),
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          loader,
+          page({ data }) {
+            const typedData = data as { cookie: string | null; slug: string };
+            return `<article><h1>${typedData.slug}</h1><p>${typedData.cookie}</p></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(loader).toHaveBeenCalledWith({
+      params: { slug: "runtime-gallery-tour" },
+      request: expect.any(Request),
+    });
+    expect(await response.text()).toContain("showcase-session=test-session");
   });
 });

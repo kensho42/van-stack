@@ -95,7 +95,7 @@ export function renderGalleryPage(data: GalleryPageData) {
         children: [
           renderRuntimePanel(data.mode.id),
           renderArticleLayout(data.post, buildPath, data.related),
-          renderReaderPulse(data.post, data.mode.id),
+          renderReaderPulse(data.post, data.mode.id, data.interactions),
           renderSiblingModeLinks(data.mode.id, {
             collection: "posts",
             slug: data.post.slug,

@@ -179,6 +179,79 @@ describe("showcase app", () => {
     expect(html).toContain("/assets/showcase-islands.js");
   });
 
+  test("pre-renders hydrated and islands interaction state from the server session", async () => {
+    const initial = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/api/showcase/posts/runtime-gallery-tour/interactions",
+      ),
+    );
+    const cookie = initial.headers.get("set-cookie")?.split(";")[0];
+    if (!cookie) {
+      throw new Error("Interaction endpoint did not return a session cookie.");
+    }
+
+    await handleShowcaseRequest(
+      new Request(
+        "https://example.com/api/showcase/posts/runtime-gallery-tour/interactions",
+        {
+          method: "POST",
+          headers: {
+            cookie,
+            "content-type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify({ action: "like" }),
+        },
+      ),
+    );
+    await handleShowcaseRequest(
+      new Request(
+        "https://example.com/api/showcase/posts/runtime-gallery-tour/interactions",
+        {
+          method: "POST",
+          headers: {
+            cookie,
+            "content-type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify({ action: "bookmark" }),
+        },
+      ),
+    );
+
+    const hydrated = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/gallery/hydrated/posts/runtime-gallery-tour",
+        {
+          headers: {
+            cookie,
+          },
+        },
+      ),
+    );
+    const islands = await handleShowcaseRequest(
+      new Request(
+        "https://example.com/gallery/islands/posts/runtime-gallery-tour",
+        {
+          headers: {
+            cookie,
+          },
+        },
+      ),
+    );
+
+    expect(hydrated.status).toBe(200);
+    expect(islands.status).toBe(200);
+
+    const hydratedHtml = await hydrated.text();
+    const islandsHtml = await islands.text();
+
+    expect(hydratedHtml).toContain('data-like-count="">10');
+    expect(hydratedHtml).toContain("Saved for this session");
+    expect(hydratedHtml).toContain("Remove bookmark");
+    expect(islandsHtml).toContain('data-like-count="">10');
+    expect(islandsHtml).toContain("Saved for this session");
+    expect(islandsHtml).toContain("Remove bookmark");
+  });
+
   test("renders shell and custom post pages as shell-first documents", async () => {
     const shell = await requestShowcase(
       "/gallery/shell/posts/runtime-gallery-tour",

@@ -7,6 +7,10 @@ import { renderRequest } from "../../../../packages/ssr/src/index";
 import { handleCustomApiRequest, handleInternalDataRequest } from "./api";
 import { createShowcaseAssetResponse } from "./assets";
 import { ShowcaseRouteNotFoundError } from "./data";
+import {
+  resolveShowcaseSession,
+  showcaseSessionCookieName,
+} from "./interactions";
 import { getShowcaseSsgPage } from "./ssg-cache";
 
 type ShowcaseRenderRoutes = Parameters<typeof renderRequest>[0]["routes"];
@@ -87,9 +91,40 @@ function getClientAssetTag(pathname: string) {
   return null;
 }
 
+function shouldPrimeShowcaseSession(pathname: string) {
+  return (
+    pathname.startsWith("/gallery/hydrated/posts/") ||
+    pathname.startsWith("/gallery/islands/posts/")
+  );
+}
+
+function withShowcaseSession(request: Request) {
+  const session = resolveShowcaseSession(request);
+
+  if (!session.setCookie) {
+    return {
+      request,
+      setCookie: null,
+    };
+  }
+
+  const headers = new Headers(request.headers);
+  headers.set("cookie", `${showcaseSessionCookieName}=${session.sessionId}`);
+
+  return {
+    request: new Request(request, {
+      headers,
+    }),
+    setCookie: session.setCookie,
+  };
+}
+
 async function renderFrameworkRoute(request: Request, pathname: string) {
+  const sessionRequest = shouldPrimeShowcaseSession(pathname)
+    ? withShowcaseSession(request)
+    : { request, setCookie: null };
   const response = await renderRequest({
-    request,
+    request: sessionRequest.request,
     routes: await getShowcaseRoutes(),
   });
 
@@ -99,17 +134,32 @@ async function renderFrameworkRoute(request: Request, pathname: string) {
 
   const assetTag = getClientAssetTag(pathname);
   if (!assetTag) {
-    return response;
+    if (!sessionRequest.setCookie) {
+      return response;
+    }
+
+    const headers = new Headers(response.headers);
+    headers.set("set-cookie", sessionRequest.setCookie);
+
+    return new Response(response.body, {
+      status: response.status,
+      headers,
+    });
   }
 
   const html = await response.text();
 
+  const headers = new Headers({
+    "content-type":
+      response.headers.get("content-type") ?? "text/html; charset=utf-8",
+  });
+  if (sessionRequest.setCookie) {
+    headers.set("set-cookie", sessionRequest.setCookie);
+  }
+
   return new Response(html.replace("</body>", `${assetTag}</body>`), {
     status: response.status,
-    headers: {
-      "content-type":
-        response.headers.get("content-type") ?? "text/html; charset=utf-8",
-    },
+    headers,
   });
 }
 
@@ -122,7 +172,7 @@ export async function handleShowcaseRequest(request: Request) {
   }
 
   if (pathname.startsWith(internalDataBasePath)) {
-    return handleInternalDataRequest(pathname);
+    return handleInternalDataRequest(request);
   }
 
   if (pathname.startsWith("/api/showcase")) {

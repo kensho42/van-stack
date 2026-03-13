@@ -114,6 +114,45 @@ describe("showcase client helpers", () => {
     expect(fetch).toHaveBeenCalledTimes(5);
   });
 
+  test("hydrates from preloaded server interaction state before sending mutations", async () => {
+    const data = {
+      ...createGalleryPostData("hydrated", "runtime-gallery-tour"),
+      interactions: {
+        likes: 11,
+        bookmarked: true,
+      },
+    };
+    const fetch = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          likes: 12,
+          bookmarked: true,
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+          },
+        },
+      );
+    });
+    const root = createInteractionRoot();
+
+    await mountShowcasePostInteractions(root.root, data, {
+      fetch: fetch as never,
+    });
+
+    expect(root.likeCount.textContent).toBe("11");
+    expect(root.bookmarkState.textContent).toBe("Saved for this session");
+    expect(root.bookmarkButton.textContent).toBe("Remove bookmark");
+    expect(fetch).not.toHaveBeenCalled();
+
+    await root.likeButton.onclick?.();
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(root.likeCount.textContent).toBe("12");
+  });
+
   test("intercepts only current-app links unless a link opts out", async () => {
     bindRenderEnv({
       van: {

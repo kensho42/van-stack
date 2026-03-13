@@ -74,13 +74,17 @@ await writeRouteManifest({ root: "src/routes" });
 `loader.ts`
 
 ```ts
-export default async function loader(input: { params: { slug: string } }) {
+export default async function loader(input: {
+  params: { slug: string };
+  request: Request;
+}) {
   return {
     post: {
       slug: input.params.slug,
       title: `Post: ${input.params.slug}`,
       excerpt: `Notes about ${input.params.slug}`,
     },
+    requestUrl: input.request.url,
   };
 }
 ```

@@ -53,14 +53,17 @@ function getSessionHeaders(request: Request) {
   };
 }
 
-export function handleInternalDataRequest(pathname: string) {
+export function handleInternalDataRequest(request: Request) {
+  const { pathname } = new URL(request.url);
   const routePath = pathname.slice(internalDataBasePath.length) || "/";
   const normalizedPath = routePath.startsWith("/")
     ? routePath
     : `/${routePath}`;
 
   try {
-    return jsonResponse(createGalleryPageDataFromPath(normalizedPath));
+    return jsonResponse(
+      createGalleryPageDataFromPath(normalizedPath, { request }),
+    );
   } catch (error) {
     if (error instanceof ShowcaseRouteNotFoundError) {
       return jsonResponse(
