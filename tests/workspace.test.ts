@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 
 const requiredFiles = [
   "AGENTS.md",
+  "compat/bun-tsconfig.json",
   "packages/core/src/index.ts",
   "packages/core/src/compat/vanjs-core.ts",
   "packages/core/src/compat/vanjs-ext.ts",

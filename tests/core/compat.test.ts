@@ -98,4 +98,10 @@ describe("compatibility shims", () => {
       }),
     ).toThrowError("van.hydrate is unavailable in the current runtime.");
   });
+
+  test("fails fast on the unsupported bun preload path", async () => {
+    await expect(import("van-stack/compat/bun-preload")).rejects.toThrowError(
+      "Use `bun run --tsconfig-override ./node_modules/van-stack/compat/bun-tsconfig.json <entry>` instead.",
+    );
+  });
 });

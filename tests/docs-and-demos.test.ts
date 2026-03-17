@@ -23,6 +23,7 @@ const requiredCompatDemoFiles = [
   "demo/third-party-compat/src/routes/csr/page.ts",
   "demo/third-party-compat/src/routes/ssr/page.ts",
   "demo/third-party-compat/src/routes/ssg/page.ts",
+  "demo/third-party-compat/tsconfig.bun.json.example",
 ] as const;
 
 describe("docs and demos", () => {
@@ -51,6 +52,9 @@ describe("docs and demos", () => {
     expect(readme).toContain("demo/third-party-compat");
     expect(readme).toContain("bun run start");
     expect(readme).toContain("van-stack/vite");
+    expect(readme).toContain("compat/bun-tsconfig.json");
+    expect(readme).toContain("tsconfig.bun.json");
+    expect(readme).toContain("bunfig.toml");
     expect(readme).toContain("van-stack/compat/node-register");
     expect(readme).toContain("bind the render env before module evaluation");
     expect(readme).toContain("ssg");
@@ -117,6 +121,9 @@ describe("docs and demos", () => {
     expect(compatReadme).toContain("vanjs-core");
     expect(compatReadme).toContain("vanjs-ext");
     expect(compatReadme).toContain("van-stack/vite");
+    expect(compatReadme).toContain("compat/bun-tsconfig.json");
+    expect(compatReadme).toContain("tsconfig.bun.json");
+    expect(compatReadme).toContain("bunfig.toml");
     expect(compatReadme).toContain("van-stack/compat/node-register");
     expect(csrPage).toContain('from "third-party-lib"');
     expect(csrPage).not.toContain("van-stack/render");

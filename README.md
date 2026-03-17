@@ -287,6 +287,37 @@ import { vanStackVite, getVanStackCompatAliases } from "van-stack/vite";
 
 Use `vanStackVite()` for Vite apps, or reuse `getVanStackCompatAliases()` in Vitest and custom Vite configs so those packages resolve through the bound `van-stack/render` environment. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
 
+For Bun SSR and SSG entrypoints, run Bun with the shipped compat override:
+
+```bash
+bun run --tsconfig-override ./node_modules/van-stack/compat/bun-tsconfig.json ./src/server.ts
+```
+
+`van-stack/compat/bun-preload` is intentionally unsupported. Bun runtime plugins do not intercept bare package imports during `bun run`, so Bun needs the `tsconfig` override path instead.
+
+For a repeatable app setup, add a dedicated Bun tsconfig and call it from package scripts:
+
+`tsconfig.bun.json`
+
+```json
+{
+  "extends": "./node_modules/van-stack/compat/bun-tsconfig.json"
+}
+```
+
+`package.json`
+
+```json
+{
+  "scripts": {
+    "ssr": "bun run --tsconfig-override ./tsconfig.bun.json ./src/server.ts",
+    "ssg": "bun run --tsconfig-override ./tsconfig.bun.json ./src/build.ts"
+  }
+}
+```
+
+`bunfig.toml` does not currently expose a `tsconfig` override setting, so the supported Bun DX path is a checked-in `tsconfig.bun.json` plus package script aliases.
+
 Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means you must bind the render env before module evaluation reaches any imported library that reads `van` or `vanX` eagerly.
 
 ### `van-stack/csr`
@@ -421,7 +452,7 @@ bun run start
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
 - `demo/ssg-site`: focused reference for static generation from route entries
 - `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation
-- `demo/third-party-compat`: focused reference for libraries that import `vanjs-core` and `vanjs-ext` directly, rendered through `van-stack/vite` in CSR and `van-stack/compat/node-register` in Node SSR and SSG
+- `demo/third-party-compat`: focused reference for libraries that import `vanjs-core` and `vanjs-ext` directly, rendered through `van-stack/vite` in CSR, `van-stack/compat/node-register` in Node SSR and SSG, and `compat/bun-tsconfig.json` in Bun SSR and SSG
 
 ## Docs
 

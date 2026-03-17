@@ -17,6 +17,6 @@ The older demo folders remain focused references once you want to inspect one ru
 - `demo/ssr-blog`: focused reference for a `hydrated` SSR blog route with slug loader, route-level `hydrate.ts`, bootstrap payload rendering, compiler-loaded filesystem routes, and automatic `app` handoff through `hydrateApp({ routes })`
 - `demo/ssg-site`: focused reference for static generation from route entries discovered under `src/routes`
 - `demo/adaptive-nav`: focused reference for replace-vs-stack presentation with filesystem route discovery
-- `demo/third-party-compat`: focused reference for a workspace library that imports `vanjs-core` and `vanjs-ext` directly, then renders through `van-stack/vite` in CSR and `van-stack/compat/node-register` in Node SSR and SSG
+- `demo/third-party-compat`: focused reference for a workspace library that imports `vanjs-core` and `vanjs-ext` directly, then renders through `van-stack/vite` in CSR, `van-stack/compat/node-register` in Node SSR and SSG, and `compat/bun-tsconfig.json` in Bun SSR and SSG
 
 Most first-party demo route modules import `van` from `van-stack/render`. The compatibility demo is the exception on purpose: its route files import `third-party-lib`, and that workspace package imports `vanjs-core` and `vanjs-ext` directly so the resolver-owned compatibility layer is exercised end to end.

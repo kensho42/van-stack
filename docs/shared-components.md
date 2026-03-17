@@ -30,6 +30,9 @@ Imported third-party packages are a separate boundary. If a package hard-imports
 
 - `van-stack/vite` or `getVanStackCompatAliases()` for Vite and Vitest
 - `van-stack/compat/node-register` for direct Node SSR and SSG entrypoints
+- `bun run --tsconfig-override ./node_modules/van-stack/compat/bun-tsconfig.json <entry>` for direct Bun SSR and SSG entrypoints
+
+For Bun apps, keep that override in a checked-in `tsconfig.bun.json` that extends `./node_modules/van-stack/compat/bun-tsconfig.json`, then call it from package scripts. `bunfig.toml` does not currently expose the same setting.
 
 Those resolver hooks must run before the imported package is evaluated. If the package reads `van` or `vanX` at module scope before the runtime binds the render env, it will still fail with the usual unbound-render error.
 
