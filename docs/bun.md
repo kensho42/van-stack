@@ -38,11 +38,19 @@ Static generation uses the same route model:
 
 ```ts
 import { loadRoutes } from "van-stack/compiler";
-import { buildStaticRoutes } from "van-stack/ssg";
+import { buildStaticRoutes, exportStaticSite } from "van-stack/ssg";
 
 const routes = await loadRoutes({ root: "src/routes" });
-const pages = await buildStaticRoutes({ routes });
+const artifacts = await buildStaticRoutes({ routes });
+
+await exportStaticSite({
+  routes,
+  outDir: "dist",
+  assets: [{ from: "public" }],
+});
 ```
+
+Use `buildStaticRoutes(...)` when you want in-memory artifacts for testing, previews, or cache warm-up. Use `exportStaticSite(...)` when you want a real static output tree that any web server can serve.
 
 ## Third-Party Van Packages
 

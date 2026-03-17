@@ -20,6 +20,8 @@ For filesystem apps, the happy path is:
 2. call `await loadRoutes({ root: "src/routes" })`
 3. pass those routes into CSR, SSR, or SSG entrypoints
 
+For deployable SSG output, use `exportStaticSite({ routes, outDir })` from `van-stack/ssg`. It writes HTML pages, raw `route.ts` outputs, and copied asset files/directories into a static tree that generic web servers can serve directly.
+
 If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src/routes" })` can still emit `.van-stack/routes.generated.ts`.
 
 ## Rule of thumb

@@ -58,6 +58,8 @@ describe("docs and demos", () => {
     expect(readme).toContain("bunfig.toml");
     expect(readme).toContain("docs/bun.md");
     expect(readme).toContain("van-stack/compat/node-register");
+    expect(readme).toContain("exportStaticSite");
+    expect(readme).toContain("generic web servers");
     expect(readme).toContain("bind the render env before module evaluation");
     expect(readme).toContain("ssg");
     expect(readme).toContain("ssr");
@@ -87,6 +89,8 @@ describe("docs and demos", () => {
   test("keeps adaptive navigation documented as a separate focused demo", () => {
     const demos = readFileSync("docs/demos.md", "utf8");
     const bunDoc = readFileSync("docs/bun.md", "utf8");
+    const gettingStarted = readFileSync("docs/getting-started.md", "utf8");
+    const ssgReadme = readFileSync("demo/ssg-site/README.md", "utf8");
     const adaptiveNavReadme = readFileSync(
       "demo/adaptive-nav/README.md",
       "utf8",
@@ -126,6 +130,13 @@ describe("docs and demos", () => {
     expect(bunDoc).toContain("van-stack/ssr");
     expect(bunDoc).toContain("van-stack/ssg");
     expect(bunDoc).toContain("van-stack/vite");
+    expect(bunDoc).toContain("exportStaticSite");
+    expect(bunDoc).toContain("any web server");
+    expect(gettingStarted).toContain("exportStaticSite");
+    expect(gettingStarted).toContain("route.ts");
+    expect(ssgReadme).toContain("exportStaticSite");
+    expect(ssgReadme).toContain("route.ts");
+    expect(ssgReadme).toContain("generic web server");
     expect(adaptiveNavReadme).toContain("adaptive");
     expect(compatReadme).toContain("third-party");
     expect(compatReadme).toContain("vanjs-core");

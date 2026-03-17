@@ -402,13 +402,21 @@ SSG also consumes the same route graph:
 
 ```ts
 import { loadRoutes } from "van-stack/compiler";
-import { buildStaticRoutes } from "van-stack/ssg";
+import { buildStaticRoutes, exportStaticSite } from "van-stack/ssg";
 
 const routes = await loadRoutes({ root: "src/routes" });
-const pages = await buildStaticRoutes({ routes });
+const artifacts = await buildStaticRoutes({ routes });
+
+await exportStaticSite({
+  routes,
+  outDir: "dist",
+  assets: [{ from: "public" }],
+});
 ```
 
-Routes that participate in SSG should provide `entries.ts` so dynamic params can expand into concrete paths.
+`buildStaticRoutes(...)` is the in-memory primitive for caches, tests, and previews. `exportStaticSite(...)` writes deployable static output for generic web servers.
+
+Routes that participate in SSG should provide `entries.ts` so dynamic params can expand into concrete paths. That applies to both `page.ts` HTML routes and raw `route.ts` outputs such as `robots.txt`, `feed.xml`, or `sitemap.xml`.
 
 ## Runtime Model
 
@@ -450,7 +458,7 @@ bun run start
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
-- `demo/ssg-site`: focused reference for static generation from route entries
+- `demo/ssg-site`: focused reference for static generation from route entries, raw `route.ts` outputs, and exported asset trees that can be served by generic web servers
 - `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation
 - `demo/third-party-compat`: focused reference for libraries that import `vanjs-core` and `vanjs-ext` directly, rendered through `van-stack/vite` in CSR, `van-stack/compat/node-register` in Node SSR and SSG, and `compat/bun-tsconfig.json` in Bun SSR and SSG
 

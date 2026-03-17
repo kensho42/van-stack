@@ -26,7 +26,9 @@ async function buildShowcaseSsgPages() {
   });
 
   return new Map(
-    pages.map((page) => [normalizePath(page.path), page.html] as const),
+    pages
+      .filter((page) => page.kind === "page")
+      .map((page) => [normalizePath(page.path), page.html] as const),
   );
 }
 
