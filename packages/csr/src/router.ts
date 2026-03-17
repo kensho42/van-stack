@@ -1,16 +1,85 @@
 import {
-  type CreateRouterOptions,
+  type BootstrapPayload,
   createInternalDataPath,
+  type HistoryLike,
   matchPath,
   type Navigation,
   type Resolve,
-  type RouteDefinition,
-  type RouteMatch,
+  type RouteMeta,
   type Router,
   type RouterEntry,
   type RouterListener,
   type Transport,
 } from "../../core/src/index";
+
+type MetaModuleLoader<T> = () => Promise<{ default: T }>;
+
+export type RouteMetaModule = (input: {
+  data: unknown;
+  params: Record<string, string>;
+}) => Promise<RouteMeta | undefined> | RouteMeta | undefined;
+
+type HeadElementLike = {
+  getAttribute?: (name: string) => string | null;
+  remove?: () => void;
+  setAttribute: (name: string, value: string) => void;
+  textContent: string;
+};
+
+export type HeadDocumentLike = {
+  createElement: (tagName: string) => HeadElementLike;
+  head: {
+    appendChild: (node: HeadElementLike) => unknown;
+  };
+  querySelector: (selector: string) => HeadElementLike | null;
+  title: string;
+};
+
+export type ClientRouteDefinition = {
+  id: string;
+  path: string;
+  meta?: RouteMetaModule;
+  files?: {
+    meta?: MetaModuleLoader<RouteMetaModule>;
+  };
+};
+
+type CreateHydratedRouterOptions = {
+  bootstrap: BootstrapPayload;
+  document?: HeadDocumentLike;
+  history: HistoryLike;
+  mode: "hydrated";
+  routes: ClientRouteDefinition[];
+  transport?: Transport;
+};
+
+type CreateShellRouterOptions = {
+  document?: HeadDocumentLike;
+  history: HistoryLike;
+  mode: "shell";
+  routes: ClientRouteDefinition[];
+  transport?: Transport;
+};
+
+type CreateCustomRouterOptions = {
+  document?: HeadDocumentLike;
+  history: HistoryLike;
+  mode: "custom";
+  resolve?: Resolve;
+  routes: ClientRouteDefinition[];
+};
+
+type CreateRouterOptions =
+  | CreateHydratedRouterOptions
+  | CreateShellRouterOptions
+  | CreateCustomRouterOptions;
+
+export type ApplyRouteHeadOptions = {
+  data: unknown;
+  document?: HeadDocumentLike;
+  path: string;
+  routes: ClientRouteDefinition[];
+};
 
 function parsePath(path: string) {
   const url = new URL(path, "https://van-stack.local");
@@ -20,6 +89,19 @@ function parsePath(path: string) {
     pathname: url.pathname,
     query: new URLSearchParams(url.searchParams),
   };
+}
+
+function getDocument(document: HeadDocumentLike | undefined) {
+  if (document) {
+    return document;
+  }
+  if (typeof globalThis.document !== "undefined") {
+    return globalThis.document as unknown as HeadDocumentLike;
+  }
+
+  throw new Error(
+    "No document was provided and global document is unavailable.",
+  );
 }
 
 function createDefaultTransport(): Transport {
@@ -55,18 +137,20 @@ function createNavigation(
   };
 }
 
-function createRouteMatch(routes: RouteDefinition[], path: string): RouteMatch {
+function findMatchedRoute(routes: ClientRouteDefinition[], path: string) {
   const { pathname, query } = parsePath(path);
 
   for (const route of routes) {
     const match = matchPath(route.path, pathname);
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
 
     return {
-      route,
       pathname,
       params: match.params,
       query,
+      route,
     };
   }
 
@@ -91,6 +175,114 @@ function getResolve(options: CreateRouterOptions): Resolve {
   return (match, navigation) => transport.load(match, navigation);
 }
 
+async function resolveMetaModule(route: ClientRouteDefinition) {
+  if (route.meta) {
+    return route.meta;
+  }
+  if (!route.files?.meta) {
+    return undefined;
+  }
+
+  const module = await route.files.meta();
+  return module.default;
+}
+
+function setManagedTitle(
+  document: HeadDocumentLike,
+  title: string | undefined,
+) {
+  document.title = title ?? "";
+
+  const existing = document.querySelector("title");
+  if (existing) {
+    existing.textContent = document.title;
+    return;
+  }
+
+  const element = document.createElement("title");
+  element.textContent = document.title;
+  document.head.appendChild(element);
+}
+
+function syncHeadTag(
+  document: HeadDocumentLike,
+  selector: string,
+  tagName: string,
+  fixedAttributes: Record<string, string>,
+  valueAttribute: string,
+  value: string | undefined,
+) {
+  const existing = document.querySelector(selector);
+
+  if (!value) {
+    existing?.remove?.();
+    return;
+  }
+
+  const element = existing ?? document.createElement(tagName);
+  for (const [name, attributeValue] of Object.entries(fixedAttributes)) {
+    element.setAttribute(name, attributeValue);
+  }
+  element.setAttribute(valueAttribute, value);
+
+  if (!existing) {
+    document.head.appendChild(element);
+  }
+}
+
+function applyResolvedMeta(
+  meta: RouteMeta | undefined,
+  document: HeadDocumentLike,
+) {
+  setManagedTitle(document, meta?.title);
+  syncHeadTag(
+    document,
+    'meta[name="description"]',
+    "meta",
+    { name: "description" },
+    "content",
+    meta?.description,
+  );
+  syncHeadTag(
+    document,
+    'link[rel="canonical"]',
+    "link",
+    { rel: "canonical" },
+    "href",
+    meta?.canonical,
+  );
+  syncHeadTag(
+    document,
+    'meta[property="og:title"]',
+    "meta",
+    { property: "og:title" },
+    "content",
+    meta?.openGraph?.title,
+  );
+  syncHeadTag(
+    document,
+    'meta[property="og:description"]',
+    "meta",
+    { property: "og:description" },
+    "content",
+    meta?.openGraph?.description,
+  );
+}
+
+export async function applyRouteHead(options: ApplyRouteHeadOptions) {
+  const document = getDocument(options.document);
+  const match = findMatchedRoute(options.routes, options.path);
+  const metaModule = await resolveMetaModule(match.route);
+  const meta = metaModule
+    ? await metaModule({
+        data: options.data,
+        params: match.params,
+      })
+    : undefined;
+
+  applyResolvedMeta(meta, document);
+}
+
 export function createRouter(options: CreateRouterOptions) {
   let current: RouterEntry | null = null;
   let activeController: AbortController | null = null;
@@ -104,7 +296,7 @@ export function createRouter(options: CreateRouterOptions) {
   }
 
   if (options.mode === "hydrated") {
-    createRouteMatch(
+    findMatchedRoute(
       options.routes,
       options.bootstrap.path ?? options.bootstrap.pathname,
     );
@@ -120,18 +312,36 @@ export function createRouter(options: CreateRouterOptions) {
     activeController?.abort();
     activeController = new AbortController();
 
-    const match = createRouteMatch(options.routes, path);
+    const match = findMatchedRoute(options.routes, path);
     const navigation = createNavigation(
       match.pathname,
       match.query,
       activeController.signal,
     );
-    const data = await resolve(match, navigation);
+    const data = await resolve(
+      {
+        route: match.route,
+        pathname: match.pathname,
+        params: match.params,
+        query: match.query,
+      },
+      navigation,
+    );
 
     current = {
       path: parsePath(path).path,
       data,
     };
+
+    if (options.document) {
+      await applyRouteHead({
+        routes: options.routes,
+        path,
+        data,
+        document: options.document,
+      });
+    }
+
     notify(current);
 
     return current;

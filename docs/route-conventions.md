@@ -20,6 +20,8 @@ Helpers such as `_components` are ignored unless they use a reserved filename.
 
 `meta.ts` is the route-level place for page metadata such as title, description, and canonical URL.
 
+`loader.ts` receives `{ params, request }`, which gives SSR and hydrated routes access to per-request state like cookies or headers without leaving the route module model.
+
 `hydrate.ts` is the client-only route module for real DOM hydration of `app` routes. It receives the existing SSR root plus bootstrap data and should call `van.hydrate(...)` on the DOM nodes that need to become interactive.
 
 `route.ts` is the raw `Request -> Response` escape hatch for non-HTML routes such as `robots.txt`, `sitemap.xml`, feeds, proxy endpoints, or webhooks.

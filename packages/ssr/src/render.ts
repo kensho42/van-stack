@@ -10,14 +10,22 @@ type RouteHandler = (input: {
   request: Request;
   params: Record<string, string>;
 }) => Promise<Response> | Response;
+type RouteLayout = (input: {
+  children: unknown;
+  data: unknown;
+  params: Record<string, string>;
+  path: string;
+}) => Promise<string> | string;
 
 type RouteDefinition = {
   id: string;
   path: string;
   hydrationPolicy?: string;
+  layoutChain?: ModuleLoader<RouteLayout>[];
   route?: RouteHandler;
   loader?: (input: {
     params: Record<string, string>;
+    request: Request;
   }) => Promise<unknown> | unknown;
   meta?: (input: {
     params: Record<string, string>;
@@ -27,7 +35,10 @@ type RouteDefinition = {
   files?: {
     route?: ModuleLoader<RouteHandler>;
     loader?: ModuleLoader<
-      (input: { params: Record<string, string> }) => Promise<unknown> | unknown
+      (input: {
+        params: Record<string, string>;
+        request: Request;
+      }) => Promise<unknown> | unknown
     >;
     meta?: ModuleLoader<
       (input: {
@@ -42,6 +53,10 @@ type RouteDefinition = {
 type RenderRequestInput = {
   request: Request;
   routes: RouteDefinition[];
+};
+
+type RenderablePageOutput = {
+  render?: () => string;
 };
 
 function getRequestPath(request: Request) {
@@ -114,6 +129,40 @@ function wrapPageBody(body: string, hydrationPolicy: string | undefined) {
   return body;
 }
 
+function renderPageOutput(output: unknown): string {
+  if (
+    output &&
+    typeof output === "object" &&
+    typeof (output as RenderablePageOutput).render === "function"
+  ) {
+    return (output as RenderablePageOutput).render?.() ?? "";
+  }
+
+  return String(output ?? "");
+}
+
+async function applyLayouts(
+  body: unknown,
+  route: RouteDefinition,
+  data: unknown,
+  params: Record<string, string>,
+  path: string,
+) {
+  let output = body;
+
+  for (const layoutLoader of [...(route.layoutChain ?? [])].reverse()) {
+    const module = await layoutLoader();
+    output = await module.default({
+      children: output,
+      data,
+      params,
+      path,
+    });
+  }
+
+  return renderPageOutput(output);
+}
+
 export async function renderRequest(input: RenderRequestInput) {
   bindServerRenderEnv();
   const requestPath = getRequestPath(input.request);
@@ -141,25 +190,40 @@ export async function renderRequest(input: RenderRequestInput) {
       throw new Error(`Route "${route.id}" is missing a page module.`);
     }
 
-    const data = loader ? await loader({ params: match.params }) : null;
+    const hydrationPolicy = route.hydrationPolicy ?? defaultHydrationPolicy;
+    const data = loader
+      ? await loader({ params: match.params, request: input.request })
+      : null;
     const meta = metaHandler
       ? await metaHandler({ params: match.params, data })
       : undefined;
+    const pageOutput = await page({ data });
     const body = wrapPageBody(
-      await page({ data }),
-      route.hydrationPolicy ?? defaultHydrationPolicy,
+      await applyLayouts(
+        pageOutput,
+        route,
+        data,
+        match.params,
+        requestPath.path,
+      ),
+      hydrationPolicy,
     );
-    const bootstrap = JSON.stringify({
-      routeId: route.id,
-      path: requestPath.path,
-      pathname: requestPath.pathname,
-      params: match.params,
-      hydrationPolicy: route.hydrationPolicy ?? defaultHydrationPolicy,
-      data,
-    });
+    const bootstrap =
+      hydrationPolicy !== "document-only"
+        ? `<script type="application/json" data-van-stack-bootstrap>${JSON.stringify(
+            {
+              routeId: route.id,
+              path: requestPath.path,
+              pathname: requestPath.pathname,
+              params: match.params,
+              hydrationPolicy,
+              data,
+            },
+          )}</script>`
+        : "";
 
     return new Response(
-      `<!doctype html><html><head>${buildHead(meta)}</head><body>${body}<script type="application/json" data-van-stack-bootstrap>${bootstrap}</script></body></html>`,
+      `<!doctype html><html><head>${buildHead(meta)}</head><body>${body}${bootstrap}</body></html>`,
       {
         status: 200,
         headers: {

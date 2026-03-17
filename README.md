@@ -74,13 +74,17 @@ await writeRouteManifest({ root: "src/routes" });
 `loader.ts`
 
 ```ts
-export default async function loader(input: { params: { slug: string } }) {
+export default async function loader(input: {
+  params: { slug: string };
+  request: Request;
+}) {
   return {
     post: {
       slug: input.params.slug,
       title: `Post: ${input.params.slug}`,
       excerpt: `Notes about ${input.params.slug}`,
     },
+    requestUrl: input.request.url,
   };
 }
 ```
@@ -205,6 +209,22 @@ app.router.subscribe((entry) => {
 
 `hydrateApp(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, waits for that route-level DOM hydration to finish via `app.ready`, then creates a `hydrated` router, intercepts same-origin in-app link clicks, and listens for `popstate`.
 
+### Islands Hydration
+
+For SSR branches using `hydrationPolicy: "islands"`, you can hydrate focused route islands without creating a client router:
+
+```ts
+import { loadRoutes } from "van-stack/compiler";
+import { hydrateIslands } from "van-stack/csr";
+
+const routes = await loadRoutes({ root: "src/routes" });
+
+const hydration = hydrateIslands({ routes });
+await hydration.ready;
+```
+
+`hydrateIslands(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, and runs that route-level hydration against the server-owned document without taking over navigation.
+
 ## API Tour
 
 ### `van-stack/compiler`
@@ -256,6 +276,49 @@ export default function page() {
 ```
 
 The render facade also exposes `van.hydrate(...)` for route-level DOM hydration modules. Under the hood, CSR binds the real VanX runtime while SSR and SSG bind the server-safe VanX placeholder recommended by the official Van fullstack SSR pattern.
+
+### Third-Party Van Libraries
+
+First-party route code should still use `van-stack/render`. Compatibility shims exist for imported packages that hard-import `vanjs-core` or `vanjs-ext` directly:
+
+```ts
+import { vanStackVite, getVanStackCompatAliases } from "van-stack/vite";
+```
+
+Use `vanStackVite()` for Vite apps, or reuse `getVanStackCompatAliases()` in Vitest and custom Vite configs so those packages resolve through the bound `van-stack/render` environment. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
+
+For Bun SSR and SSG entrypoints, run Bun with the shipped compat override:
+
+```bash
+bun run --tsconfig-override ./node_modules/van-stack/compat/bun-tsconfig.json ./src/server.ts
+```
+
+`van-stack/compat/bun-preload` is intentionally unsupported. Bun runtime plugins do not intercept bare package imports during `bun run`, so Bun needs the `tsconfig` override path instead.
+
+For a repeatable app setup, add a dedicated Bun tsconfig and call it from package scripts:
+
+`tsconfig.bun.json`
+
+```json
+{
+  "extends": "./node_modules/van-stack/compat/bun-tsconfig.json"
+}
+```
+
+`package.json`
+
+```json
+{
+  "scripts": {
+    "ssr": "bun run --tsconfig-override ./tsconfig.bun.json ./src/server.ts",
+    "ssg": "bun run --tsconfig-override ./tsconfig.bun.json ./src/build.ts"
+  }
+}
+```
+
+`bunfig.toml` does not currently expose a `tsconfig` override setting, so the supported Bun DX path is a checked-in `tsconfig.bun.json` plus package script aliases.
+
+Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means you must bind the render env before module evaluation reaches any imported library that reads `van` or `vanX` eagerly.
 
 ### `van-stack/csr`
 
@@ -339,13 +402,21 @@ SSG also consumes the same route graph:
 
 ```ts
 import { loadRoutes } from "van-stack/compiler";
-import { buildStaticRoutes } from "van-stack/ssg";
+import { buildStaticRoutes, exportStaticSite } from "van-stack/ssg";
 
 const routes = await loadRoutes({ root: "src/routes" });
-const pages = await buildStaticRoutes({ routes });
+const artifacts = await buildStaticRoutes({ routes });
+
+await exportStaticSite({
+  routes,
+  outDir: "dist",
+  assets: [{ from: "public" }],
+});
 ```
 
-Routes that participate in SSG should provide `entries.ts` so dynamic params can expand into concrete paths.
+`buildStaticRoutes(...)` is the in-memory primitive for caches, tests, and previews. `exportStaticSite(...)` writes deployable static output for generic web servers.
+
+Routes that participate in SSG should provide `entries.ts` so dynamic params can expand into concrete paths. That applies to both `page.ts` HTML routes and raw `route.ts` outputs such as `robots.txt`, `feed.xml`, or `sitemap.xml`.
 
 ## Runtime Model
 
@@ -374,10 +445,22 @@ Presentation is separate from route matching and data loading. The same route tr
 
 ## Demos
 
-- `demo/csr`: `hydrated`, `shell`, and `custom` client boot patterns
-- `demo/ssr-blog`: SSR blog route with slug loader and bootstrap handoff
-- `demo/ssg-site`: static generation from route entries
-- `demo/adaptive-nav`: `replace` vs `stack` presentation
+For the fastest evaluator path, run the showcase from the repo root:
+
+```bash
+bun run start
+```
+
+- `demo/showcase`: evaluator-first demo workspace for the shared blog app
+  - `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, and `custom` comparisons against one Northstar Journal blog app
+  - Post detail routes demonstrate server-backed likes and bookmarks, with component-level hydration for `hydrated` and `islands`
+  - `Guided Walkthrough`: annotated evaluator pages that explain those same six modes and link back to the live routes
+  - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
+- `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
+- `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
+- `demo/ssg-site`: focused reference for static generation from route entries, raw `route.ts` outputs, and exported asset trees that can be served by generic web servers; run `bun ./demo/ssg-site/build.ts` to write `demo/ssg-site/dist/`
+- `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation
+- `demo/third-party-compat`: focused reference for libraries that import `vanjs-core` and `vanjs-ext` directly, rendered through `van-stack/vite` in CSR, `van-stack/compat/node-register` in Node SSR and SSG, and `compat/bun-tsconfig.json` in Bun SSR and SSG
 
 ## Docs
 
@@ -386,6 +469,7 @@ Presentation is separate from route matching and data loading. The same route tr
 - [Loaders And Actions](./docs/loaders-and-actions.md)
 - [Hydration Modes](./docs/hydration-modes.md)
 - [Shared Components](./docs/shared-components.md)
+- [Bun Runtime](./docs/bun.md)
 - [Adaptive Navigation](./docs/adaptive-navigation.md)
 - [Optional Vite Integration](./docs/vite.md)
 - [Demos](./docs/demos.md)

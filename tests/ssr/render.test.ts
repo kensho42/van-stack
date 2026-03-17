@@ -1,5 +1,6 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
+import { van } from "../../packages/core/src/render";
 import { renderRequest } from "../../packages/ssr/src/index";
 
 describe("ssr renderer", () => {
@@ -128,5 +129,168 @@ describe("ssr renderer", () => {
       "text/plain; charset=utf-8",
     );
     expect(await response.text()).toBe("User-agent: *\nAllow: /\n");
+  });
+
+  test("renders Van facade page output instead of stringifying it", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/van"),
+      routes: [
+        {
+          id: "van",
+          path: "/van",
+          page() {
+            const { article, h1, p } = van.tags;
+
+            return article(
+              h1("Van Rendered"),
+              p("SSR should emit real HTML from Van output."),
+            );
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain("<article>");
+    expect(html).toContain("<h1>Van Rendered</h1>");
+    expect(html).not.toContain("[object Object]");
+  });
+
+  test("omits bootstrap markup for document-only SSR routes", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/ssr-only"),
+      routes: [
+        {
+          id: "ssr-only",
+          path: "/ssr-only",
+          hydrationPolicy: "document-only",
+          page() {
+            return `<article><h1>SSR Only</h1></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain("<article><h1>SSR Only</h1></article>");
+    expect(html).not.toContain('data-van-stack-app-root=""');
+    expect(html).not.toContain("data-van-stack-bootstrap");
+  });
+
+  test("keeps bootstrap markup for islands routes without app-root takeover", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/islands"),
+      routes: [
+        {
+          id: "islands",
+          path: "/islands",
+          hydrationPolicy: "islands",
+          page() {
+            return `<article><h1>Islands</h1></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain("<article><h1>Islands</h1></article>");
+    expect(html).not.toContain('data-van-stack-app-root=""');
+    expect(html).toContain("data-van-stack-bootstrap");
+    expect(html).toContain('"hydrationPolicy":"islands"');
+  });
+
+  test("wraps matched pages through the discovered layout chain", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/posts/runtime-gallery-tour"),
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          async loader({ params }) {
+            return {
+              post: {
+                slug: params.slug,
+                title: "Runtime Gallery Tour",
+              },
+            };
+          },
+          layoutChain: [
+            async () => ({
+              default({
+                children,
+                data,
+              }: {
+                children: unknown;
+                data: unknown;
+              }) {
+                const typedData = data as { post: { title: string } };
+
+                return `<section data-presentation="stack"><header>${typedData.post.title}</header>${children}</section>`;
+              },
+            }),
+          ],
+          page({ data }) {
+            const typedData = data as { post: { title: string } };
+            return `<article><h1>${typedData.post.title}</h1></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain('<section data-presentation="stack">');
+    expect(html).toContain("<header>Runtime Gallery Tour</header>");
+    expect(html).toContain("<article><h1>Runtime Gallery Tour</h1></article>");
+  });
+
+  test("passes the request into loaders so server rendering can depend on session state", async () => {
+    const loader = vi.fn(
+      async ({
+        params,
+        request,
+      }: {
+        params: Record<string, string>;
+        request: Request;
+      }) => ({
+        cookie: request.headers.get("cookie"),
+        slug: params.slug,
+      }),
+    );
+    const response = await renderRequest({
+      request: new Request("https://example.com/posts/runtime-gallery-tour", {
+        headers: {
+          cookie: "showcase-session=test-session",
+        },
+      }),
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          loader,
+          page({ data }) {
+            const typedData = data as { cookie: string | null; slug: string };
+            return `<article><h1>${typedData.slug}</h1><p>${typedData.cookie}</p></article>`;
+          },
+        },
+      ],
+    });
+
+    expect(loader).toHaveBeenCalledWith({
+      params: { slug: "runtime-gallery-tour" },
+      request: expect.any(Request),
+    });
+    expect(await response.text()).toContain("showcase-session=test-session");
   });
 });

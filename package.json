@@ -7,6 +7,10 @@
     ".": "./packages/core/src/index.ts",
     "./compiler": "./packages/compiler/src/index.ts",
     "./render": "./packages/core/src/render.ts",
+    "./compat/vanjs-core": "./packages/core/src/compat/vanjs-core.ts",
+    "./compat/vanjs-ext": "./packages/core/src/compat/vanjs-ext.ts",
+    "./compat/bun-preload": "./packages/core/src/compat/bun-preload.ts",
+    "./compat/node-register": "./packages/core/src/compat/node-register.ts",
     "./csr": "./packages/csr/src/index.ts",
     "./ssr": "./packages/ssr/src/index.ts",
     "./ssg": "./packages/ssg/src/index.ts",
@@ -17,6 +21,7 @@
     "demo/*"
   ],
   "scripts": {
+    "start": "bun -e \"await import('./demo/showcase/src/runtime/start.ts')\"",
     "test": "vitest run",
     "check": "biome check .",
     "build": "tsc -p tsconfig.json --noEmit"
@@ -25,10 +30,14 @@
     "@biomejs/biome": "2.2.4",
     "@types/node": "24.5.2",
     "typescript": "5.9.2",
+    "vite": "7.3.1",
     "vitest": "3.2.4"
   },
   "dependencies": {
+    "actual-vanjs-core": "npm:vanjs-core@1.6.0",
+    "actual-vanjs-ext": "npm:vanjs-ext@0.6.3",
     "mini-van-plate": "0.6.3",
+    "third-party-lib": "workspace:*",
     "vanjs-core": "1.6.0",
     "vanjs-ext": "0.6.3"
   }

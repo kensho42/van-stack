@@ -67,7 +67,11 @@ function toLayoutChain(segments: string[]): string[] {
     }
   }
 
-  result.pop();
+  const lastSegment = segments.at(-1);
+  if (lastSegment && !isRouteGroup(lastSegment) && lastSegment !== "index") {
+    result.pop();
+  }
+
   return result;
 }
 

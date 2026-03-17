@@ -1,5 +1,7 @@
 # CSR Demo
 
+For the fastest repo tour, start with `bun run start` and the evaluator-first `demo/showcase`.
+
 Demonstrates all three CSR runtime modes:
 
 - `hydrated`: start from SSR HTML and continue on the client with `hydrateApp({ routes })`
@@ -9,3 +11,5 @@ Demonstrates all three CSR runtime modes:
 Each route module imports `van` from `van-stack/render`, not `vanjs-core` directly.
 
 In the filesystem-routing path, the demo would typically call `await loadRoutes({ root: "src/routes" })`. Writing `.van-stack/routes.generated.ts` stays available for custom tooling, but it is not the default path.
+
+This folder stays as a focused reference for the CSR-specific pieces after the six-mode showcase demo.

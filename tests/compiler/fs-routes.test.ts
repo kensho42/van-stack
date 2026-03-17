@@ -77,6 +77,7 @@ describe("filesystem route compiler", () => {
   test("ignores non-reserved helpers and drops route groups from the URL", () => {
     const routes = compileRoutesFromPaths([
       "/src/routes/(marketing)/about/page.ts",
+      "/src/routes/posts/layout.ts",
       "/src/routes/(marketing)/about/_components/card.ts",
       "/src/routes/posts/_components/button.ts",
       "/src/routes/posts/index/page.ts",
@@ -100,7 +101,7 @@ describe("filesystem route compiler", () => {
         files: {
           page: "/src/routes/posts/index/page.ts",
         },
-        layoutChain: [],
+        layoutChain: ["posts"],
         params: [],
       },
     ]);
