@@ -9,6 +9,7 @@ const requiredDocs = [
   "demo/ssr-blog/README.md",
   "demo/ssg-site/README.md",
   "demo/adaptive-nav/README.md",
+  "demo/third-party-compat/README.md",
 ] as const;
 
 const requiredShowcaseFiles = [
@@ -18,9 +19,19 @@ const requiredShowcaseFiles = [
   "demo/showcase/src/routes/walkthrough/index/page.ts",
 ] as const;
 
+const requiredCompatDemoFiles = [
+  "demo/third-party-compat/src/routes/csr/page.ts",
+  "demo/third-party-compat/src/routes/ssr/page.ts",
+  "demo/third-party-compat/src/routes/ssg/page.ts",
+] as const;
+
 describe("docs and demos", () => {
   test("ships the showcase docs and entry files", () => {
-    for (const file of [...requiredDocs, ...requiredShowcaseFiles]) {
+    for (const file of [
+      ...requiredDocs,
+      ...requiredShowcaseFiles,
+      ...requiredCompatDemoFiles,
+    ]) {
       expect(existsSync(file)).toBe(true);
     }
   });
@@ -37,7 +48,11 @@ describe("docs and demos", () => {
     const readme = readFileSync("README.md", "utf8");
 
     expect(readme).toContain("demo/showcase");
+    expect(readme).toContain("demo/third-party-compat");
     expect(readme).toContain("bun run start");
+    expect(readme).toContain("van-stack/vite");
+    expect(readme).toContain("van-stack/compat/node-register");
+    expect(readme).toContain("bind the render env before module evaluation");
     expect(readme).toContain("ssg");
     expect(readme).toContain("ssr");
     expect(readme).toContain("hydrated");
@@ -69,9 +84,27 @@ describe("docs and demos", () => {
       "demo/adaptive-nav/README.md",
       "utf8",
     );
+    const compatReadme = readFileSync(
+      "demo/third-party-compat/README.md",
+      "utf8",
+    );
+    const csrPage = readFileSync(
+      "demo/third-party-compat/src/routes/csr/page.ts",
+      "utf8",
+    );
+    const ssrPage = readFileSync(
+      "demo/third-party-compat/src/routes/ssr/page.ts",
+      "utf8",
+    );
+    const ssgPage = readFileSync(
+      "demo/third-party-compat/src/routes/ssg/page.ts",
+      "utf8",
+    );
 
     expect(demos).toContain("demo/showcase");
     expect(demos).toContain("demo/adaptive-nav");
+    expect(demos).toContain("demo/third-party-compat");
+    expect(demos).toContain("third-party");
     expect(demos).toContain("ssg");
     expect(demos).toContain("ssr");
     expect(demos).toContain("hydrated");
@@ -80,5 +113,16 @@ describe("docs and demos", () => {
     expect(demos).toContain("custom");
     expect(demos).not.toMatch(/demo\/showcase[\s\S]{0,160}adaptive/i);
     expect(adaptiveNavReadme).toContain("adaptive");
+    expect(compatReadme).toContain("third-party");
+    expect(compatReadme).toContain("vanjs-core");
+    expect(compatReadme).toContain("vanjs-ext");
+    expect(compatReadme).toContain("van-stack/vite");
+    expect(compatReadme).toContain("van-stack/compat/node-register");
+    expect(csrPage).toContain('from "third-party-lib"');
+    expect(csrPage).not.toContain("van-stack/render");
+    expect(ssrPage).toContain('from "third-party-lib"');
+    expect(ssrPage).not.toContain("van-stack/render");
+    expect(ssgPage).toContain('from "third-party-lib"');
+    expect(ssgPage).not.toContain("van-stack/render");
   });
 });

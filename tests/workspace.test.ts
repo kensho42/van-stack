@@ -4,10 +4,15 @@ import { describe, expect, test } from "vitest";
 const requiredFiles = [
   "AGENTS.md",
   "packages/core/src/index.ts",
+  "packages/core/src/compat/vanjs-core.ts",
+  "packages/core/src/compat/vanjs-ext.ts",
+  "packages/core/src/compat/bun-preload.ts",
+  "packages/core/src/compat/node-register.ts",
   "packages/compiler/src/index.ts",
   "packages/csr/src/index.ts",
   "packages/ssr/src/index.ts",
   "packages/ssg/src/index.ts",
+  "packages/third-party-lib/src/index.ts",
   "packages/vite/src/index.ts",
 ];
 
@@ -25,6 +30,18 @@ describe("workspace layout", () => {
 
     expect(rootPackage.exports?.["./compiler"]).toBe(
       "./packages/compiler/src/index.ts",
+    );
+    expect(rootPackage.exports?.["./compat/vanjs-core"]).toBe(
+      "./packages/core/src/compat/vanjs-core.ts",
+    );
+    expect(rootPackage.exports?.["./compat/vanjs-ext"]).toBe(
+      "./packages/core/src/compat/vanjs-ext.ts",
+    );
+    expect(rootPackage.exports?.["./compat/bun-preload"]).toBe(
+      "./packages/core/src/compat/bun-preload.ts",
+    );
+    expect(rootPackage.exports?.["./compat/node-register"]).toBe(
+      "./packages/core/src/compat/node-register.ts",
     );
     expect(existsSync("packages/compiler/package.json")).toBe(false);
   });

@@ -277,6 +277,18 @@ export default function page() {
 
 The render facade also exposes `van.hydrate(...)` for route-level DOM hydration modules. Under the hood, CSR binds the real VanX runtime while SSR and SSG bind the server-safe VanX placeholder recommended by the official Van fullstack SSR pattern.
 
+### Third-Party Van Libraries
+
+First-party route code should still use `van-stack/render`. Compatibility shims exist for imported packages that hard-import `vanjs-core` or `vanjs-ext` directly:
+
+```ts
+import { vanStackVite, getVanStackCompatAliases } from "van-stack/vite";
+```
+
+Use `vanStackVite()` for Vite apps, or reuse `getVanStackCompatAliases()` in Vitest and custom Vite configs so those packages resolve through the bound `van-stack/render` environment. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
+
+Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means you must bind the render env before module evaluation reaches any imported library that reads `van` or `vanX` eagerly.
+
 ### `van-stack/csr`
 
 `van-stack/csr` supports three runtime modes:
@@ -409,6 +421,7 @@ bun run start
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
 - `demo/ssg-site`: focused reference for static generation from route entries
 - `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation
+- `demo/third-party-compat`: focused reference for libraries that import `vanjs-core` and `vanjs-ext` directly, rendered through `van-stack/vite` in CSR and `van-stack/compat/node-register` in Node SSR and SSG
 
 ## Docs
 

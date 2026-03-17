@@ -26,4 +26,11 @@ Runtime/bootstrap code binds the concrete render implementation through `bindRen
 
 The facade also exposes `van.hydrate(...)` for route-level `hydrate.ts` modules in `app` SSR handoff flows.
 
+Imported third-party packages are a separate boundary. If a package hard-imports `vanjs-core` or `vanjs-ext`, keep your own app code on `van-stack/render` and enable compatibility at the resolver layer instead:
+
+- `van-stack/vite` or `getVanStackCompatAliases()` for Vite and Vitest
+- `van-stack/compat/node-register` for direct Node SSR and SSG entrypoints
+
+Those resolver hooks must run before the imported package is evaluated. If the package reads `van` or `vanX` at module scope before the runtime binds the render env, it will still fail with the usual unbound-render error.
+
 Render-time code stays environment-safe. Browser-only behavior belongs in explicit client-only enhancement paths.

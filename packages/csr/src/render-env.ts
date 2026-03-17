@@ -1,5 +1,5 @@
-import vanCore from "vanjs-core";
-import * as vanXRuntime from "vanjs-ext";
+import vanCore from "actual-vanjs-core";
+import * as vanXRuntime from "actual-vanjs-ext";
 
 import { bindRenderEnv } from "../../core/src/render";
 
