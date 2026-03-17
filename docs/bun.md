@@ -52,6 +52,8 @@ await exportStaticSite({
 
 Use `buildStaticRoutes(...)` when you want in-memory artifacts for testing, previews, or cache warm-up. Use `exportStaticSite(...)` when you want a real static output tree that any web server can serve.
 
+The focused reference for that path in this repo is `demo/ssg-site`, which you can build with `bun ./demo/ssg-site/build.ts`.
+
 ## Third-Party Van Packages
 
 If imported packages hard-import `vanjs-core` or `vanjs-ext`, Bun needs a `tsconfig` override so those imports resolve through the active `van-stack/render` environment.

@@ -10,4 +10,19 @@ Use `buildStaticRoutes({ routes })` when you want in-memory HTML or raw route ar
 
 That export tree can be served by any generic web server.
 
+Run the demo export from the repo root:
+
+```bash
+bun ./demo/ssg-site/build.ts
+```
+
+That writes `demo/ssg-site/dist/` with:
+
+- `index.html`
+- `posts/launch-week/index.html`
+- `posts/cdn-cutover/index.html`
+- `robots.txt`
+- `assets/site.css`
+- `assets/images/pattern.txt`
+
 For the quickest evaluator flow, start with `bun run start` and `demo/showcase`. This folder stays as the focused reference for the SSG path after the six-mode showcase.

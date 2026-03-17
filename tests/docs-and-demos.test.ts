@@ -27,12 +27,15 @@ const requiredCompatDemoFiles = [
   "demo/third-party-compat/tsconfig.bun.json.example",
 ] as const;
 
+const requiredSsgDemoFiles = ["demo/ssg-site/build.ts"] as const;
+
 describe("docs and demos", () => {
   test("ships the showcase docs and entry files", () => {
     for (const file of [
       ...requiredDocs,
       ...requiredShowcaseFiles,
       ...requiredCompatDemoFiles,
+      ...requiredSsgDemoFiles,
     ]) {
       expect(existsSync(file)).toBe(true);
     }
@@ -137,6 +140,8 @@ describe("docs and demos", () => {
     expect(ssgReadme).toContain("exportStaticSite");
     expect(ssgReadme).toContain("route.ts");
     expect(ssgReadme).toContain("generic web server");
+    expect(ssgReadme).toContain("bun ./demo/ssg-site/build.ts");
+    expect(ssgReadme).toContain("dist/");
     expect(adaptiveNavReadme).toContain("adaptive");
     expect(compatReadme).toContain("third-party");
     expect(compatReadme).toContain("vanjs-core");

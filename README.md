@@ -458,7 +458,7 @@ bun run start
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
-- `demo/ssg-site`: focused reference for static generation from route entries, raw `route.ts` outputs, and exported asset trees that can be served by generic web servers
+- `demo/ssg-site`: focused reference for static generation from route entries, raw `route.ts` outputs, and exported asset trees that can be served by generic web servers; run `bun ./demo/ssg-site/build.ts` to write `demo/ssg-site/dist/`
 - `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation
 - `demo/third-party-compat`: focused reference for libraries that import `vanjs-core` and `vanjs-ext` directly, rendered through `van-stack/vite` in CSR, `van-stack/compat/node-register` in Node SSR and SSG, and `compat/bun-tsconfig.json` in Bun SSR and SSG
 
