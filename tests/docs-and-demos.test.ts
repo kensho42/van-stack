@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 
 const requiredDocs = [
   "README.md",
+  "docs/bun.md",
   "docs/demos.md",
   "demo/showcase/README.md",
   "demo/csr/README.md",
@@ -55,6 +56,7 @@ describe("docs and demos", () => {
     expect(readme).toContain("compat/bun-tsconfig.json");
     expect(readme).toContain("tsconfig.bun.json");
     expect(readme).toContain("bunfig.toml");
+    expect(readme).toContain("docs/bun.md");
     expect(readme).toContain("van-stack/compat/node-register");
     expect(readme).toContain("bind the render env before module evaluation");
     expect(readme).toContain("ssg");
@@ -84,6 +86,7 @@ describe("docs and demos", () => {
 
   test("keeps adaptive navigation documented as a separate focused demo", () => {
     const demos = readFileSync("docs/demos.md", "utf8");
+    const bunDoc = readFileSync("docs/bun.md", "utf8");
     const adaptiveNavReadme = readFileSync(
       "demo/adaptive-nav/README.md",
       "utf8",
@@ -116,6 +119,13 @@ describe("docs and demos", () => {
     expect(demos).toContain("shell");
     expect(demos).toContain("custom");
     expect(demos).not.toMatch(/demo\/showcase[\s\S]{0,160}adaptive/i);
+    expect(bunDoc).toContain("tsconfig.bun.json");
+    expect(bunDoc).toContain("compat/bun-tsconfig.json");
+    expect(bunDoc).toContain("bunfig.toml");
+    expect(bunDoc).toContain("van-stack/compiler");
+    expect(bunDoc).toContain("van-stack/ssr");
+    expect(bunDoc).toContain("van-stack/ssg");
+    expect(bunDoc).toContain("van-stack/vite");
     expect(adaptiveNavReadme).toContain("adaptive");
     expect(compatReadme).toContain("third-party");
     expect(compatReadme).toContain("vanjs-core");

@@ -38,3 +38,5 @@ export default defineConfig({
 This compatibility path only works if the aliases are active before the third-party package is evaluated.
 
 The core routing model and route discovery path stay usable without Vite.
+
+If your server or SSG entrypoints run under Bun, pair the Vite setup with the Bun runtime guidance in [Bun Runtime](./bun.md).

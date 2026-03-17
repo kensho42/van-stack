@@ -461,6 +461,7 @@ bun run start
 - [Loaders And Actions](./docs/loaders-and-actions.md)
 - [Hydration Modes](./docs/hydration-modes.md)
 - [Shared Components](./docs/shared-components.md)
+- [Bun Runtime](./docs/bun.md)
 - [Adaptive Navigation](./docs/adaptive-navigation.md)
 - [Optional Vite Integration](./docs/vite.md)
 - [Demos](./docs/demos.md)

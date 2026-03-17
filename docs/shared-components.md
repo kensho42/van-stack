@@ -34,6 +34,8 @@ Imported third-party packages are a separate boundary. If a package hard-imports
 
 For Bun apps, keep that override in a checked-in `tsconfig.bun.json` that extends `./node_modules/van-stack/compat/bun-tsconfig.json`, then call it from package scripts. `bunfig.toml` does not currently expose the same setting.
 
+See [Bun Runtime](./bun.md) for the recommended Bun script layout.
+
 Those resolver hooks must run before the imported package is evaluated. If the package reads `van` or `vanX` at module scope before the runtime binds the render env, it will still fail with the usual unbound-render error.
 
 Render-time code stays environment-safe. Browser-only behavior belongs in explicit client-only enhancement paths.
