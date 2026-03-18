@@ -14,6 +14,7 @@ The older demo folders remain focused references once you want to inspect one ru
   - `Guided Walkthrough`: annotated capability pages that link back to the matching live routes for those same six modes
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` CSR boot patterns, including `hydrateApp({ routes })`, resolver-driven custom flows, and component-level custom fetching
+- `demo/chunked-csr`: focused reference for route-level browser chunking through `.van-stack/routes.generated.ts`, `startClientApp({ routes, ... })`, split Bun browser assets, and served secondary chunks
 - `demo/ssr-blog`: focused reference for a `hydrated` SSR blog route with slug loader, route-level `hydrate.ts`, bootstrap payload rendering, compiler-loaded filesystem routes, and automatic `app` handoff through `hydrateApp({ routes })`
 - `demo/ssg-site`: focused reference for static generation from route entries discovered under `src/routes`, then exported as static files for generic web servers; run `bun ./demo/ssg-site/build.ts` to write `demo/ssg-site/dist/`
 - `demo/adaptive-nav`: focused reference for replace-vs-stack presentation with filesystem route discovery

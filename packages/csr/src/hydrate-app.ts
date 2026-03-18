@@ -1,6 +1,7 @@
 import type {
   BootstrapPayload,
   HistoryLike,
+  RouteHydrateModule,
   Router,
   Transport,
 } from "../../core/src/index";
@@ -67,6 +68,7 @@ export type HydrateAppOptions = {
   bootstrapSelector?: string;
   document?: DocumentLike;
   history?: HistoryLike;
+  rootSelector?: string;
   routes: HydratableRoute[];
   transport?: Transport;
   window?: WindowLike;
@@ -100,17 +102,11 @@ export type RouteHydrateInput = {
   path: string;
 };
 
-export type RouteHydrateModule = (input: RouteHydrateInput) => unknown;
+export type { RouteHydrateModule } from "../../core/src/index";
 
 export type HydratableRoute = ClientRouteDefinition & {
-  files?: {
-    hydrate?: () => Promise<{ default: RouteHydrateModule }>;
-    meta?: ClientRouteDefinition["files"] extends infer Files
-      ? Files extends { meta?: infer Meta }
-        ? Meta
-        : never
-      : never;
-  };
+  hydrate?: RouteHydrateModule;
+  files?: ClientRouteDefinition["files"];
 };
 
 function getDocument(document: DocumentLike | undefined) {
@@ -161,8 +157,8 @@ function getCurrentPath(window: WindowLike) {
   return `${window.location.pathname}${window.location.search}`;
 }
 
-function getAppRoot(document: DocumentLike) {
-  const root = document.querySelector(defaultAppRootSelector);
+function getAppRoot(document: DocumentLike, selector = defaultAppRootSelector) {
+  const root = document.querySelector(selector);
 
   if (!root) {
     throw new Error("No van-stack app root was found in the document.");
@@ -204,10 +200,12 @@ async function hydrateRouteRoot(
   root: AppRootLike,
 ) {
   const hydrateFactory = route.files?.hydrate;
-  if (!hydrateFactory) return;
+  const hydrate =
+    route.hydrate ??
+    (hydrateFactory ? (await hydrateFactory()).default : undefined);
+  if (!hydrate) return;
 
-  const module = await hydrateFactory();
-  await module.default({
+  await hydrate({
     root,
     data: bootstrap.data,
     params: bootstrap.params ?? {},
@@ -265,7 +263,7 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     transport: options.transport,
     document: document as never,
   });
-  const root = getAppRoot(document);
+  const root = getAppRoot(document, options.rootSelector);
   const matchedRoute = getMatchedRoute(options.routes, bootstrap);
   const ready = Promise.all([
     hydrateRouteRoot(matchedRoute, bootstrap, root),

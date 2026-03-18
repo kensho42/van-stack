@@ -31,7 +31,7 @@ bun add van-stack
 ## How It Fits Together
 
 1. Author route modules under `src/routes`.
-2. Use `van-stack/compiler` to load those routes into memory with `loadRoutes({ root: "src/routes" })`.
+2. Use `van-stack/compiler` to load those routes into memory with `loadRoutes({ root: "src/routes" })`, or emit `.van-stack/routes.generated.ts` when a browser CSR app wants route-level chunks.
 3. Write shared route components against `van-stack/render`.
 4. Pass the loaded routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
 5. Add `van-stack/vite` only if you want route-aware DX on top of the compiler layer.
@@ -189,6 +189,25 @@ await router.load("/posts/agentic-coding-is-the-future");
 await router.navigate("/posts/github-down");
 ```
 
+### Chunked CSR Boot
+
+Use the emitted route manifest when a browser CSR app wants bundler-visible lazy `import()` boundaries for per-route chunks:
+
+```ts
+import routes from "../.van-stack/routes.generated";
+import { startClientApp } from "van-stack/csr";
+
+const app = startClientApp({
+  mode: "shell",
+  routes,
+  history: window.history,
+});
+
+await app.ready;
+```
+
+The generated manifest is the opt-in chunking path. Apps that bundle everything eagerly can keep using `loadRoutes({ root: "src/routes" })`.
+
 ### App Hydration Handoff
 
 For SSR branches using `hydrationPolicy: "app"`, the client handoff no longer has to be wired by hand:
@@ -236,11 +255,11 @@ import { loadRoutes, writeRouteManifest } from "van-stack/compiler";
 
 const routes = await loadRoutes({ root: "src/routes" });
 
-// Optional emitted artifact for custom build tooling.
+// Optional emitted artifact for chunked browser CSR or custom build tooling.
 await writeRouteManifest({ root: "src/routes" });
 ```
 
-`loadRoutes(...)` is the recommended path. Writing `.van-stack/routes.generated.ts` is optional.
+`loadRoutes(...)` is still the recommended default. Writing `.van-stack/routes.generated.ts` is the opt-in path when a browser CSR app wants route-level JS chunks.
 
 ### `van-stack/render`
 
@@ -327,6 +346,21 @@ Compatibility only works when the resolver hook runs before those third-party mo
 - `hydrated`: continue from SSR HTML and bootstrap data
 - `shell`: boot from a tiny document and use transport-backed loading
 - `custom`: boot from a tiny document and keep data ownership in the host app or in components
+
+For framework-owned client rendering, use `startClientApp({ routes, ... })`. It accepts either eager route arrays or lazy manifest-shaped routes from `.van-stack/routes.generated.ts`:
+
+```ts
+import routes from "../.van-stack/routes.generated";
+import { startClientApp } from "van-stack/csr";
+
+const app = startClientApp({
+  mode: "shell",
+  routes,
+  history: window.history,
+});
+
+await app.ready;
+```
 
 Resolver-driven `custom` mode:
 
@@ -457,6 +491,7 @@ bun run start
   - `Guided Walkthrough`: annotated evaluator pages that explain those same six modes and link back to the live routes
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
+- `demo/chunked-csr`: focused reference for route-level CSR chunking through `.van-stack/routes.generated.ts` and `startClientApp({ routes })`
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
 - `demo/ssg-site`: focused reference for static generation from route entries, raw `route.ts` outputs, and exported asset trees that can be served by generic web servers; run `bun ./demo/ssg-site/build.ts` to write `demo/ssg-site/dist/`
 - `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation

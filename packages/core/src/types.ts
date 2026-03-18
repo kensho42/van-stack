@@ -25,6 +25,81 @@ export type RouteMeta = {
   };
 };
 
+export type Awaitable<T> = Promise<T> | T;
+
+export type RouteModuleLoader<T = unknown> = () => Promise<{ default: T }>;
+
+export type RouteHandlerModule = (input: {
+  request: Request;
+  params: Record<string, string>;
+}) => Awaitable<Response>;
+
+export type RouteLoaderModule = (input: {
+  params: Record<string, string>;
+  request: Request;
+}) => Awaitable<unknown>;
+
+export type RouteActionModule = (input: {
+  params: Record<string, string>;
+  request: Request;
+}) => Awaitable<unknown>;
+
+export type RouteEntriesModule = () => Awaitable<Record<string, string>[]>;
+
+export type RouteMetaModule = (input: {
+  data: unknown;
+  params: Record<string, string>;
+}) => Awaitable<RouteMeta | undefined>;
+
+export type RoutePageModule = (input: { data: unknown }) => Awaitable<unknown>;
+
+export type RouteHydrateModule = (input: {
+  root: unknown;
+  data: unknown;
+  params: Record<string, string>;
+  path: string;
+}) => unknown;
+
+export type RouteErrorModule = (input: {
+  error: unknown;
+  params: Record<string, string>;
+  path: string;
+}) => Awaitable<unknown>;
+
+export type RouteLayoutModule = (input: {
+  children: unknown;
+  data: unknown;
+  params: Record<string, string>;
+  path: string;
+}) => Awaitable<unknown>;
+
+export type RuntimeRouteFiles = {
+  action?: RouteModuleLoader<RouteActionModule>;
+  entries?: RouteModuleLoader<RouteEntriesModule>;
+  error?: RouteModuleLoader<RouteErrorModule>;
+  hydrate?: RouteModuleLoader<RouteHydrateModule>;
+  loader?: RouteModuleLoader<RouteLoaderModule>;
+  meta?: RouteModuleLoader<RouteMetaModule>;
+  page?: RouteModuleLoader<RoutePageModule>;
+  route?: RouteModuleLoader<RouteHandlerModule>;
+};
+
+export type RuntimeRouteDefinition = {
+  id: string;
+  path: string;
+  hydrationPolicy?: HydrationPolicy;
+  action?: RouteActionModule;
+  entries?: RouteEntriesModule;
+  error?: RouteErrorModule;
+  hydrate?: RouteHydrateModule;
+  loader?: RouteLoaderModule;
+  meta?: RouteMetaModule;
+  page?: RoutePageModule;
+  route?: RouteHandlerModule;
+  files?: RuntimeRouteFiles;
+  layoutChain?: readonly RouteModuleLoader<RouteLayoutModule>[];
+};
+
 export type NormalizedRoute = {
   id: string;
   path: string;

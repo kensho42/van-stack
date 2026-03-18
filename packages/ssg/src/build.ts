@@ -1,58 +1,13 @@
 import { copyFile, mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
-import type { RouteMeta } from "../../core/src/index";
+import type {
+  RouteHandlerModule,
+  RouteModuleLoader,
+  RuntimeRouteDefinition,
+} from "../../core/src/index";
 import { renderRequest } from "../../ssr/src/render";
 import { bindStaticRenderEnv } from "./render-env";
-
-type ModuleLoader<T> = () => Promise<{ default: T }>;
-type RouteHandler = (input: {
-  request: Request;
-  params: Record<string, string>;
-}) => Promise<Response> | Response;
-type RouteLayout = (input: {
-  children: unknown;
-  data: unknown;
-  params: Record<string, string>;
-  path: string;
-}) => Promise<string> | string;
-
-type StaticRouteDefinition = {
-  id: string;
-  path: string;
-  hydrationPolicy?: string;
-  layoutChain?: ModuleLoader<RouteLayout>[];
-  route?: RouteHandler;
-  entries?: () => Promise<Record<string, string>[]> | Record<string, string>[];
-  loader?: (input: {
-    params: Record<string, string>;
-    request: Request;
-  }) => Promise<unknown> | unknown;
-  meta?: (input: {
-    params: Record<string, string>;
-    data: unknown;
-  }) => Promise<RouteMeta> | RouteMeta;
-  page?: (input: { data: unknown }) => Promise<string> | string;
-  files?: {
-    route?: ModuleLoader<RouteHandler>;
-    entries?: ModuleLoader<
-      () => Promise<Record<string, string>[]> | Record<string, string>[]
-    >;
-    loader?: ModuleLoader<
-      (input: {
-        params: Record<string, string>;
-        request: Request;
-      }) => Promise<unknown> | unknown
-    >;
-    meta?: ModuleLoader<
-      (input: {
-        params: Record<string, string>;
-        data: unknown;
-      }) => Promise<RouteMeta> | RouteMeta
-    >;
-    page?: ModuleLoader<(input: { data: unknown }) => Promise<string> | string>;
-  };
-};
 
 export type StaticPageArtifact = {
   kind: "page";
@@ -82,11 +37,11 @@ export type StaticAssetInput = {
 };
 
 type BuildStaticRoutesInput = {
-  routes: StaticRouteDefinition[];
+  routes: RuntimeRouteDefinition[];
 };
 
 type ExportStaticSiteInput = {
-  routes: StaticRouteDefinition[];
+  routes: RuntimeRouteDefinition[];
   outDir: string;
   assets?: StaticAssetInput[];
 };
@@ -103,7 +58,7 @@ type PendingAssetCopy = {
 
 async function resolveRouteModule<T>(
   directValue: T | undefined,
-  factory: ModuleLoader<T> | undefined,
+  factory: RouteModuleLoader<T> | undefined,
 ): Promise<T | undefined> {
   if (directValue) return directValue;
   if (!factory) return undefined;
@@ -276,7 +231,7 @@ export async function buildStaticRoutes(
       const isRawRoute = Boolean(route.route || route.files?.route);
 
       if (isRawRoute) {
-        const routeHandler = await resolveRouteModule(
+        const routeHandler = await resolveRouteModule<RouteHandlerModule>(
           route.route,
           route.files?.route,
         );

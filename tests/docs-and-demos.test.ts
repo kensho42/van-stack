@@ -7,6 +7,7 @@ const requiredDocs = [
   "docs/demos.md",
   "demo/showcase/README.md",
   "demo/csr/README.md",
+  "demo/chunked-csr/README.md",
   "demo/ssr-blog/README.md",
   "demo/ssg-site/README.md",
   "demo/adaptive-nav/README.md",
@@ -94,6 +95,7 @@ describe("docs and demos", () => {
     const bunDoc = readFileSync("docs/bun.md", "utf8");
     const gettingStarted = readFileSync("docs/getting-started.md", "utf8");
     const ssgReadme = readFileSync("demo/ssg-site/README.md", "utf8");
+    const chunkedCsrReadme = readFileSync("demo/chunked-csr/README.md", "utf8");
     const adaptiveNavReadme = readFileSync(
       "demo/adaptive-nav/README.md",
       "utf8",
@@ -117,8 +119,10 @@ describe("docs and demos", () => {
 
     expect(demos).toContain("demo/showcase");
     expect(demos).toContain("demo/adaptive-nav");
+    expect(demos).toContain("demo/chunked-csr");
     expect(demos).toContain("demo/third-party-compat");
     expect(demos).toContain("third-party");
+    expect(demos).toContain("chunked");
     expect(demos).toContain("ssg");
     expect(demos).toContain("ssr");
     expect(demos).toContain("hydrated");
@@ -137,6 +141,10 @@ describe("docs and demos", () => {
     expect(bunDoc).toContain("any web server");
     expect(gettingStarted).toContain("exportStaticSite");
     expect(gettingStarted).toContain("route.ts");
+    expect(gettingStarted).toContain("startClientApp");
+    expect(gettingStarted).toContain(".van-stack/routes.generated.ts");
+    expect(chunkedCsrReadme).toContain(".van-stack/routes.generated.ts");
+    expect(chunkedCsrReadme).toContain("startClientApp");
     expect(ssgReadme).toContain("exportStaticSite");
     expect(ssgReadme).toContain("route.ts");
     expect(ssgReadme).toContain("generic web server");

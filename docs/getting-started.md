@@ -20,6 +20,12 @@ For filesystem apps, the happy path is:
 2. call `await loadRoutes({ root: "src/routes" })`
 3. pass those routes into CSR, SSR, or SSG entrypoints
 
+For a chunked browser CSR app, add one extra step:
+
+1. call `await writeRouteManifest({ root: "src/routes" })`
+2. import `.van-stack/routes.generated.ts` in the browser entry
+3. pass those lazy routes into `startClientApp({ routes, ... })`
+
 For deployable SSG output, use `exportStaticSite({ routes, outDir })` from `van-stack/ssg`. It writes HTML pages, raw `route.ts` outputs, and copied asset files/directories into a static tree that generic web servers can serve directly.
 
 If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src/routes" })` can still emit `.van-stack/routes.generated.ts`.
@@ -34,5 +40,7 @@ If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src
 Hydration policy is not the same as CSR runtime mode. A route can use `app` hydration for SSR handoff, while the same codebase can also boot in `shell` mode for Tauri.
 
 For the normal SSR browser handoff path, use `hydrateApp({ routes })` from `van-stack/csr`. It reads the SSR bootstrap payload, creates the hydrated router, and wires browser navigation so the app continues from the server-rendered route instead of starting from scratch.
+
+If the client should also lazy-load route code per navigation, switch the browser entry to `startClientApp({ routes })` and feed it `.van-stack/routes.generated.ts` instead of eager in-memory routes.
 
 See the demos for concrete starting points.

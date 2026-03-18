@@ -1,58 +1,19 @@
 import {
   defaultHydrationPolicy,
   matchPath,
+  type RouteHandlerModule,
+  type RouteLoaderModule,
   type RouteMeta,
+  type RouteMetaModule,
+  type RouteModuleLoader,
+  type RoutePageModule,
+  type RuntimeRouteDefinition,
 } from "../../core/src/index";
 import { bindServerRenderEnv } from "./render-env";
 
-type ModuleLoader<T> = () => Promise<{ default: T }>;
-type RouteHandler = (input: {
-  request: Request;
-  params: Record<string, string>;
-}) => Promise<Response> | Response;
-type RouteLayout = (input: {
-  children: unknown;
-  data: unknown;
-  params: Record<string, string>;
-  path: string;
-}) => Promise<string> | string;
-
-type RouteDefinition = {
-  id: string;
-  path: string;
-  hydrationPolicy?: string;
-  layoutChain?: ModuleLoader<RouteLayout>[];
-  route?: RouteHandler;
-  loader?: (input: {
-    params: Record<string, string>;
-    request: Request;
-  }) => Promise<unknown> | unknown;
-  meta?: (input: {
-    params: Record<string, string>;
-    data: unknown;
-  }) => Promise<RouteMeta> | RouteMeta;
-  page?: (input: { data: unknown }) => Promise<string> | string;
-  files?: {
-    route?: ModuleLoader<RouteHandler>;
-    loader?: ModuleLoader<
-      (input: {
-        params: Record<string, string>;
-        request: Request;
-      }) => Promise<unknown> | unknown
-    >;
-    meta?: ModuleLoader<
-      (input: {
-        params: Record<string, string>;
-        data: unknown;
-      }) => Promise<RouteMeta> | RouteMeta
-    >;
-    page?: ModuleLoader<(input: { data: unknown }) => Promise<string> | string>;
-  };
-};
-
 type RenderRequestInput = {
   request: Request;
-  routes: RouteDefinition[];
+  routes: RuntimeRouteDefinition[];
 };
 
 type RenderablePageOutput = {
@@ -112,7 +73,7 @@ function buildHead(meta: RouteMeta | undefined): string {
 
 async function resolveRouteModule<T>(
   directValue: T | undefined,
-  factory: ModuleLoader<T> | undefined,
+  factory: RouteModuleLoader<T> | undefined,
 ): Promise<T | undefined> {
   if (directValue) return directValue;
   if (!factory) return undefined;
@@ -143,7 +104,7 @@ function renderPageOutput(output: unknown): string {
 
 async function applyLayouts(
   body: unknown,
-  route: RouteDefinition,
+  route: RuntimeRouteDefinition,
   data: unknown,
   params: Record<string, string>,
   path: string,
@@ -171,7 +132,7 @@ export async function renderRequest(input: RenderRequestInput) {
     const match = matchPath(route.path, requestPath.pathname);
     if (!match) continue;
 
-    const routeHandler = await resolveRouteModule(
+    const routeHandler = await resolveRouteModule<RouteHandlerModule>(
       route.route,
       route.files?.route,
     );
@@ -182,9 +143,18 @@ export async function renderRequest(input: RenderRequestInput) {
       });
     }
 
-    const loader = await resolveRouteModule(route.loader, route.files?.loader);
-    const metaHandler = await resolveRouteModule(route.meta, route.files?.meta);
-    const page = await resolveRouteModule(route.page, route.files?.page);
+    const loader = await resolveRouteModule<RouteLoaderModule>(
+      route.loader,
+      route.files?.loader,
+    );
+    const metaHandler = await resolveRouteModule<RouteMetaModule>(
+      route.meta,
+      route.files?.meta,
+    );
+    const page = await resolveRouteModule<RoutePageModule>(
+      route.page,
+      route.files?.page,
+    );
 
     if (!page) {
       throw new Error(`Route "${route.id}" is missing a page module.`);

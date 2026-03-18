@@ -9,15 +9,9 @@ import {
   type Router,
   type RouterEntry,
   type RouterListener,
+  type RuntimeRouteDefinition,
   type Transport,
 } from "../../core/src/index";
-
-type MetaModuleLoader<T> = () => Promise<{ default: T }>;
-
-export type RouteMetaModule = (input: {
-  data: unknown;
-  params: Record<string, string>;
-}) => Promise<RouteMeta | undefined> | RouteMeta | undefined;
 
 type HeadElementLike = {
   getAttribute?: (name: string) => string | null;
@@ -35,14 +29,7 @@ export type HeadDocumentLike = {
   title: string;
 };
 
-export type ClientRouteDefinition = {
-  id: string;
-  path: string;
-  meta?: RouteMetaModule;
-  files?: {
-    meta?: MetaModuleLoader<RouteMetaModule>;
-  };
-};
+export type ClientRouteDefinition = RuntimeRouteDefinition;
 
 type CreateHydratedRouterOptions = {
   bootstrap: BootstrapPayload;

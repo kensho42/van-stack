@@ -2,16 +2,20 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import type { NormalizedRoute, RouteFileKind } from "../../core/src/index";
+import type {
+  NormalizedRoute,
+  RouteFileKind,
+  RouteModuleLoader,
+  RuntimeRouteDefinition,
+} from "../../core/src/index";
 
 import { discoverRoutes } from "./discover-routes";
 import { compileRoutesFromPaths } from "./fs-routes";
 
-const routeFileOrder: RouteFileKind[] = [
+const routeFileOrder: Exclude<RouteFileKind, "layout">[] = [
   "page",
   "hydrate",
   "route",
-  "layout",
   "loader",
   "action",
   "entries",
@@ -36,14 +40,10 @@ export type RouteManifest = {
   outFile: string;
 };
 
-export type RouteModuleLoader<T = unknown> = () => Promise<{ default: T }>;
-
-export type LoadedRoute = {
-  id: string;
-  path: string;
-  files: Partial<Record<RouteFileKind, RouteModuleLoader>>;
-  layoutChain: RouteModuleLoader[];
-};
+export type LoadedRoute = Pick<
+  RuntimeRouteDefinition,
+  "id" | "path" | "files" | "layoutChain"
+>;
 
 function normalizePath(path: string): string {
   return path.split(sep).join("/");
@@ -77,11 +77,17 @@ function toImportPath(fromFile: string, toFile: string): string {
   return relativePath.startsWith(".") ? relativePath : `./${relativePath}`;
 }
 
-function renderImportFactory(targetFile: string, outFile: string): string {
-  return `() => import("${toImportPath(outFile, targetFile)}")`;
+function toGeneratedImportPath(fromFile: string, toFile: string): string {
+  return toImportPath(fromFile, toFile).replace(/\.[cm]?[jt]sx?$/, ".js");
 }
 
-function createModuleLoader(targetFile: string): RouteModuleLoader {
+function renderImportFactory(targetFile: string, outFile: string): string {
+  return `() => import("${toGeneratedImportPath(outFile, targetFile)}")`;
+}
+
+function createModuleLoader<T = unknown>(
+  targetFile: string,
+): RouteModuleLoader<T> {
   const href = pathToFileURL(resolve(targetFile)).href;
 
   return () => import(/* @vite-ignore */ href);
@@ -91,7 +97,9 @@ function buildLoadedRoute(
   route: NormalizedRoute,
   routesRoot: string,
 ): LoadedRoute {
-  const files: LoadedRoute["files"] = {};
+  const files: Partial<
+    Record<Exclude<RouteFileKind, "layout">, RouteModuleLoader>
+  > = {};
 
   for (const key of routeFileOrder) {
     const filePath = route.files[key];
@@ -103,7 +111,7 @@ function buildLoadedRoute(
   return {
     id: route.id,
     path: route.path,
-    files,
+    files: files as LoadedRoute["files"],
     layoutChain: route.layoutChain.map((segment) =>
       createModuleLoader(join(routesRoot, ...segment.split("/"), "layout.ts")),
     ),
@@ -113,15 +121,15 @@ function buildLoadedRoute(
 function renderFiles(route: NormalizedRoute, outFile: string): string[] {
   const keys = routeFileOrder.filter((key) => route.files[key]);
 
-  if (keys.length === 0) return ["      files: {},"]; // defensive
+  if (keys.length === 0) return ["    files: {},"]; // defensive
 
   return [
-    "      files: {",
+    "    files: {",
     ...keys.map((key) => {
       const filePath = route.files[key];
-      return `        ${key}: ${renderImportFactory(filePath as string, outFile)},`;
+      return `      ${key}: ${renderImportFactory(filePath as string, outFile)},`;
     }),
-    "      },",
+    "    },",
   ];
 }
 
@@ -131,7 +139,7 @@ function renderLayoutChain(
   outFile: string,
 ): string {
   if (route.layoutChain.length === 0) {
-    return "      layoutChain: [],";
+    return "    layoutChain: [],";
   }
 
   const items = route.layoutChain.map((segment) =>
@@ -141,7 +149,7 @@ function renderLayoutChain(
     ),
   );
 
-  return `      layoutChain: [${items.join(", ")}],`;
+  return `    layoutChain: [${items.join(", ")}],`;
 }
 
 function renderManifestCode(
@@ -168,7 +176,7 @@ function renderManifestCode(
   lines.push("");
   lines.push("export default routes;");
 
-  return lines.join("\n");
+  return `${lines.join("\n")}\n`;
 }
 
 export async function buildRouteManifest(

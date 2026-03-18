@@ -24,6 +24,8 @@ CSR runtime mode applies whenever `van-stack/csr` boots a client router:
 - `shell`: boot from a minimal document and use transport-backed route loading
 - `custom`: boot from a minimal document and delegate route data to the host app, or skip route-level data loading entirely
 
+`startClientApp({ routes, ... })` is the high-level CSR entrypoint for all three modes. It accepts either eager routes or lazy manifest routes from `.van-stack/routes.generated.ts`, so the same API can boot a single-bundle CSR app or a route-chunked one.
+
 These choices are related but separate:
 
 - hydration policy decides how SSR output becomes interactive

@@ -169,22 +169,22 @@ describe("filesystem route compiler", () => {
     expect(manifest.code).toContain("export const routes = [");
     expect(manifest.code).toContain('id: "posts/[slug]"');
     expect(manifest.code).toContain(
-      'page: () => import("../src/routes/posts/[slug]/page.ts")',
+      'page: () => import("../src/routes/posts/[slug]/page.js")',
     );
     expect(manifest.code).toContain(
-      'hydrate: () => import("../src/routes/posts/[slug]/hydrate.ts")',
+      'hydrate: () => import("../src/routes/posts/[slug]/hydrate.js")',
     );
     expect(manifest.code).toContain(
-      'loader: () => import("../src/routes/posts/[slug]/loader.ts")',
+      'loader: () => import("../src/routes/posts/[slug]/loader.js")',
     );
     expect(manifest.code).toContain(
-      'route: () => import("../src/routes/posts/[slug]/route.ts")',
+      'route: () => import("../src/routes/posts/[slug]/route.js")',
     );
     expect(manifest.code).toContain(
-      'meta: () => import("../src/routes/posts/[slug]/meta.ts")',
+      'meta: () => import("../src/routes/posts/[slug]/meta.js")',
     );
     expect(manifest.code).toContain(
-      'layoutChain: [() => import("../src/routes/posts/layout.ts")]',
+      'layoutChain: [() => import("../src/routes/posts/layout.js")]',
     );
   });
 
@@ -227,9 +227,9 @@ describe("filesystem route compiler", () => {
       id: "posts/[slug]",
       path: "/posts/:slug",
     });
-    expect(typeof routes[0]?.files.page).toBe("function");
-    expect(typeof routes[0]?.files.hydrate).toBe("function");
-    expect(typeof routes[0]?.files.loader).toBe("function");
+    expect(typeof routes[0]?.files?.page).toBe("function");
+    expect(typeof routes[0]?.files?.hydrate).toBe("function");
+    expect(typeof routes[0]?.files?.loader).toBe("function");
     expect(routes[0]?.layoutChain).toHaveLength(1);
     expect(
       existsSync(join(app.appRoot, ".van-stack", "routes.generated.ts")),
