@@ -101,6 +101,7 @@ describe("showcase content", () => {
       "islands",
       "shell",
       "custom",
+      "chunked",
     ]);
 
     for (const mode of showcaseModes) {

@@ -88,6 +88,7 @@ describe("docs and demos", () => {
     expect(showcaseReadme).toContain("islands");
     expect(showcaseReadme).toContain("shell");
     expect(showcaseReadme).toContain("custom");
+    expect(showcaseReadme).toContain("chunked");
   });
 
   test("keeps adaptive navigation documented as a separate focused demo", () => {
@@ -129,6 +130,7 @@ describe("docs and demos", () => {
     expect(demos).toContain("islands");
     expect(demos).toContain("shell");
     expect(demos).toContain("custom");
+    expect(demos).toContain("chunked");
     expect(demos).not.toMatch(/demo\/showcase[\s\S]{0,160}adaptive/i);
     expect(bunDoc).toContain("tsconfig.bun.json");
     expect(bunDoc).toContain("compat/bun-tsconfig.json");

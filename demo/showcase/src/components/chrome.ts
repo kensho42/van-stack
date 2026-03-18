@@ -407,22 +407,45 @@ export function renderShowcaseFrame(input: {
             )
           : null,
       ),
-      main(
-        { class: "showcase-main" },
-        input.title || input.summary
-          ? section(
-              { class: "showcase-section-block" },
-              input.title
-                ? p({ class: "showcase-eyebrow" }, "Section overview")
+      input.currentModeId === "chunked"
+        ? div(
+            {
+              "data-showcase-client-root": "",
+              "data-showcase-mode": "chunked",
+            },
+            main(
+              { class: "showcase-main" },
+              input.title || input.summary
+                ? section(
+                    { class: "showcase-section-block" },
+                    input.title
+                      ? p({ class: "showcase-eyebrow" }, "Section overview")
+                      : null,
+                    input.title ? h1(input.title) : null,
+                    input.summary
+                      ? p({ class: "showcase-lede" }, input.summary)
+                      : null,
+                  )
                 : null,
-              input.title ? h1(input.title) : null,
-              input.summary
-                ? p({ class: "showcase-lede" }, input.summary)
-                : null,
-            )
-          : null,
-        ...input.children,
-      ),
+              ...input.children,
+            ),
+          )
+        : main(
+            { class: "showcase-main" },
+            input.title || input.summary
+              ? section(
+                  { class: "showcase-section-block" },
+                  input.title
+                    ? p({ class: "showcase-eyebrow" }, "Section overview")
+                    : null,
+                  input.title ? h1(input.title) : null,
+                  input.summary
+                    ? p({ class: "showcase-lede" }, input.summary)
+                    : null,
+                )
+              : null,
+            ...input.children,
+          ),
       footer(
         { class: "showcase-footer" },
         small(

@@ -9,9 +9,9 @@ bun run start
 The older demo folders remain focused references once you want to inspect one runtime area in isolation.
 
 - `demo/showcase`: evaluator-first entrypoint for the shared blog app
-  - `Runtime Gallery`: live mode comparisons for `ssg`, `ssr`, `hydrated`, `islands`, `shell`, and `custom`
+  - `Runtime Gallery`: live mode comparisons for `ssg`, `ssr`, `hydrated`, `islands`, `shell`, `custom`, and `chunked`
   - Post detail routes prove server-backed likes and bookmarks, including component-level hydration on `hydrated` and `islands`
-  - `Guided Walkthrough`: annotated capability pages that link back to the matching live routes for those same six modes
+  - `Guided Walkthrough`: annotated capability pages that link back to the matching live routes for those same seven modes
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` CSR boot patterns, including `hydrateApp({ routes })`, resolver-driven custom flows, and component-level custom fetching
 - `demo/chunked-csr`: focused reference for route-level browser chunking through `.van-stack/routes.generated.ts`, `startClientApp({ routes, ... })`, split Bun browser assets, and served secondary chunks

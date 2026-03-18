@@ -4,8 +4,8 @@ The showcase is the evaluator-first demo entrypoint for `van-stack`.
 
 It ships one shared blog app, `Northstar Journal`, and presents it through three evaluator tracks:
 
-- `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, and `custom` routes
-- `Guided Walkthrough`: annotated evaluator pages for those same six modes
+- `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, `custom`, and `chunked` routes
+- `Guided Walkthrough`: annotated evaluator pages for those same seven modes
 - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 
 The gallery route surface is:
@@ -32,7 +32,7 @@ The adaptive route surface mirrors the same blog graph under `/adaptive`:
 - `/adaptive/tags`
 - `/adaptive/tags/:slug`
 
-On post detail routes, likes and bookmarks are stored on the server for the current session. `hydrated` and `islands` pre-render those values into the HTML and continue them through component-level hydration; `shell` and `custom` reuse the same interaction API after client-side rendering.
+On post detail routes, likes and bookmarks are stored on the server for the current session. `hydrated` and `islands` pre-render those values into the HTML and continue them through component-level hydration; `shell`, `custom`, and `chunked` reuse the same interaction API after client-side rendering. `chunked` keeps the same gallery content but loads route modules from a browser-safe generated manifest so the browser entry can split one chunk per route family.
 
 Run it from the repo root:
 

@@ -486,9 +486,9 @@ bun run start
 ```
 
 - `demo/showcase`: evaluator-first demo workspace for the shared blog app
-  - `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, and `custom` comparisons against one Northstar Journal blog app
+  - `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, `custom`, and `chunked` comparisons against one Northstar Journal blog app
   - Post detail routes demonstrate server-backed likes and bookmarks, with component-level hydration for `hydrated` and `islands`
-  - `Guided Walkthrough`: annotated evaluator pages that explain those same six modes and link back to the live routes
+  - `Guided Walkthrough`: annotated evaluator pages that explain those same seven modes and link back to the live routes
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
 - `demo/chunked-csr`: focused reference for route-level CSR chunking through `.van-stack/routes.generated.ts` and `startClientApp({ routes })`

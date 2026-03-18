@@ -35,6 +35,7 @@ If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src
 - use `hydrated` when the browser receives HTML from `van-stack/ssr`
 - use `shell` when the app boots from bundled assets but still wants `loader.ts`
 - use `custom` when the app already has its own GraphQL, REST, RPC, native data layer, or component-level query logic
+- use a generated route manifest when you want the browser to split route modules per navigation
 - use manual route arrays only when you intentionally want to bypass filesystem routing
 
 Hydration policy is not the same as CSR runtime mode. A route can use `app` hydration for SSR handoff, while the same codebase can also boot in `shell` mode for Tauri.

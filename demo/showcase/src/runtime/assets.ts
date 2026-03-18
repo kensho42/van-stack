@@ -1,15 +1,19 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
+import { buildRouteManifest, writeRouteManifest } from "van-stack/compiler";
+
 type ShowcaseAssetPath =
   | "/assets/showcase-hydrated.js"
   | "/assets/showcase-islands.js"
   | "/assets/showcase-shell.js"
-  | "/assets/showcase-custom.js";
+  | "/assets/showcase-custom.js"
+  | "/assets/showcase-chunked.js"
+  | `/assets/${string}`;
 
 const assetEntrypoints = {
   "/assets/showcase-hydrated.js": fileURLToPath(
@@ -24,10 +28,21 @@ const assetEntrypoints = {
   "/assets/showcase-custom.js": fileURLToPath(
     new URL("../client/custom.ts", import.meta.url),
   ),
+  "/assets/showcase-chunked.js": fileURLToPath(
+    new URL("../client/chunked.ts", import.meta.url),
+  ),
 } satisfies Record<ShowcaseAssetPath, string>;
 
 let assetsPromise: Promise<Map<ShowcaseAssetPath, string>> | null = null;
 const execFileAsync = promisify(execFile);
+const routesRoot = fileURLToPath(new URL("../routes", import.meta.url));
+const chunkedBrowserRoutesManifestPath = join(
+  routesRoot,
+  "..",
+  "..",
+  ".van-stack",
+  "routes.chunked.generated.ts",
+);
 
 async function getBunBuild() {
   const bunGlobal = (
@@ -105,12 +120,98 @@ async function buildAsset(entrypoint: string) {
   }
 }
 
+async function collectFiles(root: string): Promise<string[]> {
+  const entries = await readdir(root, { withFileTypes: true });
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    const resolved = join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await collectFiles(resolved)));
+      continue;
+    }
+
+    files.push(resolved);
+  }
+
+  return files.sort();
+}
+
+async function collectRouteSourceFiles(root: string): Promise<string[]> {
+  const entries = await readdir(root, { withFileTypes: true });
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    const resolved = join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await collectRouteSourceFiles(resolved)));
+      continue;
+    }
+
+    if (resolved.endsWith(".ts")) {
+      files.push(resolved);
+    }
+  }
+
+  return files.sort();
+}
+
+async function buildChunkedAsset(entrypoint: string) {
+  await writeRouteManifest({ root: routesRoot });
+
+  const chunkedRouteFiles = await collectRouteSourceFiles(
+    join(routesRoot, "gallery", "chunked"),
+  );
+  const browserManifest = await buildRouteManifest({
+    filePaths: chunkedRouteFiles,
+    outFile: chunkedBrowserRoutesManifestPath,
+    root: routesRoot,
+  });
+  await writeFile(
+    chunkedBrowserRoutesManifestPath,
+    browserManifest.code,
+    "utf8",
+  );
+
+  const outdir = await mkdtemp(join(tmpdir(), "van-stack-showcase-"));
+
+  try {
+    await execFileAsync("bun", [
+      "build",
+      entrypoint,
+      `--outdir=${outdir}`,
+      "--target=browser",
+      "--format=esm",
+      "--splitting",
+      "--entry-naming=showcase-chunked.js",
+      "--chunk-naming=chunk-[name]-[hash].js",
+    ]);
+
+    const assets = new Map<string, string>();
+    for (const file of await collectFiles(outdir)) {
+      assets.set(`/assets/${basename(file)}`, await readFile(file, "utf8"));
+    }
+
+    return assets;
+  } finally {
+    await rm(outdir, { force: true, recursive: true });
+  }
+}
+
 async function buildShowcaseAssets() {
   const assets = new Map<ShowcaseAssetPath, string>();
 
   for (const [pathname, entrypoint] of Object.entries(
     assetEntrypoints,
   ) as Array<[ShowcaseAssetPath, string]>) {
+    if (pathname === "/assets/showcase-chunked.js") {
+      const chunkedAssets = await buildChunkedAsset(entrypoint);
+      for (const [chunkPath, chunkSource] of chunkedAssets) {
+        assets.set(chunkPath as ShowcaseAssetPath, chunkSource);
+      }
+      continue;
+    }
+
     assets.set(pathname, await buildAsset(entrypoint));
   }
 

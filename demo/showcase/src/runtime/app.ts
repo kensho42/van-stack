@@ -87,6 +87,9 @@ function getClientAssetTag(pathname: string) {
   if (pathname.startsWith("/gallery/custom")) {
     return '<script type="module" src="/assets/showcase-custom.js" data-showcase-custom=""></script>';
   }
+  if (pathname.startsWith("/gallery/chunked")) {
+    return '<script type="module" src="/assets/showcase-chunked.js" data-showcase-chunked=""></script>';
+  }
 
   return null;
 }

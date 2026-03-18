@@ -8,4 +8,7 @@ export const showcaseClientManifest = {
   custom: {
     hint: "App-owned resolution lets the app keep control of fetching.",
   },
+  chunked: {
+    hint: "Generated route manifests keep browser route modules split per navigation.",
+  },
 } as const;

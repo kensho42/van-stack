@@ -18,6 +18,7 @@ const interactiveModeIds = new Set<ShowcaseModeId>([
   "islands",
   "shell",
   "custom",
+  "chunked",
 ]);
 
 export type ShowcaseComparisonTarget = {

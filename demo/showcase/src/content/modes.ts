@@ -7,6 +7,7 @@ export const showcaseLiveModeIds = [
   "islands",
   "shell",
   "custom",
+  "chunked",
 ] as const;
 
 export type ShowcaseLiveModeId = (typeof showcaseLiveModeIds)[number];
@@ -97,6 +98,19 @@ export const showcaseModes = [
     deliveryLabel: "Client shell plus custom JSON API",
     dataBoundary:
       "The app or route component owns data loading through demo API endpoints.",
+  },
+  {
+    id: "chunked",
+    title: "Chunked",
+    summary:
+      "Keep the same shell behavior but load route modules on demand from the generated manifest.",
+    proves:
+      "Shows that client-side route code can stay split per route while the app still uses the same transport-driven data flow.",
+    galleryPath: `/gallery/chunked/posts/${showcaseCanonicalPostSlug}`,
+    walkthroughPath: "/walkthrough/chunked",
+    deliveryLabel: "Client shell with chunked route modules",
+    dataBoundary:
+      "The browser entry resolves route data and route code independently, loading pages only when navigation reaches them.",
   },
 ] satisfies ShowcaseMode[];
 

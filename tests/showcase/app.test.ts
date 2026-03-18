@@ -16,6 +16,7 @@ const modeIds = [
   "islands",
   "shell",
   "custom",
+  "chunked",
 ] as const;
 const contentFamilies = [
   {
@@ -88,6 +89,7 @@ describe("showcase app", () => {
     expect(html).toContain("/gallery/islands/posts/runtime-gallery-tour");
     expect(html).toContain("/gallery/shell/posts/runtime-gallery-tour");
     expect(html).toContain("/gallery/custom/posts/runtime-gallery-tour");
+    expect(html).toContain("/gallery/chunked/posts/runtime-gallery-tour");
     expect(html).not.toContain("/gallery/adaptive");
   });
 
@@ -278,6 +280,20 @@ describe("showcase app", () => {
     expect(custom.html).not.toContain("/_van-stack/data/");
   });
 
+  test("renders chunked post pages with the chunked client entry", async () => {
+    const chunked = await requestShowcase(
+      "/gallery/chunked/posts/runtime-gallery-tour",
+    );
+
+    expect(chunked.response.status).toBe(200);
+    expect(chunked.html).toContain("Runtime Gallery Tour");
+    expect(chunked.html).toContain("<article");
+    expect(chunked.html).toContain("showcase-chunked");
+    expect(chunked.html).toContain('data-showcase-client-root=""');
+    expect(chunked.html).toContain("<script");
+    expect(chunked.html).toContain("/assets/showcase-chunked.js");
+  });
+
   test("renders SSG post pages as fully rendered static HTML", async () => {
     const { response, html } = await requestShowcase(
       "/gallery/ssg/posts/runtime-gallery-tour",
@@ -292,7 +308,7 @@ describe("showcase app", () => {
     expect(html).not.toContain("showcase-custom");
   });
 
-  test("serves bundled client entry assets for hydrated, islands, shell, and custom modes", async () => {
+  test("serves bundled client entry assets for hydrated, islands, shell, custom, and chunked modes", async () => {
     const hydratedAsset = await handleShowcaseRequest(
       new Request("https://example.com/assets/showcase-hydrated.js"),
     );
@@ -305,35 +321,57 @@ describe("showcase app", () => {
     const customAsset = await handleShowcaseRequest(
       new Request("https://example.com/assets/showcase-custom.js"),
     );
+    const chunkedAsset = await handleShowcaseRequest(
+      new Request("https://example.com/assets/showcase-chunked.js"),
+    );
 
     expect(hydratedAsset.status).toBe(200);
     expect(islandsAsset.status).toBe(200);
     expect(shellAsset.status).toBe(200);
     expect(customAsset.status).toBe(200);
+    expect(chunkedAsset.status).toBe(200);
     expect(hydratedAsset.headers.get("content-type")).toContain("javascript");
     expect(islandsAsset.headers.get("content-type")).toContain("javascript");
     expect(shellAsset.headers.get("content-type")).toContain("javascript");
     expect(customAsset.headers.get("content-type")).toContain("javascript");
+    expect(chunkedAsset.headers.get("content-type")).toContain("javascript");
     const hydratedSource = await hydratedAsset.text();
     const islandsSource = await islandsAsset.text();
     const shellSource = await shellAsset.text();
     const customSource = await customAsset.text();
+    const chunkedSource = await chunkedAsset.text();
 
     expect(hydratedSource).toContain("hydrateApp");
     expect(islandsSource).toContain("hydrateIslands");
     expect(shellSource).toContain("createRouter");
     expect(customSource).toContain("createRouter");
+    expect(chunkedSource).toContain("startClientApp");
+    expect(chunkedSource).toContain("chunk-");
 
     // Client entrypoints should not bundle the full showcase editorial catalog.
     expect(hydratedSource).not.toContain("showcasePostCatalog");
     expect(islandsSource).not.toContain("showcasePostCatalog");
     expect(shellSource).not.toContain("showcasePostCatalog");
     expect(customSource).not.toContain("showcasePostCatalog");
+    expect(chunkedSource).not.toContain("showcasePostCatalog");
 
     expect(hydratedSource.length).toBeLessThan(300_000);
     expect(islandsSource.length).toBeLessThan(300_000);
     expect(shellSource.length).toBeLessThan(300_000);
     expect(customSource.length).toBeLessThan(300_000);
+    expect(chunkedSource.length).toBeLessThan(300_000);
+
+    const chunkImport = /chunk-[^"'`]+\.js/.exec(chunkedSource)?.[0];
+    expect(chunkImport).toBeTruthy();
+    if (!chunkImport) {
+      throw new Error("Chunked asset build did not emit a secondary chunk.");
+    }
+
+    const secondaryChunk = await handleShowcaseRequest(
+      new Request(`https://example.com/assets/${chunkImport}`),
+    );
+    expect(secondaryChunk.status).toBe(200);
+    expect(secondaryChunk.headers.get("content-type")).toContain("javascript");
   });
 
   test("serves route metadata from meta.ts for interactive routes", async () => {
@@ -353,6 +391,12 @@ describe("showcase app", () => {
     );
     expect(islands.html).toContain(
       "<title>Runtime Gallery Tour · Hydrated Islands · Northstar Journal</title>",
+    );
+    const chunked = await requestShowcase(
+      "/gallery/chunked/posts/runtime-gallery-tour",
+    );
+    expect(chunked.html).toContain(
+      "<title>Runtime Gallery Tour · Chunked · Northstar Journal</title>",
     );
     expect(walkthrough.html).toContain(
       "<title>Hydrated Islands Walkthrough · Northstar Journal</title>",
