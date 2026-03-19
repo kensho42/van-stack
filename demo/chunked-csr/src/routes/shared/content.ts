@@ -39,6 +39,12 @@ const chunkedLandingLinks = [
     title: "Custom route",
     summary: "Client-owned navigation with app-owned data resolution.",
   },
+  {
+    href: "/shell-workbench/overview",
+    title: "Shell slot route",
+    summary:
+      "A control-plane workbench with a pathless @sidebar slot and workspace-only shell updates.",
+  },
 ] as const;
 
 export type ChunkedMode = keyof typeof chunkedRouteContent;

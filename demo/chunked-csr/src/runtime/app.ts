@@ -21,6 +21,7 @@ let routesPromise: Promise<ChunkedCsrRoutes> | null = null;
 function getMode(pathname: string) {
   if (pathname.startsWith("/hydrated/")) return "hydrated";
   if (pathname.startsWith("/shell/")) return "shell";
+  if (pathname.startsWith("/shell-workbench/")) return "shell";
   if (pathname.startsWith("/custom/")) return "custom";
   return "landing";
 }

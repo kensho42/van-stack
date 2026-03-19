@@ -281,6 +281,127 @@ describe("csr hydrate app", () => {
     );
   });
 
+  test("hydrates named slot roots from bootstrap slot data", async () => {
+    const env = createHydrationEnv();
+    const defaultSlotRoot = { id: "default-slot" };
+    const sidebarSlotRoot = { id: "sidebar-slot" };
+    const defaultHydrate = vi.fn();
+    const sidebarHydrate = vi.fn();
+
+    env.appRoot.querySelector = vi.fn((selector: string) => {
+      if (selector === '[data-van-stack-slot-root="default"]') {
+        return defaultSlotRoot;
+      }
+      if (selector === '[data-van-stack-slot-root="sidebar"]') {
+        return sidebarSlotRoot;
+      }
+      return null;
+    });
+
+    bindRenderEnv({
+      van: {
+        tags: {},
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(..._args: unknown[]) {},
+        hydrate(..._args: unknown[]) {},
+      },
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list(..._args: unknown[]) {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
+      },
+    });
+
+    env.setBootstrapScript({
+      routeId: "app/users/[id]",
+      path: "/app/users/ada",
+      pathname: "/app/users/ada",
+      params: { id: "ada" },
+      hydrationPolicy: "app",
+      data: {
+        user: { name: "Ada Lovelace" },
+      },
+      slotData: {
+        sidebar: {
+          navigation: { label: "Workspace" },
+        },
+      },
+    });
+
+    const app = hydrateApp({
+      routes: [
+        {
+          id: "app/users/[id]",
+          path: "/app/users/:id",
+          files: {
+            hydrate: async () => ({ default: defaultHydrate }),
+          },
+          slotOwnerLayout: "app",
+          slotOwnerLayoutIndex: 0,
+          slots: {
+            sidebar: [
+              {
+                id: "app::sidebar",
+                slot: "sidebar",
+                path: "/app",
+                files: {
+                  hydrate: async () => ({ default: sidebarHydrate }),
+                },
+                layoutChain: [],
+              },
+            ],
+          },
+        },
+      ],
+      history: env.history,
+      document: env.document as never,
+      window: env.window as never,
+    });
+
+    await app.ready;
+
+    expect(defaultHydrate).toHaveBeenCalledWith({
+      root: defaultSlotRoot,
+      data: { user: { name: "Ada Lovelace" } },
+      params: { id: "ada" },
+      path: "/app/users/ada",
+    });
+    expect(sidebarHydrate).toHaveBeenCalledWith({
+      root: sidebarSlotRoot,
+      data: {
+        navigation: { label: "Workspace" },
+      },
+      params: {},
+      path: "/app/users/ada",
+    });
+  });
+
   test("skips unmatched or opted-out links during hydrated navigation", async () => {
     const env = createHydrationEnv();
     env.setBootstrapScript({

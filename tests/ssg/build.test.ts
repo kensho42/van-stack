@@ -177,6 +177,77 @@ describe("ssg builder", () => {
     );
   });
 
+  test("builds composed slot layouts for static html output", async () => {
+    const output = await buildStaticRoutes({
+      routes: [
+        {
+          id: "app/users/[id]",
+          path: "/app/users/:id",
+          hydrationPolicy: "document-only",
+          async entries() {
+            return [{ id: "ada" }];
+          },
+          async loader({ params }) {
+            return {
+              user: {
+                id: params.id,
+                name: "Ada Lovelace",
+              },
+            };
+          },
+          layoutChain: [
+            async () => ({
+              default({
+                children,
+                slots,
+              }: {
+                children: unknown;
+                slots: Record<string, unknown>;
+              }) {
+                return `<div class="control-plane">${slots.sidebar}${children}</div>`;
+              },
+            }),
+          ],
+          slotOwnerLayout: "app",
+          slotOwnerLayoutIndex: 0,
+          slots: {
+            sidebar: [
+              {
+                id: "app::sidebar",
+                slot: "sidebar",
+                path: "/app",
+                async page() {
+                  return '<aside data-sidebar="true">Sidebar</aside>';
+                },
+                layoutChain: [],
+              },
+            ],
+          },
+          page({ data }) {
+            const typedData = data as { user: { name: string } };
+            return `<main><h1>${typedData.user.name}</h1></main>`;
+          },
+        },
+      ],
+    });
+
+    expect(output).toEqual([
+      {
+        kind: "page",
+        path: "/app/users/ada",
+        outputPath: "app/users/ada/index.html",
+        html: expect.stringContaining(
+          '<div class="control-plane"><div data-van-stack-slot-root="sidebar"><aside data-sidebar="true">Sidebar</aside></div><div data-van-stack-slot-root="default"><main><h1>Ada Lovelace</h1></main></div></div>',
+        ),
+        status: 200,
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+        },
+      },
+    ]);
+    expect(output[0]?.html).not.toContain("data-van-stack-bootstrap");
+  });
+
   test("exports html pages, raw route outputs, and copied assets to a static directory", async () => {
     const tempRoot = await mkdtemp(join(tmpdir(), "van-stack-ssg-export-"));
 

@@ -44,14 +44,18 @@ Filesystem routing is the default path, but it is not mandatory. Manual route ar
 
 ```text
 src/routes/
-  posts/
-    [slug]/
+  app/
+    layout.ts
+    @sidebar/
       page.ts
-      hydrate.ts
-      route.ts
-      loader.ts
-      meta.ts
+    users/
+      [id]/
+        page.ts
+        loader.ts
+        meta.ts
 ```
+
+`@slot` directories are pathless route branches that attach to the nearest owning `layout.ts`. The default branch is still exposed as `children`; named branches are exposed as `slots[name]`, and their resolved data is exposed as `slotData[name]`.
 
 ### Load Routes
 
@@ -119,6 +123,26 @@ export default function meta(input: {
     description: input.data.post.excerpt,
     canonical: `/posts/${input.params.slug}`,
   };
+}
+```
+
+`layout.ts`
+
+```ts
+import { van } from "van-stack/render";
+
+const { aside, div, main } = van.tags;
+
+export default function layout(input: {
+  children: unknown;
+  slots: Record<string, unknown>;
+  slotData: Record<string, unknown>;
+}) {
+  return div(
+    { class: "control-plane" },
+    aside(input.slots.sidebar),
+    main(input.children),
+  );
 }
 ```
 
@@ -491,7 +515,7 @@ bun run start
   - `Guided Walkthrough`: annotated evaluator pages that explain those same seven modes and link back to the live routes
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
-- `demo/chunked-csr`: focused reference for route-level CSR chunking through `.van-stack/routes.generated.ts` and `startClientApp({ routes })`
+- `demo/chunked-csr`: focused reference for route-level CSR chunking through `.van-stack/routes.generated.ts` and `startClientApp({ routes })`, including a `/shell-workbench/overview` control-plane route built from `layout.ts` plus a pathless `@sidebar` slot
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
 - `demo/ssg-site`: focused reference for static generation from route entries, raw `route.ts` outputs, and exported asset trees that can be served by generic web servers; run `bun ./demo/ssg-site/build.ts` to write `demo/ssg-site/dist/`
 - `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation

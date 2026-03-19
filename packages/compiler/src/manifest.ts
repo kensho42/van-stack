@@ -4,9 +4,13 @@ import { pathToFileURL } from "node:url";
 
 import type {
   NormalizedRoute,
+  NormalizedSlotRoute,
   RouteFileKind,
+  RouteLayoutModule,
   RouteModuleLoader,
   RuntimeRouteDefinition,
+  RuntimeSlotDefinition,
+  SlotRouteFileKind,
 } from "../../core/src/index";
 
 import { discoverRoutes } from "./discover-routes";
@@ -20,6 +24,13 @@ const routeFileOrder: Exclude<RouteFileKind, "layout">[] = [
   "action",
   "entries",
   "meta",
+  "error",
+];
+
+const slotRouteFileOrder: Exclude<SlotRouteFileKind, "layout">[] = [
+  "page",
+  "hydrate",
+  "loader",
   "error",
 ];
 
@@ -42,7 +53,13 @@ export type RouteManifest = {
 
 export type LoadedRoute = Pick<
   RuntimeRouteDefinition,
-  "id" | "path" | "files" | "layoutChain"
+  | "id"
+  | "path"
+  | "files"
+  | "layoutChain"
+  | "slotOwnerLayout"
+  | "slotOwnerLayoutIndex"
+  | "slots"
 >;
 
 function normalizePath(path: string): string {
@@ -85,12 +102,74 @@ function renderImportFactory(targetFile: string, outFile: string): string {
   return `() => import("${toGeneratedImportPath(outFile, targetFile)}")`;
 }
 
+function renderImportPropertyLines(
+  indent: string,
+  key: string,
+  targetFile: string,
+  outFile: string,
+): string[] {
+  const importPath = toGeneratedImportPath(outFile, targetFile);
+  const singleLine = `${indent}${key}: () => import("${importPath}"),`;
+
+  if (singleLine.length <= 80) {
+    return [singleLine];
+  }
+
+  return [`${indent}${key}: () =>`, `${indent}  import("${importPath}"),`];
+}
+
 function createModuleLoader<T = unknown>(
   targetFile: string,
 ): RouteModuleLoader<T> {
   const href = pathToFileURL(resolve(targetFile)).href;
 
   return () => import(/* @vite-ignore */ href);
+}
+
+function createLayoutLoader(
+  directory: string,
+  routesRoot: string,
+): RouteModuleLoader<RouteLayoutModule> {
+  return createModuleLoader(
+    join(routesRoot, ...directory.split("/"), "layout.ts"),
+  );
+}
+
+function buildLoadedSlotRoute(
+  route: NormalizedSlotRoute,
+  routesRoot: string,
+): RuntimeSlotDefinition {
+  const files = {} as NonNullable<RuntimeSlotDefinition["files"]>;
+
+  for (const key of slotRouteFileOrder) {
+    const filePath = route.files[key];
+    if (!filePath) continue;
+
+    switch (key) {
+      case "page":
+        files.page = createModuleLoader(filePath);
+        break;
+      case "hydrate":
+        files.hydrate = createModuleLoader(filePath);
+        break;
+      case "loader":
+        files.loader = createModuleLoader(filePath);
+        break;
+      case "error":
+        files.error = createModuleLoader(filePath);
+        break;
+    }
+  }
+
+  return {
+    id: route.id,
+    slot: route.slot,
+    path: route.path,
+    files,
+    layoutChain: route.layoutChain.map((segment) =>
+      createLayoutLoader(segment, routesRoot),
+    ),
+  };
 }
 
 function buildLoadedRoute(
@@ -108,13 +187,29 @@ function buildLoadedRoute(
     files[key] = createModuleLoader(filePath);
   }
 
+  const layoutChain = route.layoutChain.map((segment) =>
+    createLayoutLoader(segment, routesRoot),
+  );
+
   return {
     id: route.id,
     path: route.path,
     files: files as LoadedRoute["files"],
-    layoutChain: route.layoutChain.map((segment) =>
-      createModuleLoader(join(routesRoot, ...segment.split("/"), "layout.ts")),
-    ),
+    layoutChain,
+    slotOwnerLayout: route.slotOwnerLayout,
+    slotOwnerLayoutIndex: route.slotOwnerLayout
+      ? route.layoutChain.indexOf(route.slotOwnerLayout)
+      : undefined,
+    slots: route.slots
+      ? Object.fromEntries(
+          Object.entries(route.slots).map(([slot, slotRoutes]) => [
+            slot,
+            slotRoutes.map((slotRoute) =>
+              buildLoadedSlotRoute(slotRoute, routesRoot),
+            ),
+          ]),
+        )
+      : undefined,
   };
 }
 
@@ -125,10 +220,14 @@ function renderFiles(route: NormalizedRoute, outFile: string): string[] {
 
   return [
     "    files: {",
-    ...keys.map((key) => {
-      const filePath = route.files[key];
-      return `      ${key}: ${renderImportFactory(filePath as string, outFile)},`;
-    }),
+    ...keys.flatMap((key) =>
+      renderImportPropertyLines(
+        "      ",
+        key,
+        route.files[key] as string,
+        outFile,
+      ),
+    ),
     "    },",
   ];
 }
@@ -152,6 +251,65 @@ function renderLayoutChain(
   return `    layoutChain: [${items.join(", ")}],`;
 }
 
+function renderSlotRoute(
+  route: NormalizedSlotRoute,
+  routesRoot: string,
+  outFile: string,
+): string[] {
+  const fileLines = slotRouteFileOrder
+    .filter((key) => route.files[key])
+    .flatMap((key) =>
+      renderImportPropertyLines(
+        "            ",
+        key,
+        route.files[key] as string,
+        outFile,
+      ),
+    );
+
+  const layoutItems = route.layoutChain.map((segment) =>
+    renderImportFactory(
+      join(routesRoot, ...segment.split("/"), "layout.ts"),
+      outFile,
+    ),
+  );
+
+  return [
+    "        {",
+    `          id: "${route.id}",`,
+    `          slot: "${route.slot}",`,
+    `          path: "${route.path}",`,
+    fileLines.length === 0 ? "          files: {}," : "          files: {",
+    ...fileLines,
+    ...(fileLines.length === 0 ? [] : ["          },"]),
+    `          layoutChain: [${layoutItems.join(", ")}],`,
+    "        },",
+  ];
+}
+
+function renderSlots(
+  route: NormalizedRoute,
+  routesRoot: string,
+  outFile: string,
+): string[] {
+  if (!route.slots || Object.keys(route.slots).length === 0) {
+    return ["    slots: undefined,"];
+  }
+
+  const lines = ["    slots: {"];
+
+  for (const [slot, slotRoutes] of Object.entries(route.slots)) {
+    lines.push(`      ${slot}: [`);
+    for (const slotRoute of slotRoutes) {
+      lines.push(...renderSlotRoute(slotRoute, routesRoot, outFile));
+    }
+    lines.push("      ],");
+  }
+
+  lines.push("    },");
+  return lines;
+}
+
 function renderManifestCode(
   routes: NormalizedRoute[],
   routesRoot: string,
@@ -169,6 +327,17 @@ function renderManifestCode(
     lines.push(`    path: "${route.path}",`);
     lines.push(...renderFiles(route, outFile));
     lines.push(renderLayoutChain(route, routesRoot, outFile));
+    lines.push(
+      route.slotOwnerLayout
+        ? `    slotOwnerLayout: "${route.slotOwnerLayout}",`
+        : "    slotOwnerLayout: undefined,",
+    );
+    lines.push(
+      route.slotOwnerLayout
+        ? `    slotOwnerLayoutIndex: ${route.layoutChain.indexOf(route.slotOwnerLayout)},`
+        : "    slotOwnerLayoutIndex: undefined,",
+    );
+    lines.push(...renderSlots(route, routesRoot, outFile));
     lines.push("  },");
   }
 

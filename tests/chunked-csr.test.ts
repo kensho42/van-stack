@@ -55,7 +55,9 @@ describe("chunked csr demo", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("javascript");
-    expect(await response.text()).toContain("chunkedRouteContent");
+    expect(await response.text()).toMatch(
+      /chunkedRouteContent|workbenchPanels/,
+    );
   });
 
   test("renders hydrated, shell, and custom detail pages with matching assets", async () => {

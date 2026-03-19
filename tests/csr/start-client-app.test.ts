@@ -15,18 +15,144 @@ type HeadNode = {
 type RootNode = {
   children: unknown[];
   innerHTML: string;
+  querySelector?: (selector: string) => unknown;
   replaceChildren: (...children: unknown[]) => void;
 };
 
-function createRootNode(): RootNode {
-  return {
-    children: [],
+type ViewChild = ViewNode | string;
+
+type ViewNode = {
+  attributes: Map<string, string>;
+  children: ViewChild[];
+  innerHTML: string;
+  querySelector: (selector: string) => ViewNode | null;
+  replaceChildren: (...children: unknown[]) => void;
+  tagName: string;
+};
+
+function renderViewChild(child: unknown): string {
+  if (typeof child === "string") {
+    return child;
+  }
+
+  if (child && typeof child === "object" && "tagName" in child) {
+    const viewNode = child as ViewNode;
+    const attributes = [...viewNode.attributes.entries()]
+      .map(([name, value]) => ` ${name}="${value}"`)
+      .join("");
+
+    return `<${viewNode.tagName}${attributes}>${viewNode.innerHTML}</${viewNode.tagName}>`;
+  }
+
+  return String(child ?? "");
+}
+
+function matchesViewSelector(node: ViewNode, selector: string) {
+  const attributeMatch = /^\[([^=\]]+)="([^"]+)"\]$/.exec(selector);
+  if (!attributeMatch) {
+    return false;
+  }
+
+  return node.attributes.get(attributeMatch[1]) === attributeMatch[2];
+}
+
+function createViewNode(
+  tagName: string,
+  attributes: Record<string, string>,
+  children: ViewChild[],
+): ViewNode {
+  const node: ViewNode = {
+    tagName,
+    attributes: new Map(Object.entries(attributes)),
+    children,
     innerHTML: "",
-    replaceChildren(...children: unknown[]) {
-      this.children = [...children];
-      this.innerHTML = children.map((child) => String(child)).join("");
+    querySelector(selector: string) {
+      for (const child of node.children) {
+        if (!child || typeof child === "string") {
+          continue;
+        }
+
+        if (matchesViewSelector(child, selector)) {
+          return child;
+        }
+
+        const nested = child.querySelector(selector);
+        if (nested) {
+          return nested;
+        }
+      }
+
+      return null;
+    },
+    replaceChildren(...nextChildren: unknown[]) {
+      node.children = nextChildren as ViewChild[];
+      node.innerHTML = node.children
+        .map((child) => renderViewChild(child))
+        .join("");
     },
   };
+
+  node.replaceChildren(...children);
+  return node;
+}
+
+function createTag(tagName: string) {
+  return (...args: unknown[]) => {
+    const [first, ...rest] = args;
+    const hasAttributes =
+      first &&
+      typeof first === "object" &&
+      !Array.isArray(first) &&
+      !("tagName" in (first as Record<string, unknown>));
+    const attributes = hasAttributes
+      ? Object.fromEntries(
+          Object.entries(first as Record<string, unknown>).map(
+            ([name, value]) => [name, String(value)],
+          ),
+        )
+      : {};
+    const children = hasAttributes
+      ? (rest as ViewChild[])
+      : (args as ViewChild[]);
+
+    return createViewNode(tagName, attributes, children);
+  };
+}
+
+function createRootNode(): RootNode {
+  const root: RootNode = {
+    children: [],
+    innerHTML: "",
+    querySelector(selector: string) {
+      for (const child of root.children) {
+        if (
+          !child ||
+          typeof child === "string" ||
+          !("querySelector" in (child as object))
+        ) {
+          continue;
+        }
+
+        const viewChild = child as ViewNode;
+        if (matchesViewSelector(viewChild, selector)) {
+          return viewChild;
+        }
+
+        const nested = viewChild.querySelector(selector);
+        if (nested) {
+          return nested;
+        }
+      }
+
+      return null;
+    },
+    replaceChildren(...children: unknown[]) {
+      this.children = [...children];
+      this.innerHTML = children.map((child) => renderViewChild(child)).join("");
+    },
+  };
+
+  return root;
 }
 
 function createClientDocument() {
@@ -486,6 +612,163 @@ describe("startClientApp", () => {
     expect(env.getAttribute('link[rel="canonical"]', "href")).toBe(
       "/notes/launch",
     );
+  });
+
+  test("rerenders only changed slot roots for slot-aware shell routes", async () => {
+    bindRenderEnv({
+      van: {
+        tags: {
+          aside: createTag("aside"),
+          div: createTag("div"),
+          main: createTag("main"),
+        },
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(root: RootNode, child: unknown) {
+          root.replaceChildren(child);
+        },
+        hydrate() {},
+      },
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list() {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
+      },
+    });
+
+    const env = createClientDocument();
+    const sidebarPage = vi.fn(() => createViewNode("aside", {}, ["Sidebar"]));
+    const workspacePage = vi.fn(({ data }: { data: unknown }) => {
+      const typedData = data as { user: { name: string } };
+
+      return createViewNode("main", {}, [typedData.user.name]);
+    });
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "app/users/[id]",
+          path: "/app/users/:id",
+          files: {
+            async page() {
+              return {
+                default: workspacePage,
+              };
+            },
+          },
+          layoutChain: [
+            async () => ({
+              default({
+                children,
+                slots,
+              }: {
+                children: unknown;
+                slots: Record<string, unknown>;
+              }) {
+                return createViewNode("div", { class: "control-plane" }, [
+                  slots.sidebar as ViewNode,
+                  children as ViewNode,
+                ]);
+              },
+            }),
+          ],
+          slotOwnerLayout: "app",
+          slotOwnerLayoutIndex: 0,
+          slots: {
+            sidebar: [
+              {
+                id: "app::sidebar",
+                slot: "sidebar",
+                path: "/app",
+                files: {
+                  async page() {
+                    return {
+                      default: sidebarPage,
+                    };
+                  },
+                },
+                layoutChain: [],
+              },
+            ],
+          },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: {
+        load: vi.fn(async (match) => ({
+          data: {
+            user: {
+              name: match.params.id === "ada" ? "Ada Lovelace" : "Grace Hopper",
+            },
+          },
+          slotData: {
+            sidebar: {
+              navigation: { label: "Workspace" },
+            },
+          },
+        })),
+      },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/app/users/ada",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    const sidebarRoot = env.root.querySelector?.(
+      '[data-van-stack-slot-root="sidebar"]',
+    ) as ViewNode | null;
+    const defaultRoot = env.root.querySelector?.(
+      '[data-van-stack-slot-root="default"]',
+    ) as ViewNode | null;
+
+    expect(sidebarPage).toHaveBeenCalledTimes(1);
+    expect(workspacePage).toHaveBeenCalledTimes(1);
+    expect(sidebarRoot?.innerHTML).toContain("Sidebar");
+    expect(defaultRoot?.innerHTML).toContain("Ada Lovelace");
+
+    await app.router.navigate("/app/users/grace");
+
+    expect(sidebarPage).toHaveBeenCalledTimes(1);
+    expect(workspacePage).toHaveBeenCalledTimes(2);
+    expect(
+      env.root.querySelector?.('[data-van-stack-slot-root="sidebar"]'),
+    ).toBe(sidebarRoot);
+    expect(defaultRoot?.innerHTML).toContain("Grace Hopper");
   });
 
   test("rejects shell startup when the matched route page import fails", async () => {

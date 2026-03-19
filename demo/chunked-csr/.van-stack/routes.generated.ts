@@ -9,6 +9,9 @@ export const routes = [
       meta: () => import("../src/routes/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "custom/[slug]",
@@ -19,6 +22,9 @@ export const routes = [
       meta: () => import("../src/routes/custom/[slug]/meta.js"),
     },
     layoutChain: [() => import("../src/routes/custom/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "hydrated/[slug]",
@@ -30,6 +36,59 @@ export const routes = [
       meta: () => import("../src/routes/hydrated/[slug]/meta.js"),
     },
     layoutChain: [() => import("../src/routes/hydrated/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
+  },
+  {
+    id: "shell-workbench",
+    path: "/shell-workbench",
+    files: {
+      page: () => import("../src/routes/shell-workbench/page.js"),
+    },
+    layoutChain: [() => import("../src/routes/shell-workbench/layout.js")],
+    slotOwnerLayout: "shell-workbench",
+    slotOwnerLayoutIndex: 0,
+    slots: {
+      sidebar: [
+        {
+          id: "shell-workbench::sidebar",
+          slot: "sidebar",
+          path: "/shell-workbench",
+          files: {
+            page: () =>
+              import("../src/routes/shell-workbench/@sidebar/page.js"),
+          },
+          layoutChain: [],
+        },
+      ],
+    },
+  },
+  {
+    id: "shell-workbench/[slug]",
+    path: "/shell-workbench/:slug",
+    files: {
+      page: () => import("../src/routes/shell-workbench/[slug]/page.js"),
+      loader: () => import("../src/routes/shell-workbench/[slug]/loader.js"),
+      meta: () => import("../src/routes/shell-workbench/[slug]/meta.js"),
+    },
+    layoutChain: [() => import("../src/routes/shell-workbench/layout.js")],
+    slotOwnerLayout: "shell-workbench",
+    slotOwnerLayoutIndex: 0,
+    slots: {
+      sidebar: [
+        {
+          id: "shell-workbench::sidebar",
+          slot: "sidebar",
+          path: "/shell-workbench",
+          files: {
+            page: () =>
+              import("../src/routes/shell-workbench/@sidebar/page.js"),
+          },
+          layoutChain: [],
+        },
+      ],
+    },
   },
   {
     id: "shell/[slug]",
@@ -40,6 +99,9 @@ export const routes = [
       meta: () => import("../src/routes/shell/[slug]/meta.js"),
     },
     layoutChain: [() => import("../src/routes/shell/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
 ] as const;
 

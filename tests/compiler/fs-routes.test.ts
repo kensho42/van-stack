@@ -235,4 +235,164 @@ describe("filesystem route compiler", () => {
       existsSync(join(app.appRoot, ".van-stack", "routes.generated.ts")),
     ).toBe(false);
   });
+
+  test("groups pathless @slot branches under the owning layout route", () => {
+    const routes = compileRoutesFromPaths([
+      "/src/routes/app/layout.ts",
+      "/src/routes/app/page.ts",
+      "/src/routes/app/users/[id]/page.ts",
+      "/src/routes/app/@sidebar/page.ts",
+      "/src/routes/app/@sidebar/users/[id]/page.ts",
+      "/src/routes/app/@sidebar/users/[id]/loader.ts",
+    ]);
+
+    expect(routes).toEqual([
+      {
+        id: "app",
+        path: "/app",
+        directorySegments: ["app"],
+        files: {
+          page: "/src/routes/app/page.ts",
+        },
+        layoutChain: ["app"],
+        params: [],
+        slotOwnerLayout: "app",
+        slots: {
+          sidebar: [
+            {
+              id: "app::sidebar",
+              slot: "sidebar",
+              path: "/app",
+              directorySegments: ["app", "@sidebar"],
+              files: {
+                page: "/src/routes/app/@sidebar/page.ts",
+              },
+              layoutChain: [],
+              params: [],
+            },
+            {
+              id: "app::sidebar/users/[id]",
+              slot: "sidebar",
+              path: "/app/users/:id",
+              directorySegments: ["app", "@sidebar", "users", "[id]"],
+              files: {
+                page: "/src/routes/app/@sidebar/users/[id]/page.ts",
+                loader: "/src/routes/app/@sidebar/users/[id]/loader.ts",
+              },
+              layoutChain: [],
+              params: ["id"],
+            },
+          ],
+        },
+      },
+      {
+        id: "app/users/[id]",
+        path: "/app/users/:id",
+        directorySegments: ["app", "users", "[id]"],
+        files: {
+          page: "/src/routes/app/users/[id]/page.ts",
+        },
+        layoutChain: ["app"],
+        params: ["id"],
+        slotOwnerLayout: "app",
+        slots: {
+          sidebar: [
+            {
+              id: "app::sidebar",
+              slot: "sidebar",
+              path: "/app",
+              directorySegments: ["app", "@sidebar"],
+              files: {
+                page: "/src/routes/app/@sidebar/page.ts",
+              },
+              layoutChain: [],
+              params: [],
+            },
+            {
+              id: "app::sidebar/users/[id]",
+              slot: "sidebar",
+              path: "/app/users/:id",
+              directorySegments: ["app", "@sidebar", "users", "[id]"],
+              files: {
+                page: "/src/routes/app/@sidebar/users/[id]/page.ts",
+                loader: "/src/routes/app/@sidebar/users/[id]/loader.ts",
+              },
+              layoutChain: [],
+              params: ["id"],
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
+  test("rejects @slot branches without an owning layout", () => {
+    expect(() =>
+      compileRoutesFromPaths([
+        "/src/routes/app/page.ts",
+        "/src/routes/app/@sidebar/page.ts",
+      ]),
+    ).toThrow('Slot directory "@sidebar" requires an owning layout.ts.');
+  });
+
+  test("rejects unsupported module kinds inside named slots", () => {
+    expect(() =>
+      compileRoutesFromPaths([
+        "/src/routes/app/layout.ts",
+        "/src/routes/app/page.ts",
+        "/src/routes/app/@sidebar/meta.ts",
+      ]),
+    ).toThrow('Named slot "sidebar" cannot define "meta.ts".');
+  });
+
+  test("rejects nested slot sets", () => {
+    expect(() =>
+      compileRoutesFromPaths([
+        "/src/routes/app/layout.ts",
+        "/src/routes/app/page.ts",
+        "/src/routes/app/@sidebar/page.ts",
+        "/src/routes/app/@sidebar/users/layout.ts",
+        "/src/routes/app/@sidebar/users/@details/page.ts",
+      ]),
+    ).toThrow('Nested slot directory "@details" is not supported.');
+  });
+
+  test("loads slot-aware routes in memory and emits slot loaders in the manifest", async () => {
+    const app = createTempApp();
+
+    app.write("src/routes/app/layout.ts");
+    app.write("src/routes/app/page.ts");
+    app.write("src/routes/app/users/[id]/page.ts");
+    app.write("src/routes/app/@sidebar/page.ts");
+    app.write("src/routes/app/@sidebar/users/[id]/page.ts");
+    app.write("src/routes/app/@sidebar/users/[id]/loader.ts");
+
+    const routes = await loadRoutes({ root: app.routesRoot });
+    const manifest = await buildRouteManifest({ root: app.routesRoot });
+
+    expect(routes).toHaveLength(2);
+    expect(routes[0]).toMatchObject({
+      id: "app",
+      path: "/app",
+      slotOwnerLayout: "app",
+      slotOwnerLayoutIndex: 0,
+    });
+    expect(routes[0]?.slots?.sidebar).toHaveLength(2);
+    expect(typeof routes[0]?.slots?.sidebar?.[0]?.files?.page).toBe("function");
+    expect(typeof routes[0]?.slots?.sidebar?.[1]?.files?.loader).toBe(
+      "function",
+    );
+    expect(manifest.code).toContain('slotOwnerLayout: "app"');
+    expect(manifest.code).toContain("slotOwnerLayoutIndex: 0");
+    expect(manifest.code).toContain("slots: {");
+    expect(manifest.code).toContain("sidebar: [");
+    expect(manifest.code).toContain('id: "app::sidebar"');
+    expect(manifest.code).toContain(
+      'page: () => import("../src/routes/app/@sidebar/page.js")',
+    );
+    expect(manifest.code).toContain("loader: () =>");
+    expect(manifest.code).toContain(
+      'import("../src/routes/app/@sidebar/users/[id]/loader.js")',
+    );
+  });
 });
