@@ -9,6 +9,9 @@ export const routes = [
       meta: () => import("../src/routes/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/index",
@@ -18,6 +21,9 @@ export const routes = [
       meta: () => import("../src/routes/adaptive/index/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/authors",
@@ -27,6 +33,9 @@ export const routes = [
       meta: () => import("../src/routes/adaptive/authors/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/authors/[slug]",
@@ -37,6 +46,9 @@ export const routes = [
       meta: () => import("../src/routes/adaptive/authors/[slug]/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/categories",
@@ -46,16 +58,23 @@ export const routes = [
       meta: () => import("../src/routes/adaptive/categories/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/categories/[slug]",
     path: "/adaptive/categories/:slug",
     files: {
       page: () => import("../src/routes/adaptive/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/adaptive/categories/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/adaptive/categories/[slug]/loader.js"),
       meta: () => import("../src/routes/adaptive/categories/[slug]/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/posts",
@@ -65,6 +84,9 @@ export const routes = [
       meta: () => import("../src/routes/adaptive/posts/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/posts/[slug]",
@@ -75,6 +97,9 @@ export const routes = [
       meta: () => import("../src/routes/adaptive/posts/[slug]/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/tags",
@@ -84,6 +109,9 @@ export const routes = [
       meta: () => import("../src/routes/adaptive/tags/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "adaptive/tags/[slug]",
@@ -94,6 +122,9 @@ export const routes = [
       meta: () => import("../src/routes/adaptive/tags/[slug]/meta.js"),
     },
     layoutChain: [() => import("../src/routes/adaptive/layout.js")],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/index",
@@ -103,6 +134,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/index",
@@ -112,6 +146,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/authors",
@@ -121,16 +158,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/authors/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/authors/[slug]",
     path: "/gallery/chunked/authors/:slug",
     files: {
-      page: () => import("../src/routes/gallery/chunked/authors/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/chunked/authors/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/chunked/authors/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/chunked/authors/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/authors/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/chunked/authors/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/categories",
@@ -140,16 +186,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/categories/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/categories/[slug]",
     path: "/gallery/chunked/categories/:slug",
     files: {
-      page: () => import("../src/routes/gallery/chunked/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/chunked/categories/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/chunked/categories/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/chunked/categories/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/categories/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/chunked/categories/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/posts",
@@ -159,16 +214,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/posts/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/posts/[slug]",
     path: "/gallery/chunked/posts/:slug",
     files: {
       page: () => import("../src/routes/gallery/chunked/posts/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/chunked/posts/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/posts/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/posts/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/tags",
@@ -178,16 +240,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/tags/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/tags/[slug]",
     path: "/gallery/chunked/tags/:slug",
     files: {
       page: () => import("../src/routes/gallery/chunked/tags/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/chunked/tags/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/tags/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/tags/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/index",
@@ -197,6 +266,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/custom/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/authors",
@@ -206,16 +278,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/custom/authors/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/authors/[slug]",
     path: "/gallery/custom/authors/:slug",
     files: {
       page: () => import("../src/routes/gallery/custom/authors/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/custom/authors/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/custom/authors/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/custom/authors/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/categories",
@@ -225,16 +304,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/custom/categories/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/categories/[slug]",
     path: "/gallery/custom/categories/:slug",
     files: {
-      page: () => import("../src/routes/gallery/custom/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/custom/categories/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/custom/categories/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/custom/categories/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/custom/categories/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/custom/categories/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/posts",
@@ -244,16 +332,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/custom/posts/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/posts/[slug]",
     path: "/gallery/custom/posts/:slug",
     files: {
       page: () => import("../src/routes/gallery/custom/posts/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/custom/posts/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/custom/posts/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/custom/posts/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/tags",
@@ -263,16 +358,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/custom/tags/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/custom/tags/[slug]",
     path: "/gallery/custom/tags/:slug",
     files: {
       page: () => import("../src/routes/gallery/custom/tags/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/custom/tags/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/custom/tags/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/custom/tags/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/index",
@@ -282,6 +384,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/hydrated/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/authors",
@@ -291,16 +396,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/hydrated/authors/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/authors/[slug]",
     path: "/gallery/hydrated/authors/:slug",
     files: {
-      page: () => import("../src/routes/gallery/hydrated/authors/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/hydrated/authors/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/hydrated/authors/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/hydrated/authors/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/hydrated/authors/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/hydrated/authors/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/categories",
@@ -310,16 +424,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/hydrated/categories/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/categories/[slug]",
     path: "/gallery/hydrated/categories/:slug",
     files: {
-      page: () => import("../src/routes/gallery/hydrated/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/hydrated/categories/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/hydrated/categories/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/hydrated/categories/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/hydrated/categories/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/hydrated/categories/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/posts",
@@ -329,17 +452,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/hydrated/posts/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/posts/[slug]",
     path: "/gallery/hydrated/posts/:slug",
     files: {
       page: () => import("../src/routes/gallery/hydrated/posts/[slug]/page.js"),
-      hydrate: () => import("../src/routes/gallery/hydrated/posts/[slug]/hydrate.js"),
-      loader: () => import("../src/routes/gallery/hydrated/posts/[slug]/loader.js"),
+      hydrate: () =>
+        import("../src/routes/gallery/hydrated/posts/[slug]/hydrate.js"),
+      loader: () =>
+        import("../src/routes/gallery/hydrated/posts/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/posts/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/tags",
@@ -349,16 +480,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/hydrated/tags/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/hydrated/tags/[slug]",
     path: "/gallery/hydrated/tags/:slug",
     files: {
       page: () => import("../src/routes/gallery/hydrated/tags/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/hydrated/tags/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/hydrated/tags/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/tags/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/index",
@@ -368,6 +506,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/islands/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/authors",
@@ -377,16 +518,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/islands/authors/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/authors/[slug]",
     path: "/gallery/islands/authors/:slug",
     files: {
-      page: () => import("../src/routes/gallery/islands/authors/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/islands/authors/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/islands/authors/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/islands/authors/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/islands/authors/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/islands/authors/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/categories",
@@ -396,16 +546,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/islands/categories/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/categories/[slug]",
     path: "/gallery/islands/categories/:slug",
     files: {
-      page: () => import("../src/routes/gallery/islands/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/islands/categories/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/islands/categories/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/islands/categories/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/islands/categories/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/islands/categories/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/posts",
@@ -415,17 +574,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/islands/posts/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/posts/[slug]",
     path: "/gallery/islands/posts/:slug",
     files: {
       page: () => import("../src/routes/gallery/islands/posts/[slug]/page.js"),
-      hydrate: () => import("../src/routes/gallery/islands/posts/[slug]/hydrate.js"),
-      loader: () => import("../src/routes/gallery/islands/posts/[slug]/loader.js"),
+      hydrate: () =>
+        import("../src/routes/gallery/islands/posts/[slug]/hydrate.js"),
+      loader: () =>
+        import("../src/routes/gallery/islands/posts/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/islands/posts/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/tags",
@@ -435,16 +602,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/islands/tags/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/islands/tags/[slug]",
     path: "/gallery/islands/tags/:slug",
     files: {
       page: () => import("../src/routes/gallery/islands/tags/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/islands/tags/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/islands/tags/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/islands/tags/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/index",
@@ -454,6 +628,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/shell/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/authors",
@@ -463,16 +640,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/shell/authors/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/authors/[slug]",
     path: "/gallery/shell/authors/:slug",
     files: {
       page: () => import("../src/routes/gallery/shell/authors/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/shell/authors/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/shell/authors/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/shell/authors/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/categories",
@@ -482,16 +666,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/shell/categories/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/categories/[slug]",
     path: "/gallery/shell/categories/:slug",
     files: {
-      page: () => import("../src/routes/gallery/shell/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/shell/categories/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/shell/categories/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/shell/categories/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/shell/categories/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/shell/categories/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/posts",
@@ -501,16 +694,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/shell/posts/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/posts/[slug]",
     path: "/gallery/shell/posts/:slug",
     files: {
       page: () => import("../src/routes/gallery/shell/posts/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/shell/posts/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/shell/posts/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/shell/posts/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/tags",
@@ -520,6 +720,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/shell/tags/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/shell/tags/[slug]",
@@ -530,6 +733,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/shell/tags/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/index",
@@ -539,6 +745,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssg/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/authors",
@@ -548,17 +757,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssg/authors/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/authors/[slug]",
     path: "/gallery/ssg/authors/:slug",
     files: {
       page: () => import("../src/routes/gallery/ssg/authors/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/ssg/authors/[slug]/loader.js"),
-      entries: () => import("../src/routes/gallery/ssg/authors/[slug]/entries.js"),
+      loader: () =>
+        import("../src/routes/gallery/ssg/authors/[slug]/loader.js"),
+      entries: () =>
+        import("../src/routes/gallery/ssg/authors/[slug]/entries.js"),
       meta: () => import("../src/routes/gallery/ssg/authors/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/categories",
@@ -568,17 +785,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssg/categories/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/categories/[slug]",
     path: "/gallery/ssg/categories/:slug",
     files: {
       page: () => import("../src/routes/gallery/ssg/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/ssg/categories/[slug]/loader.js"),
-      entries: () => import("../src/routes/gallery/ssg/categories/[slug]/entries.js"),
+      loader: () =>
+        import("../src/routes/gallery/ssg/categories/[slug]/loader.js"),
+      entries: () =>
+        import("../src/routes/gallery/ssg/categories/[slug]/entries.js"),
       meta: () => import("../src/routes/gallery/ssg/categories/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/posts",
@@ -588,6 +813,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssg/posts/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/posts/[slug]",
@@ -595,10 +823,14 @@ export const routes = [
     files: {
       page: () => import("../src/routes/gallery/ssg/posts/[slug]/page.js"),
       loader: () => import("../src/routes/gallery/ssg/posts/[slug]/loader.js"),
-      entries: () => import("../src/routes/gallery/ssg/posts/[slug]/entries.js"),
+      entries: () =>
+        import("../src/routes/gallery/ssg/posts/[slug]/entries.js"),
       meta: () => import("../src/routes/gallery/ssg/posts/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/tags",
@@ -608,6 +840,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssg/tags/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssg/tags/[slug]",
@@ -619,6 +854,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssg/tags/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/index",
@@ -628,6 +866,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssr/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/authors",
@@ -637,16 +878,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssr/authors/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/authors/[slug]",
     path: "/gallery/ssr/authors/:slug",
     files: {
       page: () => import("../src/routes/gallery/ssr/authors/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/ssr/authors/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/ssr/authors/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/ssr/authors/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/categories",
@@ -656,16 +904,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssr/categories/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/categories/[slug]",
     path: "/gallery/ssr/categories/:slug",
     files: {
       page: () => import("../src/routes/gallery/ssr/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/ssr/categories/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/ssr/categories/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/ssr/categories/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/posts",
@@ -675,6 +930,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssr/posts/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/posts/[slug]",
@@ -685,6 +943,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssr/posts/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/tags",
@@ -694,6 +955,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssr/tags/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/ssr/tags/[slug]",
@@ -704,6 +968,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/ssr/tags/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "robots.txt",
@@ -712,6 +979,9 @@ export const routes = [
       route: () => import("../src/routes/robots.txt/route.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "sitemap.xml",
@@ -720,6 +990,9 @@ export const routes = [
       route: () => import("../src/routes/sitemap.xml/route.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "walkthrough/index",
@@ -729,6 +1002,9 @@ export const routes = [
       meta: () => import("../src/routes/walkthrough/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "walkthrough/chunked",
@@ -738,6 +1014,9 @@ export const routes = [
       meta: () => import("../src/routes/walkthrough/chunked/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "walkthrough/custom",
@@ -747,6 +1026,9 @@ export const routes = [
       meta: () => import("../src/routes/walkthrough/custom/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "walkthrough/hydrated",
@@ -756,6 +1038,9 @@ export const routes = [
       meta: () => import("../src/routes/walkthrough/hydrated/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "walkthrough/islands",
@@ -765,6 +1050,9 @@ export const routes = [
       meta: () => import("../src/routes/walkthrough/islands/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "walkthrough/shell",
@@ -774,6 +1062,9 @@ export const routes = [
       meta: () => import("../src/routes/walkthrough/shell/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "walkthrough/ssg",
@@ -784,6 +1075,9 @@ export const routes = [
       meta: () => import("../src/routes/walkthrough/ssg/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "walkthrough/ssr",
@@ -793,6 +1087,9 @@ export const routes = [
       meta: () => import("../src/routes/walkthrough/ssr/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
 ] as const;
 

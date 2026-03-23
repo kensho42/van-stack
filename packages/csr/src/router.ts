@@ -68,6 +68,36 @@ export type ApplyRouteHeadOptions = {
   routes: ClientRouteDefinition[];
 };
 
+function normalizeResolvedData(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return {
+      data: value,
+      slotData: undefined,
+    };
+  }
+
+  if (!("data" in value) && !("slotData" in value)) {
+    return {
+      data: value,
+      slotData: undefined,
+    };
+  }
+
+  const typedValue = value as {
+    data?: unknown;
+    slotData?: Record<string, unknown>;
+  };
+  const slotData =
+    typedValue.slotData && Object.keys(typedValue.slotData).length > 0
+      ? typedValue.slotData
+      : undefined;
+
+  return {
+    data: typedValue.data,
+    slotData,
+  };
+}
+
 function parsePath(path: string) {
   const url = new URL(path, "https://van-stack.local");
 
@@ -292,6 +322,7 @@ export function createRouter(options: CreateRouterOptions) {
       path: parsePath(options.bootstrap.path ?? options.bootstrap.pathname)
         .path,
       data: options.bootstrap.data,
+      slotData: options.bootstrap.slotData,
     };
   }
 
@@ -305,26 +336,29 @@ export function createRouter(options: CreateRouterOptions) {
       match.query,
       activeController.signal,
     );
-    const data = await resolve(
-      {
-        route: match.route,
-        pathname: match.pathname,
-        params: match.params,
-        query: match.query,
-      },
-      navigation,
+    const resolved = normalizeResolvedData(
+      await resolve(
+        {
+          route: match.route,
+          pathname: match.pathname,
+          params: match.params,
+          query: match.query,
+        },
+        navigation,
+      ),
     );
 
     current = {
       path: parsePath(path).path,
-      data,
+      data: resolved.data,
+      slotData: resolved.slotData,
     };
 
     if (options.document) {
       await applyRouteHead({
         routes: options.routes,
         path,
-        data,
+        data: resolved.data,
         document: options.document,
       });
     }

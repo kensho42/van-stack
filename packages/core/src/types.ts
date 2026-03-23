@@ -15,6 +15,13 @@ export type RouteFileKind =
   | "meta"
   | "error";
 
+export type SlotRouteFileKind =
+  | "page"
+  | "hydrate"
+  | "layout"
+  | "loader"
+  | "error";
+
 export type RouteMeta = {
   title?: string;
   description?: string;
@@ -69,9 +76,30 @@ export type RouteErrorModule = (input: {
 export type RouteLayoutModule = (input: {
   children: unknown;
   data: unknown;
+  slots: Record<string, unknown>;
+  slotData: Record<string, unknown>;
   params: Record<string, string>;
   path: string;
 }) => Awaitable<unknown>;
+
+export type RuntimeSlotFiles = {
+  error?: RouteModuleLoader<RouteErrorModule>;
+  hydrate?: RouteModuleLoader<RouteHydrateModule>;
+  loader?: RouteModuleLoader<RouteLoaderModule>;
+  page?: RouteModuleLoader<RoutePageModule>;
+};
+
+export type RuntimeSlotDefinition = {
+  id: string;
+  slot: string;
+  path: string;
+  error?: RouteErrorModule;
+  hydrate?: RouteHydrateModule;
+  loader?: RouteLoaderModule;
+  page?: RoutePageModule;
+  files?: RuntimeSlotFiles;
+  layoutChain?: readonly RouteModuleLoader<RouteLayoutModule>[];
+};
 
 export type RuntimeRouteFiles = {
   action?: RouteModuleLoader<RouteActionModule>;
@@ -98,6 +126,19 @@ export type RuntimeRouteDefinition = {
   route?: RouteHandlerModule;
   files?: RuntimeRouteFiles;
   layoutChain?: readonly RouteModuleLoader<RouteLayoutModule>[];
+  slotOwnerLayout?: string;
+  slotOwnerLayoutIndex?: number;
+  slots?: Record<string, readonly RuntimeSlotDefinition[]>;
+};
+
+export type NormalizedSlotRoute = {
+  id: string;
+  slot: string;
+  path: string;
+  directorySegments: string[];
+  files: Partial<Record<SlotRouteFileKind, string>>;
+  layoutChain: string[];
+  params: string[];
 };
 
 export type NormalizedRoute = {
@@ -107,6 +148,8 @@ export type NormalizedRoute = {
   files: Partial<Record<RouteFileKind, string>>;
   layoutChain: string[];
   params: string[];
+  slotOwnerLayout?: string;
+  slots?: Record<string, readonly NormalizedSlotRoute[]>;
 };
 
 export type RouteDefinition = {
@@ -143,6 +186,7 @@ export type Resolve = (
 export type RouterEntry = {
   path: string;
   data: unknown;
+  slotData?: Record<string, unknown>;
 };
 
 export type RouterListener = (entry: RouterEntry) => void;
@@ -154,6 +198,7 @@ export type BootstrapPayload = {
   params?: Record<string, string>;
   hydrationPolicy?: HydrationPolicy;
   data: unknown;
+  slotData?: Record<string, unknown>;
 };
 
 export type CreateHydratedRouterOptions = {

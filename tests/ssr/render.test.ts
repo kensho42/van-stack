@@ -255,6 +255,91 @@ describe("ssr renderer", () => {
     expect(html).toContain("<article><h1>Runtime Gallery Tour</h1></article>");
   });
 
+  test("renders named slots through the owning layout and bootstraps slot data", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/app/users/ada"),
+      routes: [
+        {
+          id: "app/users/[id]",
+          path: "/app/users/:id",
+          hydrationPolicy: "app",
+          async loader({ params }) {
+            return {
+              user: {
+                id: params.id,
+                name: "Ada Lovelace",
+              },
+            };
+          },
+          meta({ data }) {
+            const typedData = data as { user: { name: string } };
+            return {
+              title: typedData.user.name,
+            };
+          },
+          layoutChain: [
+            async () => ({
+              default({
+                children,
+                slots,
+                slotData,
+              }: {
+                children: unknown;
+                slots: Record<string, unknown>;
+                slotData: Record<string, unknown>;
+              }) {
+                const typedSlotData = slotData.sidebar as {
+                  navigation: { label: string };
+                };
+
+                return `<div class="control-plane">${slots.sidebar}<section data-slot-label="${typedSlotData.navigation.label}">${children}</section></div>`;
+              },
+            }),
+          ],
+          slotOwnerLayout: "app",
+          slotOwnerLayoutIndex: 0,
+          slots: {
+            sidebar: [
+              {
+                id: "app::sidebar",
+                slot: "sidebar",
+                path: "/app",
+                async loader() {
+                  return {
+                    navigation: { label: "Workspace" },
+                  };
+                },
+                async page() {
+                  return '<aside data-sidebar="true">Sidebar</aside>';
+                },
+                layoutChain: [],
+              },
+            ],
+          },
+          page({ data }) {
+            const typedData = data as { user: { name: string } };
+            return `<main><h1>${typedData.user.name}</h1></main>`;
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain('<div class="control-plane">');
+    expect(html).toContain('data-van-stack-slot-root="sidebar"');
+    expect(html).toContain('data-van-stack-slot-root="default"');
+    expect(html).toContain('<aside data-sidebar="true">Sidebar</aside>');
+    expect(html).toContain("<main><h1>Ada Lovelace</h1></main>");
+    expect(html).toContain('<section data-slot-label="Workspace">');
+    expect(html).toContain("<title>Ada Lovelace</title>");
+    expect(html).toContain(
+      '"slotData":{"sidebar":{"navigation":{"label":"Workspace"}}}',
+    );
+  });
+
   test("passes the request into loaders so server rendering can depend on session state", async () => {
     const loader = vi.fn(
       async ({

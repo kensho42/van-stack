@@ -145,7 +145,18 @@ describe("docs and demos", () => {
     expect(gettingStarted).toContain("route.ts");
     expect(gettingStarted).toContain("startClientApp");
     expect(gettingStarted).toContain(".van-stack/routes.generated.ts");
+    expect(gettingStarted).toContain("@sidebar");
+    expect(gettingStarted).toContain("slots");
+    expect(readFileSync("docs/route-conventions.md", "utf8")).toContain(
+      "@slot",
+    );
+    expect(readFileSync("docs/route-conventions.md", "utf8")).toContain(
+      "slotData",
+    );
+    expect(readFileSync("README.md", "utf8")).toContain("@sidebar");
     expect(chunkedCsrReadme).toContain(".van-stack/routes.generated.ts");
+    expect(chunkedCsrReadme).toContain("/shell-workbench/overview");
+    expect(chunkedCsrReadme).toContain("@sidebar");
     expect(chunkedCsrReadme).toContain("startClientApp");
     expect(ssgReadme).toContain("exportStaticSite");
     expect(ssgReadme).toContain("route.ts");

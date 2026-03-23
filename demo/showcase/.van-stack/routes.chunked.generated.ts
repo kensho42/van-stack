@@ -9,6 +9,9 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/index/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/authors",
@@ -18,16 +21,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/authors/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/authors/[slug]",
     path: "/gallery/chunked/authors/:slug",
     files: {
-      page: () => import("../src/routes/gallery/chunked/authors/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/chunked/authors/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/chunked/authors/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/chunked/authors/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/authors/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/chunked/authors/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/categories",
@@ -37,16 +49,25 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/categories/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/categories/[slug]",
     path: "/gallery/chunked/categories/:slug",
     files: {
-      page: () => import("../src/routes/gallery/chunked/categories/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/chunked/categories/[slug]/loader.js"),
-      meta: () => import("../src/routes/gallery/chunked/categories/[slug]/meta.js"),
+      page: () =>
+        import("../src/routes/gallery/chunked/categories/[slug]/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/categories/[slug]/loader.js"),
+      meta: () =>
+        import("../src/routes/gallery/chunked/categories/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/posts",
@@ -56,16 +77,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/posts/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/posts/[slug]",
     path: "/gallery/chunked/posts/:slug",
     files: {
       page: () => import("../src/routes/gallery/chunked/posts/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/chunked/posts/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/posts/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/posts/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/tags",
@@ -75,16 +103,23 @@ export const routes = [
       meta: () => import("../src/routes/gallery/chunked/tags/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
   {
     id: "gallery/chunked/tags/[slug]",
     path: "/gallery/chunked/tags/:slug",
     files: {
       page: () => import("../src/routes/gallery/chunked/tags/[slug]/page.js"),
-      loader: () => import("../src/routes/gallery/chunked/tags/[slug]/loader.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/tags/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/tags/[slug]/meta.js"),
     },
     layoutChain: [],
+    slotOwnerLayout: undefined,
+    slotOwnerLayoutIndex: undefined,
+    slots: undefined,
   },
 ] as const;
 
