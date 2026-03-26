@@ -6,8 +6,8 @@ export const chunkedRouteContent = {
   hydrated: {
     title: "Chunked hydrated detail",
     summary:
-      "Hydrated mode starts from SSR HTML and then continues through the generated client manifest.",
-    note: "This page proves the hydrated route chunk is loaded lazily from the split bundle.",
+      "Hydrated mode starts from SSR HTML, then remounts the live route through the generated client manifest.",
+    note: "This page proves the hydrated route chunk is loaded lazily from the split bundle and becomes interactive through default remount.",
   },
   shell: {
     title: "Chunked shell detail",
@@ -100,7 +100,8 @@ export function renderChunkedLandingPage() {
 }
 
 export function renderChunkedDetailPage(data: ChunkedRouteData) {
-  const { article, h1, p, section, small } = van.tags;
+  const { article, button, h1, p, section, small, span } = van.tags;
+  const remountCount = createHydratedRemountCount(data);
 
   return article(
     {
@@ -116,11 +117,61 @@ export function renderChunkedDetailPage(data: ChunkedRouteData) {
       ),
       p(data.note),
       data.mode === "hydrated"
-        ? small({ "data-hydrated-note": "" }, "Hydration marker is active.")
+        ? section(
+            { class: "chunked-csr-remount-proof" },
+            p(
+              "The browser entry remounts this route by default, so this counter becomes live without a route-level hydrate.ts hook.",
+            ),
+            p(
+              span(
+                { "data-remount-count": "" },
+                remountCount
+                  ? () => String(remountCount.val)
+                  : String(getHydratedRemountInitialCount(data)),
+              ),
+              " remount clicks recorded in this browser view.",
+            ),
+            button(
+              {
+                type: "button",
+                ...(remountCount
+                  ? {
+                      onclick: () => {
+                        remountCount.val += 1;
+                      },
+                    }
+                  : {}),
+              },
+              "Increment remount counter",
+            ),
+          )
         : null,
       small(`/${data.mode}/${data.slug}`),
     ),
   );
+}
+
+type StateLike<T> = {
+  val: T;
+};
+
+function isBrowserEnvironment() {
+  return (
+    typeof globalThis.window !== "undefined" &&
+    typeof globalThis.document !== "undefined"
+  );
+}
+
+function getHydratedRemountInitialCount(data: ChunkedRouteData) {
+  return Math.max(1, data.slug.length % 5);
+}
+
+function createHydratedRemountCount(data: ChunkedRouteData) {
+  if (data.mode !== "hydrated" || !isBrowserEnvironment()) {
+    return null;
+  }
+
+  return van.state(getHydratedRemountInitialCount(data)) as StateLike<number>;
 }
 
 export async function loadChunkedRouteData(

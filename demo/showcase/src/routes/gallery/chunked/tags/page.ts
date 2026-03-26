@@ -1,6 +1,6 @@
-import { renderGalleryPage } from "../../../../route-helpers/gallery";
+import { renderGalleryChunkedPage } from "../../../../route-helpers/gallery";
 import { createTagsIndexData } from "../../../../runtime/data";
 
 export default function page() {
-  return renderGalleryPage(createTagsIndexData("chunked"));
+  return renderGalleryChunkedPage(createTagsIndexData("chunked"));
 }

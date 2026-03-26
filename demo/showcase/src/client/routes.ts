@@ -4,10 +4,6 @@ import type {
   HydratableRoute,
   RouteHydrateModule,
 } from "van-stack/csr";
-import { van } from "van-stack/render";
-
-import { renderGalleryPage } from "../route-helpers/gallery";
-import type { GalleryPageData } from "../runtime/data";
 
 type HistoryLike = {
   pushState: (state: unknown, unused: string, url?: string) => void;
@@ -29,13 +25,17 @@ type WindowLike = Window & {
   history: HistoryLike;
 };
 
-const { div, h1, p } = van.tags;
+const chunkedEagerRouteId = "gallery/chunked/index";
 
 export const hydratedClientRoutes: HydratableRoute[] = [
   {
     id: "gallery/hydrated/index",
     path: "/gallery/hydrated",
     files: {
+      page: async () => ({
+        default: (await import("../routes/gallery/hydrated/index/page"))
+          .default,
+      }),
       meta: async () => ({
         default: (await import("../routes/gallery/hydrated/index/meta"))
           .default,
@@ -46,6 +46,10 @@ export const hydratedClientRoutes: HydratableRoute[] = [
     id: "gallery/hydrated/posts",
     path: "/gallery/hydrated/posts",
     files: {
+      page: async () => ({
+        default: (await import("../routes/gallery/hydrated/posts/page"))
+          .default,
+      }),
       meta: async () => ({
         default: (await import("../routes/gallery/hydrated/posts/meta"))
           .default,
@@ -56,14 +60,13 @@ export const hydratedClientRoutes: HydratableRoute[] = [
     id: "gallery/hydrated/posts/[slug]",
     path: "/gallery/hydrated/posts/:slug",
     files: {
+      page: async () => ({
+        default: (await import("../routes/gallery/hydrated/posts/[slug]/page"))
+          .default,
+      }),
       meta: async () => ({
         default: (await import("../routes/gallery/hydrated/posts/[slug]/meta"))
           .default,
-      }),
-      hydrate: async () => ({
-        default: (
-          await import("../routes/gallery/hydrated/posts/[slug]/hydrate")
-        ).default as RouteHydrateModule,
       }),
     },
   },
@@ -71,6 +74,10 @@ export const hydratedClientRoutes: HydratableRoute[] = [
     id: "gallery/hydrated/authors",
     path: "/gallery/hydrated/authors",
     files: {
+      page: async () => ({
+        default: (await import("../routes/gallery/hydrated/authors/page"))
+          .default,
+      }),
       meta: async () => ({
         default: (await import("../routes/gallery/hydrated/authors/meta"))
           .default,
@@ -81,6 +88,11 @@ export const hydratedClientRoutes: HydratableRoute[] = [
     id: "gallery/hydrated/authors/[slug]",
     path: "/gallery/hydrated/authors/:slug",
     files: {
+      page: async () => ({
+        default: (
+          await import("../routes/gallery/hydrated/authors/[slug]/page")
+        ).default,
+      }),
       meta: async () => ({
         default: (
           await import("../routes/gallery/hydrated/authors/[slug]/meta")
@@ -92,6 +104,10 @@ export const hydratedClientRoutes: HydratableRoute[] = [
     id: "gallery/hydrated/categories",
     path: "/gallery/hydrated/categories",
     files: {
+      page: async () => ({
+        default: (await import("../routes/gallery/hydrated/categories/page"))
+          .default,
+      }),
       meta: async () => ({
         default: (await import("../routes/gallery/hydrated/categories/meta"))
           .default,
@@ -102,6 +118,11 @@ export const hydratedClientRoutes: HydratableRoute[] = [
     id: "gallery/hydrated/categories/[slug]",
     path: "/gallery/hydrated/categories/:slug",
     files: {
+      page: async () => ({
+        default: (
+          await import("../routes/gallery/hydrated/categories/[slug]/page")
+        ).default,
+      }),
       meta: async () => ({
         default: (
           await import("../routes/gallery/hydrated/categories/[slug]/meta")
@@ -113,6 +134,9 @@ export const hydratedClientRoutes: HydratableRoute[] = [
     id: "gallery/hydrated/tags",
     path: "/gallery/hydrated/tags",
     files: {
+      page: async () => ({
+        default: (await import("../routes/gallery/hydrated/tags/page")).default,
+      }),
       meta: async () => ({
         default: (await import("../routes/gallery/hydrated/tags/meta")).default,
       }),
@@ -122,6 +146,10 @@ export const hydratedClientRoutes: HydratableRoute[] = [
     id: "gallery/hydrated/tags/[slug]",
     path: "/gallery/hydrated/tags/:slug",
     files: {
+      page: async () => ({
+        default: (await import("../routes/gallery/hydrated/tags/[slug]/page"))
+          .default,
+      }),
       meta: async () => ({
         default: (await import("../routes/gallery/hydrated/tags/[slug]/meta"))
           .default,
@@ -407,30 +435,30 @@ export const customClientRoutes: ClientRouteDefinition[] = [
   },
 ] as const;
 
-export function getClientRoot(document: Document) {
-  const root = document.querySelector(
-    "[data-showcase-client-root], [data-van-stack-app-root]",
+export async function loadChunkedClientRoutes(): Promise<
+  ClientRouteDefinition[]
+> {
+  const [
+    { default: chunkedRoutes },
+    { default: chunkedIndexPage },
+    { default: chunkedIndexMeta },
+  ] = await Promise.all([
+    import("../../.van-stack/routes.chunked.generated"),
+    import("../routes/gallery/chunked/index/page"),
+    import("../routes/gallery/chunked/index/meta"),
+  ]);
+  const typedChunkedRoutes =
+    chunkedRoutes as unknown as ClientRouteDefinition[];
+
+  return [...typedChunkedRoutes].map((route) =>
+    route.id === chunkedEagerRouteId
+      ? {
+          ...route,
+          meta: chunkedIndexMeta,
+          page: chunkedIndexPage,
+        }
+      : route,
   );
-
-  if (!(root instanceof Element)) {
-    throw new Error("No showcase client root was found in the document.");
-  }
-
-  return root;
-}
-
-export function renderClientPage(root: Element, data: GalleryPageData) {
-  root.replaceChildren();
-  van.add(root, renderGalleryPage(data));
-}
-
-export function renderClientLoading(
-  root: Element,
-  title: string,
-  body: string,
-) {
-  root.replaceChildren();
-  van.add(root, div({ class: "showcase-client-state" }, h1(title), p(body)));
 }
 
 function getAnchor(event: MouseEvent) {

@@ -53,14 +53,15 @@ export const showcaseModes = [
   {
     id: "hydrated",
     title: "Hydrated",
-    summary: "Start from SSR HTML, then continue the blog on the client.",
+    summary:
+      "Start from SSR HTML, then let the browser remount the live app by default.",
     proves:
-      "Shows SSR output handing off to a real client router that keeps the same blog app interactive after first paint.",
+      "Shows SSR output handing off to a real client router that remounts the current route by default, then keeps the same blog app interactive after first paint.",
     galleryPath: `/gallery/hydrated/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/hydrated",
-    deliveryLabel: "SSR plus client takeover",
+    deliveryLabel: "SSR plus remount takeover",
     dataBoundary:
-      "Bootstrap state and route hydration continue from the server document.",
+      "Bootstrap state seeds the first remount, then the client router owns later navigation.",
   },
   {
     id: "islands",
@@ -68,7 +69,7 @@ export const showcaseModes = [
     summary:
       "Keep the document server-rendered, then hydrate only focused interactive islands.",
     proves:
-      "Shows route-level hydration without a client router takeover by wiring small post interactions onto an otherwise server-owned page.",
+      "Shows low-level enhance hooks without a client router takeover by wiring small post interactions onto an otherwise server-owned page.",
     galleryPath: `/gallery/islands/posts/${showcaseCanonicalPostSlug}`,
     walkthroughPath: "/walkthrough/islands",
     deliveryLabel: "SSR plus island hydration",

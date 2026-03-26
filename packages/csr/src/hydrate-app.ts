@@ -3,10 +3,10 @@ import type {
   HistoryLike,
   RouteHydrateModule,
   Router,
-  RuntimeSlotDefinition,
   Transport,
 } from "../../core/src/index";
 import { matchPath as matchCanonicalPath } from "../../core/src/index";
+import { type AppRootLike, applyInitialRouteStrategy } from "./route-render";
 import {
   applyRouteHead,
   type ClientRouteDefinition,
@@ -49,10 +49,6 @@ type DocumentLike = {
     type: "click",
     handler: (event: ClickEventLike) => unknown,
   ) => void;
-};
-
-export type AppRootLike = {
-  querySelector?: (selector: string) => unknown;
 };
 
 type WindowLike = {
@@ -104,6 +100,7 @@ export type RouteHydrateInput = {
 };
 
 export type { RouteHydrateModule } from "../../core/src/index";
+export type { AppRootLike } from "./route-render";
 
 export type HydratableRoute = ClientRouteDefinition & {
   hydrate?: RouteHydrateModule;
@@ -174,15 +171,27 @@ function getMatchedRoute(
 ) {
   if (bootstrap.routeId) {
     const matchedById = routes.find((route) => route.id === bootstrap.routeId);
-    if (matchedById) return matchedById;
+    if (matchedById) {
+      return {
+        route: matchedById,
+        params:
+          bootstrap.params ??
+          matchCanonicalPath(matchedById.path, bootstrap.pathname)?.params ??
+          {},
+      };
+    }
   }
 
   const pathname = bootstrap.pathname;
-  const matchedByPath = routes.find((route) =>
-    Boolean(matchCanonicalPath(route.path, pathname)),
-  );
-
-  if (matchedByPath) return matchedByPath;
+  for (const route of routes) {
+    const match = matchCanonicalPath(route.path, pathname);
+    if (match) {
+      return {
+        route,
+        params: bootstrap.params ?? match.params,
+      };
+    }
+  }
 
   throw new Error(`No route matched bootstrap path: ${bootstrap.pathname}`);
 }
@@ -192,44 +201,6 @@ function hasMatchingRoute(routes: HydratableRoute[], path: string) {
 
   return routes.some((route) =>
     Boolean(matchCanonicalPath(route.path, pathname)),
-  );
-}
-
-function matchSlotRoute(
-  slotRoutes: readonly RuntimeSlotDefinition[],
-  path: string,
-) {
-  const pathname = new URL(path, "https://van-stack.local").pathname;
-  let fallback: {
-    params: Record<string, string>;
-    route: RuntimeSlotDefinition;
-  } | null = null;
-
-  for (const route of slotRoutes) {
-    const match = matchCanonicalPath(route.path, pathname);
-    if (match) {
-      return {
-        params: match.params,
-        route,
-      };
-    }
-
-    if (!fallback || route.path.length < fallback.route.path.length) {
-      fallback = {
-        params: {},
-        route,
-      };
-    }
-  }
-
-  return fallback;
-}
-
-function getSlotRoot(root: AppRootLike, slot: string) {
-  return (
-    (root.querySelector?.(
-      `[data-van-stack-slot-root="${slot}"]`,
-    ) as AppRootLike | null) ?? null
   );
 }
 
@@ -248,58 +219,6 @@ async function hydrateRouteRoot(
   if (!hydrate) return;
 
   await hydrate({ ...input, root });
-}
-
-async function hydrateMatchedRouteRoots(
-  route: HydratableRoute,
-  bootstrap: BootstrapPayload,
-  root: AppRootLike,
-) {
-  const path = bootstrap.path ?? bootstrap.pathname;
-  const defaultRoot =
-    route.slotOwnerLayoutIndex === undefined
-      ? root
-      : (getSlotRoot(root, "default") ?? root);
-
-  await hydrateRouteRoot(
-    route,
-    {
-      root: defaultRoot,
-      data: bootstrap.data,
-      params: bootstrap.params ?? {},
-      path,
-    },
-    defaultRoot,
-  );
-
-  if (route.slotOwnerLayoutIndex === undefined) {
-    return;
-  }
-
-  await Promise.all(
-    Object.entries(route.slots ?? {}).map(async ([slot, slotRoutes]) => {
-      const matched = matchSlotRoute(slotRoutes, path);
-      if (!matched) {
-        return;
-      }
-
-      const slotRoot = getSlotRoot(root, slot);
-      if (!slotRoot) {
-        return;
-      }
-
-      await hydrateRouteRoot(
-        matched.route,
-        {
-          root: slotRoot,
-          data: bootstrap.slotData?.[slot],
-          params: matched.params,
-          path,
-        },
-        slotRoot,
-      );
-    }),
-  );
 }
 
 function getAnchor(event: ClickEventLike) {
@@ -355,7 +274,16 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
   const root = getAppRoot(document, options.rootSelector);
   const matchedRoute = getMatchedRoute(options.routes, bootstrap);
   const ready = Promise.all([
-    hydrateMatchedRouteRoots(matchedRoute, bootstrap, root),
+    applyInitialRouteStrategy(
+      matchedRoute.route,
+      {
+        path: bootstrap.path ?? bootstrap.pathname,
+        data: bootstrap.data,
+        slotData: bootstrap.slotData,
+      },
+      matchedRoute.params,
+      root,
+    ),
     applyRouteHead({
       routes: options.routes,
       path: bootstrap.path ?? bootstrap.pathname,
@@ -414,11 +342,11 @@ export function hydrateIslands(
 
   const matchedRoute = getMatchedRoute(options.routes, bootstrap);
   const ready = hydrateRouteRoot(
-    matchedRoute,
+    matchedRoute.route,
     {
       root: document as unknown as AppRootLike,
       data: bootstrap.data,
-      params: bootstrap.params ?? {},
+      params: matchedRoute.params,
       path: bootstrap.path ?? bootstrap.pathname,
     },
     document as unknown as AppRootLike,

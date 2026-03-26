@@ -1,6 +1,6 @@
 import { van } from "van-stack/render";
 
-import type { ShowcasePost } from "../content/blog";
+import { getShowcaseInitialLikeCount } from "../content/blog";
 import {
   buildShowcaseGalleryPath,
   getShowcaseMode,
@@ -8,7 +8,8 @@ import {
   type ShowcaseLiveModeId,
   type ShowcaseModeId,
 } from "../content/modes";
-import type { ShowcaseInteractionState } from "../runtime/interactions";
+import { createShowcasePostInteractionBinding } from "../post-interactions";
+import type { GalleryPostData } from "../runtime/data";
 import { renderBookmarkToggle } from "./bookmark-toggle";
 import { renderLikeCounter } from "./like-counter";
 
@@ -71,28 +72,40 @@ export function renderRuntimePanel(modeId: ShowcaseLiveModeId) {
   );
 }
 
-export function renderReaderPulse(
-  post: ShowcasePost,
-  modeId: ShowcaseLiveModeId,
-  interactions?: ShowcaseInteractionState,
-) {
+export function renderReaderPulse(data: GalleryPostData) {
+  const { interactions, mode, post } = data;
+  const modeId = mode.id;
+
   if (!modeHasReaderPulse(modeId)) {
     return null;
   }
 
-  const mode = getShowcaseMode(modeId);
-  if (!mode) {
+  if (!getShowcaseMode(modeId)) {
     throw new Error(`Unknown showcase mode: ${modeId}`);
   }
+
+  const liveControls = createRemountedReaderPulse(data);
+  const likeCounterOptions = liveControls
+    ? {
+        likes: liveControls.likes,
+        onLike: liveControls.like,
+      }
+    : {
+        interactions,
+      };
+  const bookmarkToggleOptions = liveControls
+    ? {
+        bookmarked: liveControls.bookmarked,
+        onToggle: liveControls.toggleBookmark,
+      }
+    : {
+        interactions,
+      };
 
   return section(
     { class: "showcase-section-block", "data-post-slug": post.slug },
     h2("Reader pulse"),
-    p(
-      modeId === "islands"
-        ? "This page keeps navigation on the server and hydrates only focused post interactions."
-        : "This interaction persists for the current browser session without changing the underlying editorial route.",
-    ),
+    p(getReaderPulseSummary(modeId, Boolean(liveControls))),
     div(
       { class: "taxonomy-row" },
       a(
@@ -105,10 +118,80 @@ export function renderReaderPulse(
     ),
     div(
       { class: "card-grid card-grid--tight" },
-      renderLikeCounter(post, interactions),
-      renderBookmarkToggle(interactions),
+      renderLikeCounter(post, likeCounterOptions),
+      renderBookmarkToggle(bookmarkToggleOptions),
     ),
   );
+}
+
+type StateLike<T> = {
+  val: T;
+};
+
+type ReaderPulseControls = {
+  bookmarked: StateLike<boolean>;
+  likes: StateLike<number>;
+  like: () => Promise<void>;
+  toggleBookmark: () => Promise<void>;
+};
+
+function isBrowserEnvironment() {
+  return (
+    typeof globalThis.window !== "undefined" &&
+    typeof globalThis.document !== "undefined"
+  );
+}
+
+function getReaderPulseSummary(
+  modeId: ShowcaseLiveModeId,
+  isLiveRemount: boolean,
+) {
+  if (modeId === "islands") {
+    return "This page keeps navigation on the server and enhances only the marked post controls.";
+  }
+
+  if (modeId === "hydrated" && isLiveRemount) {
+    return "The server painted this article first. The hydrated browser entry then remounted the route and took over these controls.";
+  }
+
+  return "This interaction persists for the current browser session without changing the underlying editorial route.";
+}
+
+function createRemountedReaderPulse(
+  data: GalleryPostData,
+): ReaderPulseControls | null {
+  if (data.mode.id !== "hydrated" || !isBrowserEnvironment()) {
+    return null;
+  }
+
+  const binding = createShowcasePostInteractionBinding(data);
+  if (!binding) {
+    return null;
+  }
+
+  const initialState = binding.getState() ??
+    data.interactions ?? {
+      likes: getShowcaseInitialLikeCount(data.post),
+      bookmarked: false,
+    };
+  const likes = van.state(initialState.likes) as StateLike<number>;
+  const bookmarked = van.state(initialState.bookmarked) as StateLike<boolean>;
+
+  binding.subscribe((state) => {
+    likes.val = state.likes;
+    bookmarked.val = state.bookmarked;
+  });
+
+  return {
+    likes,
+    bookmarked,
+    async like() {
+      await binding.like();
+    },
+    async toggleBookmark() {
+      await binding.toggleBookmark();
+    },
+  };
 }
 
 export function renderSiblingModeLinks(

@@ -55,7 +55,10 @@ async function collectFiles(root: string): Promise<string[]> {
 }
 
 async function buildChunkedCsrAssets() {
-  await writeRouteManifest({ root: routesRoot });
+  await writeRouteManifest({
+    root: routesRoot,
+    chunkedRoutes: true,
+  });
   const outdir = await mkdtemp(join(tmpdir(), "van-stack-chunked-csr-"));
 
   try {

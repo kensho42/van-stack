@@ -510,6 +510,111 @@ describe("startClientApp", () => {
     await app.router.navigate("/posts/github-down");
 
     expect(env.root.innerHTML).toBe("<article><h1>GitHub Down</h1></article>");
+    expect(hydrateRoute).toHaveBeenLastCalledWith({
+      root: env.root,
+      data: { post: { slug: "github-down", title: "GitHub Down" } },
+      params: { slug: "github-down" },
+      path: "/posts/github-down",
+    });
+    expect(hydrateRoute).toHaveBeenCalledTimes(2);
+  });
+
+  test("remounts the initial hydrated route through hydrateApp when no hydrate.ts is present", async () => {
+    bindRenderEnv({
+      van: {
+        tags: {},
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(root: RootNode, child: unknown) {
+          root.replaceChildren(child);
+        },
+        hydrate: vi.fn(),
+      },
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list() {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
+      },
+    });
+
+    const env = createClientDocument();
+    env.root.innerHTML = "<article><h1>Server HTML</h1></article>";
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/server-html",
+      pathname: "/posts/server-html",
+      params: { slug: "server-html" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "server-html", title: "Client HTML" } },
+    });
+
+    const app = startClientApp({
+      mode: "hydrated",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          files: {
+            async page() {
+              return {
+                default({ data }: { data: unknown }) {
+                  const typedData = data as {
+                    post: { title: string };
+                  };
+
+                  return `<article><h1>${typedData.post.title}</h1></article>`;
+                },
+              };
+            },
+          },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: {
+        load: vi.fn(async (match: { params: Record<string, string> }) => ({
+          post: { slug: match.params.slug, title: "GitHub Down" },
+        })),
+      },
+      document: env.document as never,
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/server-html",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(env.root.innerHTML).toBe("<article><h1>Client HTML</h1></article>");
   });
 
   test("renders eager custom routes through van.add and app-owned resolve", async () => {
@@ -612,6 +717,426 @@ describe("startClientApp", () => {
     expect(env.getAttribute('link[rel="canonical"]', "href")).toBe(
       "/notes/launch",
     );
+  });
+
+  test("loads chunked shell routes through lazy page and meta modules", async () => {
+    bindRenderEnv({
+      van: {
+        tags: {},
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(root: RootNode, child: unknown) {
+          root.replaceChildren(child);
+        },
+        hydrate() {},
+      },
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list() {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
+      },
+    });
+
+    const env = createClientDocument();
+    const load = vi.fn(async (match: { params: Record<string, string> }) => ({
+      post: { slug: match.params.slug, title: "Lazy Shell" },
+    }));
+    const eagerPage = vi.fn(() => "<article>eager shell</article>");
+    const chunkedPage = vi.fn(({ data }: { data: unknown }) => {
+      const typedData = data as { post: { title: string } };
+      return `<article>${typedData.post.title}</article>`;
+    });
+    const eagerMeta = vi.fn(() => ({
+      title: "Wrong title",
+    }));
+    const chunkedMeta = vi.fn(({ data }: { data: unknown }) => {
+      const typedData = data as { post: { slug: string; title: string } };
+      return {
+        title: typedData.post.title,
+        canonical: `/posts/${typedData.post.slug}`,
+      };
+    });
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          chunked: true,
+          page: eagerPage,
+          meta: eagerMeta,
+          files: {
+            async page() {
+              return { default: chunkedPage };
+            },
+            async meta() {
+              return { default: chunkedMeta };
+            },
+          },
+        },
+      ] as never,
+      history: { pushState: vi.fn() },
+      transport: { load },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/lazy-shell",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(chunkedPage).toHaveBeenCalledTimes(1);
+    expect(chunkedMeta).toHaveBeenCalledTimes(1);
+    expect(eagerPage).not.toHaveBeenCalled();
+    expect(eagerMeta).not.toHaveBeenCalled();
+    expect(env.root.innerHTML).toContain("<article>Lazy Shell</article>");
+    expect(env.document.title).toBe("Lazy Shell");
+  });
+
+  test("loads chunked custom routes while keeping app-owned resolve", async () => {
+    bindRenderEnv({
+      van: {
+        tags: {},
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(root: RootNode, child: unknown) {
+          root.children = [child];
+          root.innerHTML = "";
+        },
+        hydrate() {},
+      },
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list() {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
+      },
+    });
+
+    const env = createClientDocument();
+    const resolve = vi.fn(async (match) => ({
+      note: { slug: match.params.slug, title: "Lazy Custom" },
+    }));
+    const eagerPage = vi.fn(() => ({ kind: "wrong-view" }));
+    const chunkedPage = vi.fn(({ data }: { data: unknown }) => {
+      const typedData = data as { note: { title: string } };
+      return { kind: "note-view", title: typedData.note.title };
+    });
+
+    const app = startClientApp({
+      mode: "custom",
+      routes: [
+        {
+          id: "notes/[slug]",
+          path: "/notes/:slug",
+          chunked: true,
+          page: eagerPage,
+          files: {
+            async page() {
+              return { default: chunkedPage };
+            },
+          },
+        },
+      ] as never,
+      history: { pushState: vi.fn() },
+      resolve,
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/notes/lazy-custom",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(resolve).toHaveBeenCalledTimes(1);
+    expect(chunkedPage).toHaveBeenCalledTimes(1);
+    expect(eagerPage).not.toHaveBeenCalled();
+    expect(env.root.children).toEqual([
+      {
+        kind: "note-view",
+        title: "Lazy Custom",
+      },
+    ]);
+  });
+
+  test("loads chunked slot routes through lazy slot page modules", async () => {
+    bindRenderEnv({
+      van: {
+        tags: {
+          aside: createTag("aside"),
+          div: createTag("div"),
+          main: createTag("main"),
+        },
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(root: RootNode, child: unknown) {
+          root.replaceChildren(child);
+        },
+        hydrate() {},
+      },
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list() {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
+      },
+    });
+
+    const env = createClientDocument();
+    const eagerSidebarPage = vi.fn(() =>
+      createViewNode("aside", {}, ["Wrong"]),
+    );
+    const chunkedSidebarPage = vi.fn(() =>
+      createViewNode("aside", {}, ["Lazy Sidebar"]),
+    );
+    const workspacePage = vi.fn(({ data }: { data: unknown }) => {
+      const typedData = data as { user: { name: string } };
+      return createViewNode("main", {}, [typedData.user.name]);
+    });
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "app/users/[id]",
+          path: "/app/users/:id",
+          files: {
+            async page() {
+              return {
+                default: workspacePage,
+              };
+            },
+          },
+          layoutChain: [
+            async () => ({
+              default({
+                children,
+                slots,
+              }: {
+                children: unknown;
+                slots: Record<string, unknown>;
+              }) {
+                return createViewNode("div", { class: "control-plane" }, [
+                  slots.sidebar as ViewNode,
+                  children as ViewNode,
+                ]);
+              },
+            }),
+          ],
+          slotOwnerLayout: "app",
+          slotOwnerLayoutIndex: 0,
+          slots: {
+            sidebar: [
+              {
+                id: "app::sidebar",
+                slot: "sidebar",
+                path: "/app",
+                chunked: true,
+                page: eagerSidebarPage,
+                files: {
+                  async page() {
+                    return {
+                      default: chunkedSidebarPage,
+                    };
+                  },
+                },
+                layoutChain: [],
+              },
+            ],
+          },
+        },
+      ] as never,
+      history: { pushState: vi.fn() },
+      transport: {
+        load: vi.fn(async () => ({
+          data: { user: { name: "Ada Lovelace" } },
+          slotData: { sidebar: { navigation: true } },
+        })),
+      },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/app/users/ada",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(chunkedSidebarPage).toHaveBeenCalledTimes(1);
+    expect(eagerSidebarPage).not.toHaveBeenCalled();
+    expect(env.root.innerHTML).toContain("Lazy Sidebar");
+    expect(env.root.innerHTML).toContain("Ada Lovelace");
+  });
+
+  test("rejects shell startup when a chunked route page import fails", async () => {
+    bindRenderEnv({
+      van: {
+        tags: {},
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(root: RootNode, child: unknown) {
+          root.replaceChildren(child);
+        },
+        hydrate() {},
+      },
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list() {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
+      },
+    });
+
+    const env = createClientDocument();
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "broken",
+          path: "/broken",
+          chunked: true,
+          page: () => "<article>wrong</article>",
+          files: {
+            async page() {
+              throw new Error("chunk import failed");
+            },
+          },
+        },
+      ] as never,
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/broken",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await expect(app.ready).rejects.toThrow("chunk import failed");
   });
 
   test("rerenders only changed slot roots for slot-aware shell routes", async () => {

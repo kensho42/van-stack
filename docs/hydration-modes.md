@@ -12,9 +12,14 @@ Hydration policy is about SSR HTML. CSR runtime mode is about how the client app
 
 Only `app` mode enables internal route-data fetches for later navigations.
 
-For `app` routes, the normal client entrypoint is `hydrateApp({ routes })` from `van-stack/csr`. That helper reads the bootstrap payload emitted by SSR, finds the framework app root, lazy-loads the matched route `hydrate.ts`, and exposes `app.ready` so app code can wait for route-level DOM hydration to finish before assuming the initial SSR DOM is live.
+For `app` routes, the recommended client entrypoint is `startClientApp({ mode: "hydrated", routes, ... })` from `van-stack/csr`. That high-level helper uses `hydrateApp({ routes })` internally for the initial SSR handoff.
 
-If the matched route has no `hydrate.ts`, `hydrateApp(...)` still continues with router takeover, but the initial SSR DOM remains static until later client-rendered navigations.
+The default `app` handoff strategy is `remount`:
+
+- if the matched route or named slot declares `hydrate.ts`, VanStack treats that file as a low-level enhance hook and runs it against the existing SSR DOM
+- otherwise VanStack resolves the matched `page.ts` and remounts that branch into the app root or slot root
+
+In the managed `hydrated` client path, later navigations use the same render-or-enhance rule. `hydrated` remains the CSR runtime mode name for compatibility; `remount` is the default handoff strategy inside `app` hydration, not a new mode.
 
 ## CSR runtime mode
 

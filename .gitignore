@@ -3,3 +3,4 @@ bun.lock
 dist
 demo/ssg-site/dist
 .DS_Store
+.worktrees

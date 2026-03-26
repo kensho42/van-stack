@@ -1,10 +1,12 @@
 import { startClientApp } from "van-stack/csr";
 
-import routes from "../../.van-stack/routes.chunked.generated";
+import { loadChunkedClientRoutes } from "./routes";
+
+const routes = await loadChunkedClientRoutes();
 
 const app = startClientApp({
   mode: "shell",
-  routes: [...routes],
+  routes,
   history: window.history,
   rootSelector: "[data-showcase-client-root]",
 });

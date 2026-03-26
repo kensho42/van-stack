@@ -188,6 +188,82 @@ describe("filesystem route compiler", () => {
     );
   });
 
+  test("marks manifest routes as chunked by default and excludes explicit route ids", async () => {
+    const app = createTempApp();
+
+    app.write("src/routes/gallery/layout.ts");
+    app.write("src/routes/gallery/hydrated/posts/[slug]/page.ts");
+    app.write("src/routes/gallery/custom/posts/[slug]/page.ts");
+
+    const manifest = await buildRouteManifest({
+      root: app.routesRoot,
+      chunkedRoutes: {
+        excludeRouteIds: ["gallery/custom/posts/[slug]"],
+      },
+    });
+
+    expect(
+      manifest.routes.find(
+        (route) => route.id === "gallery/hydrated/posts/[slug]",
+      ),
+    ).toMatchObject({
+      id: "gallery/hydrated/posts/[slug]",
+      chunked: true,
+    });
+    expect(
+      manifest.routes.find(
+        (route) => route.id === "gallery/custom/posts/[slug]",
+      ),
+    ).toMatchObject({
+      id: "gallery/custom/posts/[slug]",
+      chunked: false,
+    });
+  });
+
+  test("emits chunked metadata into generated manifest code", async () => {
+    const app = createTempApp();
+
+    app.write("src/routes/app/layout.ts");
+    app.write("src/routes/app/page.ts");
+    app.write("src/routes/app/users/[id]/page.ts");
+
+    const manifest = await buildRouteManifest({
+      root: app.routesRoot,
+      chunkedRoutes: true,
+    });
+
+    expect(manifest.routes).toHaveLength(2);
+    expect(manifest.routes.every((route) => route.chunked === true)).toBe(true);
+    expect(manifest.code).toContain("chunked: true,");
+  });
+
+  test("marks slot branches as chunked or excluded independently", async () => {
+    const app = createTempApp();
+
+    app.write("src/routes/app/layout.ts");
+    app.write("src/routes/app/page.ts");
+    app.write("src/routes/app/@sidebar/page.ts");
+    app.write("src/routes/app/@sidebar/users/[id]/page.ts");
+
+    const manifest = await buildRouteManifest({
+      root: app.routesRoot,
+      chunkedRoutes: {
+        excludeRouteIds: ["app::sidebar/users/[id]"],
+      },
+    });
+
+    expect(manifest.routes[0]?.slots?.sidebar?.[0]).toMatchObject({
+      id: "app::sidebar",
+      chunked: true,
+    });
+    expect(manifest.routes[0]?.slots?.sidebar?.[1]).toMatchObject({
+      id: "app::sidebar/users/[id]",
+      chunked: false,
+    });
+    expect(manifest.code).toContain('id: "app::sidebar/users/[id]"');
+    expect(manifest.code).toContain("chunked: false,");
+  });
+
   test("writes a generated manifest file to .van-stack/routes.generated.ts", async () => {
     const app = createTempApp();
 

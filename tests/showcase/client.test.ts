@@ -99,6 +99,20 @@ function bindComponentRenderEnv() {
 }
 
 describe("showcase client helpers", () => {
+  test("uses page modules as the default hydrated route handoff and leaves route-level hydrate optional", async () => {
+    const { hydratedClientRoutes } = await import(
+      "../../demo/showcase/src/client/routes"
+    );
+    const postRoute = hydratedClientRoutes.find(
+      (route) => route.id === "gallery/hydrated/posts/[slug]",
+    );
+
+    expect(postRoute).toBeTruthy();
+    expect(postRoute?.page).toBeUndefined();
+    expect(typeof postRoute?.files?.page).toBe("function");
+    expect(postRoute?.files?.hydrate).toBeUndefined();
+  });
+
   test("hydrates like and bookmark controls as separate isomorphic components over one shared interaction binding", async () => {
     bindComponentRenderEnv();
 

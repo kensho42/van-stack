@@ -31,6 +31,18 @@ async function getChunkedCsrRoutes() {
     routesPromise = loadRoutes({ root: routesRoot }).then((routes) =>
       routes.map((route) => ({
         ...route,
+        chunked: true,
+        slots: route.slots
+          ? Object.fromEntries(
+              Object.entries(route.slots).map(([slot, slotRoutes]) => [
+                slot,
+                slotRoutes.map((slotRoute) => ({
+                  ...slotRoute,
+                  chunked: true,
+                })),
+              ]),
+            )
+          : undefined,
         hydrationPolicy: route.id === "index" ? "document-only" : "app",
       })),
     );

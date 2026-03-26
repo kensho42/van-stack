@@ -12,6 +12,7 @@ import {
   type RuntimeRouteDefinition,
   type Transport,
 } from "../../core/src/index";
+import { resolveRouteModule } from "./route-render";
 
 type HeadElementLike = {
   getAttribute?: (name: string) => string | null;
@@ -193,15 +194,7 @@ function getResolve(options: CreateRouterOptions): Resolve {
 }
 
 async function resolveMetaModule(route: ClientRouteDefinition) {
-  if (route.meta) {
-    return route.meta;
-  }
-  if (!route.files?.meta) {
-    return undefined;
-  }
-
-  const module = await route.files.meta();
-  return module.default;
+  return resolveRouteModule(route.meta, route.files?.meta, route);
 }
 
 function setManagedTitle(

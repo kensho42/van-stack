@@ -4,6 +4,7 @@ export const routes = [
   {
     id: "gallery/chunked/index",
     path: "/gallery/chunked",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/index/page.js"),
       meta: () => import("../src/routes/gallery/chunked/index/meta.js"),
@@ -16,6 +17,7 @@ export const routes = [
   {
     id: "gallery/chunked/authors",
     path: "/gallery/chunked/authors",
+    chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/authors/page.js"),
       meta: () => import("../src/routes/gallery/chunked/authors/meta.js"),
@@ -28,6 +30,7 @@ export const routes = [
   {
     id: "gallery/chunked/authors/[slug]",
     path: "/gallery/chunked/authors/:slug",
+    chunked: true,
     files: {
       page: () =>
         import("../src/routes/gallery/chunked/authors/[slug]/page.js"),
@@ -44,6 +47,7 @@ export const routes = [
   {
     id: "gallery/chunked/categories",
     path: "/gallery/chunked/categories",
+    chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/categories/page.js"),
       meta: () => import("../src/routes/gallery/chunked/categories/meta.js"),
@@ -56,6 +60,7 @@ export const routes = [
   {
     id: "gallery/chunked/categories/[slug]",
     path: "/gallery/chunked/categories/:slug",
+    chunked: true,
     files: {
       page: () =>
         import("../src/routes/gallery/chunked/categories/[slug]/page.js"),
@@ -72,6 +77,7 @@ export const routes = [
   {
     id: "gallery/chunked/posts",
     path: "/gallery/chunked/posts",
+    chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/posts/page.js"),
       meta: () => import("../src/routes/gallery/chunked/posts/meta.js"),
@@ -84,6 +90,7 @@ export const routes = [
   {
     id: "gallery/chunked/posts/[slug]",
     path: "/gallery/chunked/posts/:slug",
+    chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/posts/[slug]/page.js"),
       loader: () =>
@@ -98,6 +105,7 @@ export const routes = [
   {
     id: "gallery/chunked/tags",
     path: "/gallery/chunked/tags",
+    chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/tags/page.js"),
       meta: () => import("../src/routes/gallery/chunked/tags/meta.js"),
@@ -110,6 +118,7 @@ export const routes = [
   {
     id: "gallery/chunked/tags/[slug]",
     path: "/gallery/chunked/tags/:slug",
+    chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/tags/[slug]/page.js"),
       loader: () =>

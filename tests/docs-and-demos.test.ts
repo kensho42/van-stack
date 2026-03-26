@@ -72,6 +72,9 @@ describe("docs and demos", () => {
     expect(readme).toContain("shell");
     expect(readme).toContain("custom");
     expect(readme).toContain("demo/adaptive-nav");
+    expect(readme).toContain('mode: "hydrated"');
+    expect(readme).toContain("low-level enhance hook");
+    expect(readme).toContain("remounts that branch by default");
     expect(readme).not.toMatch(/demo\/showcase[\s\S]{0,160}adaptive/i);
   });
 
@@ -89,6 +92,8 @@ describe("docs and demos", () => {
     expect(showcaseReadme).toContain("shell");
     expect(showcaseReadme).toContain("custom");
     expect(showcaseReadme).toContain("chunked");
+    expect(showcaseReadme).toContain("remounts the live route by default");
+    expect(showcaseReadme).toContain("low-level enhance hook");
   });
 
   test("keeps adaptive navigation documented as a separate focused demo", () => {
@@ -131,6 +136,8 @@ describe("docs and demos", () => {
     expect(demos).toContain("shell");
     expect(demos).toContain("custom");
     expect(demos).toContain("chunked");
+    expect(demos).toContain("default remount handoff");
+    expect(demos).toContain("low-level enhance hook");
     expect(demos).not.toMatch(/demo\/showcase[\s\S]{0,160}adaptive/i);
     expect(bunDoc).toContain("tsconfig.bun.json");
     expect(bunDoc).toContain("compat/bun-tsconfig.json");
@@ -153,17 +160,33 @@ describe("docs and demos", () => {
     expect(readFileSync("docs/route-conventions.md", "utf8")).toContain(
       "slotData",
     );
+    expect(readFileSync("docs/hydration-modes.md", "utf8")).toContain(
+      "default `app` handoff strategy is `remount`",
+    );
+    expect(readFileSync("docs/hydration-modes.md", "utf8")).toContain(
+      "low-level enhance hook",
+    );
+    expect(readFileSync("docs/hydration-modes.md", "utf8")).toContain(
+      "not a new mode",
+    );
+    expect(readFileSync("docs/route-conventions.md", "utf8")).toContain(
+      "client-only low-level enhance hook",
+    );
     expect(readFileSync("README.md", "utf8")).toContain("@sidebar");
     expect(chunkedCsrReadme).toContain(".van-stack/routes.generated.ts");
     expect(chunkedCsrReadme).toContain("/shell-workbench/overview");
     expect(chunkedCsrReadme).toContain("@sidebar");
     expect(chunkedCsrReadme).toContain("startClientApp");
+    expect(chunkedCsrReadme).toContain("default remount strategy");
     expect(ssgReadme).toContain("exportStaticSite");
     expect(ssgReadme).toContain("route.ts");
     expect(ssgReadme).toContain("generic web server");
     expect(ssgReadme).toContain("bun ./demo/ssg-site/build.ts");
     expect(ssgReadme).toContain("dist/");
     expect(adaptiveNavReadme).toContain("adaptive");
+    expect(readFileSync("demo/ssr-blog/README.md", "utf8")).toContain(
+      "low-level enhance hook",
+    );
     expect(compatReadme).toContain("third-party");
     expect(compatReadme).toContain("vanjs-core");
     expect(compatReadme).toContain("vanjs-ext");

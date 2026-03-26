@@ -37,13 +37,13 @@ The owning `layout.ts` receives the default branch as `children`, the sidebar br
 
 For a chunked browser CSR app, add one extra step:
 
-1. call `await writeRouteManifest({ root: "src/routes" })`
+1. call `await writeRouteManifest({ root: "src/routes", chunkedRoutes: true })`
 2. import `.van-stack/routes.generated.ts` in the browser entry
 3. pass those lazy routes into `startClientApp({ routes, ... })`
 
 For deployable SSG output, use `exportStaticSite({ routes, outDir })` from `van-stack/ssg`. It writes HTML pages, raw `route.ts` outputs, and copied asset files/directories into a static tree that generic web servers can serve directly.
 
-If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src/routes" })` can still emit `.van-stack/routes.generated.ts`.
+If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src/routes" })` can still emit `.van-stack/routes.generated.ts`. Add `chunkedRoutes` when the generated manifest should drive browser chunking by default.
 
 ## Rule of thumb
 

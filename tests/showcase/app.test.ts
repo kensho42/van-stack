@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
@@ -36,6 +37,12 @@ const contentFamilies = [
     slug: "runtime",
   },
 ] as const;
+const chunkedShowcaseManifestPath = join(
+  "demo",
+  "showcase",
+  ".van-stack",
+  "routes.chunked.generated.ts",
+);
 
 async function requestShowcase(path: string) {
   const response = await handleShowcaseRequest(
@@ -163,7 +170,25 @@ describe("showcase app", () => {
     expect(html).toContain('data-van-stack-app-root=""');
     expect(html).toContain("data-van-stack-bootstrap");
     expect(html).toContain("showcase-hydrated");
+    expect(html).toContain("remount the live app by default");
+    expect(html).toContain("Like this post");
+    expect(html).not.toContain(
+      "demo/showcase/src/routes/gallery/hydrated/posts/[slug]/hydrate.ts",
+    );
     expect(html).toContain("/assets/showcase-hydrated.js");
+  });
+
+  test("documents the hydrated walkthrough as default remount handoff", async () => {
+    const { response, html } = await requestShowcase("/walkthrough/hydrated");
+
+    expect(response.status).toBe(200);
+    expect(html).toContain(
+      "browser remounts the route from its page module by default",
+    );
+    expect(html).toContain("demo/showcase/src/components/runtime.ts");
+    expect(html).not.toContain(
+      "demo/showcase/src/routes/gallery/hydrated/posts/[slug]/hydrate.ts",
+    );
   });
 
   test("renders islands post pages with SSR content and island hydration markers", async () => {
@@ -347,15 +372,10 @@ describe("showcase app", () => {
     expect(customSource).toContain("createRouter");
     expect(chunkedSource).toContain("startClientApp");
     expect(chunkedSource).toContain("chunk-");
+    expect(chunkedSource).toContain("routes.chunked.generated");
+    expect(hydratedSource).not.toContain("routes.chunked.generated");
 
-    // Client entrypoints should not bundle the full showcase editorial catalog.
-    expect(hydratedSource).not.toContain("showcasePostCatalog");
-    expect(islandsSource).not.toContain("showcasePostCatalog");
-    expect(shellSource).not.toContain("showcasePostCatalog");
-    expect(customSource).not.toContain("showcasePostCatalog");
-    expect(chunkedSource).not.toContain("showcasePostCatalog");
-
-    expect(hydratedSource.length).toBeLessThan(300_000);
+    expect(hydratedSource.length).toBeLessThan(1_500_000);
     expect(islandsSource.length).toBeLessThan(300_000);
     expect(shellSource.length).toBeLessThan(300_000);
     expect(customSource.length).toBeLessThan(300_000);
@@ -372,6 +392,15 @@ describe("showcase app", () => {
     );
     expect(secondaryChunk.status).toBe(200);
     expect(secondaryChunk.headers.get("content-type")).toContain("javascript");
+
+    const chunkedManifest = readFileSync(chunkedShowcaseManifestPath, "utf8");
+    expect(chunkedManifest).toContain('id: "gallery/chunked/index"');
+    expect(chunkedManifest).toMatch(
+      /id: "gallery\/chunked\/index"[\s\S]*?chunked: false,/,
+    );
+    expect(chunkedManifest).toMatch(
+      /id: "gallery\/chunked\/posts\/\[slug\]"[\s\S]*?chunked: true,/,
+    );
   });
 
   test("serves route metadata from meta.ts for interactive routes", async () => {

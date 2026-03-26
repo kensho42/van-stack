@@ -4,12 +4,11 @@ import type { GalleryPageData } from "../runtime/data";
 import { fetchCustomPageData } from "./custom-data";
 import { mountShowcasePostInteractions } from "./post-interactions";
 import {
-  customClientRoutes,
   getClientRoot,
   renderClientLoading,
   renderClientPage,
-  wireClientNavigation,
-} from "./routes";
+} from "./rendering";
+import { customClientRoutes, wireClientNavigation } from "./routes";
 
 const root = getClientRoot(document);
 const router = createRouter({

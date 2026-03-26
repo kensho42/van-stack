@@ -4,6 +4,7 @@ export const routes = [
   {
     id: "index",
     path: "/",
+    chunked: false,
     files: {
       page: () => import("../src/routes/index/page.js"),
       meta: () => import("../src/routes/index/meta.js"),
@@ -16,6 +17,7 @@ export const routes = [
   {
     id: "adaptive/index",
     path: "/adaptive",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/index/page.js"),
       meta: () => import("../src/routes/adaptive/index/meta.js"),
@@ -28,6 +30,7 @@ export const routes = [
   {
     id: "adaptive/authors",
     path: "/adaptive/authors",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/authors/page.js"),
       meta: () => import("../src/routes/adaptive/authors/meta.js"),
@@ -40,6 +43,7 @@ export const routes = [
   {
     id: "adaptive/authors/[slug]",
     path: "/adaptive/authors/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/authors/[slug]/page.js"),
       loader: () => import("../src/routes/adaptive/authors/[slug]/loader.js"),
@@ -53,6 +57,7 @@ export const routes = [
   {
     id: "adaptive/categories",
     path: "/adaptive/categories",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/categories/page.js"),
       meta: () => import("../src/routes/adaptive/categories/meta.js"),
@@ -65,6 +70,7 @@ export const routes = [
   {
     id: "adaptive/categories/[slug]",
     path: "/adaptive/categories/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/categories/[slug]/page.js"),
       loader: () =>
@@ -79,6 +85,7 @@ export const routes = [
   {
     id: "adaptive/posts",
     path: "/adaptive/posts",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/posts/page.js"),
       meta: () => import("../src/routes/adaptive/posts/meta.js"),
@@ -91,6 +98,7 @@ export const routes = [
   {
     id: "adaptive/posts/[slug]",
     path: "/adaptive/posts/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/posts/[slug]/page.js"),
       loader: () => import("../src/routes/adaptive/posts/[slug]/loader.js"),
@@ -104,6 +112,7 @@ export const routes = [
   {
     id: "adaptive/tags",
     path: "/adaptive/tags",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/tags/page.js"),
       meta: () => import("../src/routes/adaptive/tags/meta.js"),
@@ -116,6 +125,7 @@ export const routes = [
   {
     id: "adaptive/tags/[slug]",
     path: "/adaptive/tags/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/adaptive/tags/[slug]/page.js"),
       loader: () => import("../src/routes/adaptive/tags/[slug]/loader.js"),
@@ -129,6 +139,7 @@ export const routes = [
   {
     id: "gallery/index",
     path: "/gallery",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/index/page.js"),
       meta: () => import("../src/routes/gallery/index/meta.js"),
@@ -141,6 +152,7 @@ export const routes = [
   {
     id: "gallery/chunked/index",
     path: "/gallery/chunked",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/index/page.js"),
       meta: () => import("../src/routes/gallery/chunked/index/meta.js"),
@@ -153,6 +165,7 @@ export const routes = [
   {
     id: "gallery/chunked/authors",
     path: "/gallery/chunked/authors",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/authors/page.js"),
       meta: () => import("../src/routes/gallery/chunked/authors/meta.js"),
@@ -165,6 +178,7 @@ export const routes = [
   {
     id: "gallery/chunked/authors/[slug]",
     path: "/gallery/chunked/authors/:slug",
+    chunked: false,
     files: {
       page: () =>
         import("../src/routes/gallery/chunked/authors/[slug]/page.js"),
@@ -181,6 +195,7 @@ export const routes = [
   {
     id: "gallery/chunked/categories",
     path: "/gallery/chunked/categories",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/categories/page.js"),
       meta: () => import("../src/routes/gallery/chunked/categories/meta.js"),
@@ -193,6 +208,7 @@ export const routes = [
   {
     id: "gallery/chunked/categories/[slug]",
     path: "/gallery/chunked/categories/:slug",
+    chunked: false,
     files: {
       page: () =>
         import("../src/routes/gallery/chunked/categories/[slug]/page.js"),
@@ -209,6 +225,7 @@ export const routes = [
   {
     id: "gallery/chunked/posts",
     path: "/gallery/chunked/posts",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/posts/page.js"),
       meta: () => import("../src/routes/gallery/chunked/posts/meta.js"),
@@ -221,6 +238,7 @@ export const routes = [
   {
     id: "gallery/chunked/posts/[slug]",
     path: "/gallery/chunked/posts/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/posts/[slug]/page.js"),
       loader: () =>
@@ -235,6 +253,7 @@ export const routes = [
   {
     id: "gallery/chunked/tags",
     path: "/gallery/chunked/tags",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/tags/page.js"),
       meta: () => import("../src/routes/gallery/chunked/tags/meta.js"),
@@ -247,6 +266,7 @@ export const routes = [
   {
     id: "gallery/chunked/tags/[slug]",
     path: "/gallery/chunked/tags/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/tags/[slug]/page.js"),
       loader: () =>
@@ -261,6 +281,7 @@ export const routes = [
   {
     id: "gallery/custom/index",
     path: "/gallery/custom",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/custom/index/page.js"),
       meta: () => import("../src/routes/gallery/custom/index/meta.js"),
@@ -273,6 +294,7 @@ export const routes = [
   {
     id: "gallery/custom/authors",
     path: "/gallery/custom/authors",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/custom/authors/page.js"),
       meta: () => import("../src/routes/gallery/custom/authors/meta.js"),
@@ -285,6 +307,7 @@ export const routes = [
   {
     id: "gallery/custom/authors/[slug]",
     path: "/gallery/custom/authors/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/custom/authors/[slug]/page.js"),
       loader: () =>
@@ -299,6 +322,7 @@ export const routes = [
   {
     id: "gallery/custom/categories",
     path: "/gallery/custom/categories",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/custom/categories/page.js"),
       meta: () => import("../src/routes/gallery/custom/categories/meta.js"),
@@ -311,6 +335,7 @@ export const routes = [
   {
     id: "gallery/custom/categories/[slug]",
     path: "/gallery/custom/categories/:slug",
+    chunked: false,
     files: {
       page: () =>
         import("../src/routes/gallery/custom/categories/[slug]/page.js"),
@@ -327,6 +352,7 @@ export const routes = [
   {
     id: "gallery/custom/posts",
     path: "/gallery/custom/posts",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/custom/posts/page.js"),
       meta: () => import("../src/routes/gallery/custom/posts/meta.js"),
@@ -339,6 +365,7 @@ export const routes = [
   {
     id: "gallery/custom/posts/[slug]",
     path: "/gallery/custom/posts/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/custom/posts/[slug]/page.js"),
       loader: () =>
@@ -353,6 +380,7 @@ export const routes = [
   {
     id: "gallery/custom/tags",
     path: "/gallery/custom/tags",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/custom/tags/page.js"),
       meta: () => import("../src/routes/gallery/custom/tags/meta.js"),
@@ -365,6 +393,7 @@ export const routes = [
   {
     id: "gallery/custom/tags/[slug]",
     path: "/gallery/custom/tags/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/custom/tags/[slug]/page.js"),
       loader: () =>
@@ -379,8 +408,10 @@ export const routes = [
   {
     id: "gallery/hydrated/index",
     path: "/gallery/hydrated",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/hydrated/index/page.js"),
+      loader: () => import("../src/routes/gallery/hydrated/index/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/index/meta.js"),
     },
     layoutChain: [],
@@ -391,8 +422,10 @@ export const routes = [
   {
     id: "gallery/hydrated/authors",
     path: "/gallery/hydrated/authors",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/hydrated/authors/page.js"),
+      loader: () => import("../src/routes/gallery/hydrated/authors/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/authors/meta.js"),
     },
     layoutChain: [],
@@ -403,6 +436,7 @@ export const routes = [
   {
     id: "gallery/hydrated/authors/[slug]",
     path: "/gallery/hydrated/authors/:slug",
+    chunked: false,
     files: {
       page: () =>
         import("../src/routes/gallery/hydrated/authors/[slug]/page.js"),
@@ -419,8 +453,11 @@ export const routes = [
   {
     id: "gallery/hydrated/categories",
     path: "/gallery/hydrated/categories",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/hydrated/categories/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/hydrated/categories/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/categories/meta.js"),
     },
     layoutChain: [],
@@ -431,6 +468,7 @@ export const routes = [
   {
     id: "gallery/hydrated/categories/[slug]",
     path: "/gallery/hydrated/categories/:slug",
+    chunked: false,
     files: {
       page: () =>
         import("../src/routes/gallery/hydrated/categories/[slug]/page.js"),
@@ -447,8 +485,10 @@ export const routes = [
   {
     id: "gallery/hydrated/posts",
     path: "/gallery/hydrated/posts",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/hydrated/posts/page.js"),
+      loader: () => import("../src/routes/gallery/hydrated/posts/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/posts/meta.js"),
     },
     layoutChain: [],
@@ -459,10 +499,9 @@ export const routes = [
   {
     id: "gallery/hydrated/posts/[slug]",
     path: "/gallery/hydrated/posts/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/hydrated/posts/[slug]/page.js"),
-      hydrate: () =>
-        import("../src/routes/gallery/hydrated/posts/[slug]/hydrate.js"),
       loader: () =>
         import("../src/routes/gallery/hydrated/posts/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/posts/[slug]/meta.js"),
@@ -475,8 +514,10 @@ export const routes = [
   {
     id: "gallery/hydrated/tags",
     path: "/gallery/hydrated/tags",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/hydrated/tags/page.js"),
+      loader: () => import("../src/routes/gallery/hydrated/tags/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/tags/meta.js"),
     },
     layoutChain: [],
@@ -487,6 +528,7 @@ export const routes = [
   {
     id: "gallery/hydrated/tags/[slug]",
     path: "/gallery/hydrated/tags/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/hydrated/tags/[slug]/page.js"),
       loader: () =>
@@ -501,6 +543,7 @@ export const routes = [
   {
     id: "gallery/islands/index",
     path: "/gallery/islands",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/islands/index/page.js"),
       meta: () => import("../src/routes/gallery/islands/index/meta.js"),
@@ -513,6 +556,7 @@ export const routes = [
   {
     id: "gallery/islands/authors",
     path: "/gallery/islands/authors",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/islands/authors/page.js"),
       meta: () => import("../src/routes/gallery/islands/authors/meta.js"),
@@ -525,6 +569,7 @@ export const routes = [
   {
     id: "gallery/islands/authors/[slug]",
     path: "/gallery/islands/authors/:slug",
+    chunked: false,
     files: {
       page: () =>
         import("../src/routes/gallery/islands/authors/[slug]/page.js"),
@@ -541,6 +586,7 @@ export const routes = [
   {
     id: "gallery/islands/categories",
     path: "/gallery/islands/categories",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/islands/categories/page.js"),
       meta: () => import("../src/routes/gallery/islands/categories/meta.js"),
@@ -553,6 +599,7 @@ export const routes = [
   {
     id: "gallery/islands/categories/[slug]",
     path: "/gallery/islands/categories/:slug",
+    chunked: false,
     files: {
       page: () =>
         import("../src/routes/gallery/islands/categories/[slug]/page.js"),
@@ -569,6 +616,7 @@ export const routes = [
   {
     id: "gallery/islands/posts",
     path: "/gallery/islands/posts",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/islands/posts/page.js"),
       meta: () => import("../src/routes/gallery/islands/posts/meta.js"),
@@ -581,6 +629,7 @@ export const routes = [
   {
     id: "gallery/islands/posts/[slug]",
     path: "/gallery/islands/posts/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/islands/posts/[slug]/page.js"),
       hydrate: () =>
@@ -597,6 +646,7 @@ export const routes = [
   {
     id: "gallery/islands/tags",
     path: "/gallery/islands/tags",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/islands/tags/page.js"),
       meta: () => import("../src/routes/gallery/islands/tags/meta.js"),
@@ -609,6 +659,7 @@ export const routes = [
   {
     id: "gallery/islands/tags/[slug]",
     path: "/gallery/islands/tags/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/islands/tags/[slug]/page.js"),
       loader: () =>
@@ -623,6 +674,7 @@ export const routes = [
   {
     id: "gallery/shell/index",
     path: "/gallery/shell",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/shell/index/page.js"),
       meta: () => import("../src/routes/gallery/shell/index/meta.js"),
@@ -635,6 +687,7 @@ export const routes = [
   {
     id: "gallery/shell/authors",
     path: "/gallery/shell/authors",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/shell/authors/page.js"),
       meta: () => import("../src/routes/gallery/shell/authors/meta.js"),
@@ -647,6 +700,7 @@ export const routes = [
   {
     id: "gallery/shell/authors/[slug]",
     path: "/gallery/shell/authors/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/shell/authors/[slug]/page.js"),
       loader: () =>
@@ -661,6 +715,7 @@ export const routes = [
   {
     id: "gallery/shell/categories",
     path: "/gallery/shell/categories",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/shell/categories/page.js"),
       meta: () => import("../src/routes/gallery/shell/categories/meta.js"),
@@ -673,6 +728,7 @@ export const routes = [
   {
     id: "gallery/shell/categories/[slug]",
     path: "/gallery/shell/categories/:slug",
+    chunked: false,
     files: {
       page: () =>
         import("../src/routes/gallery/shell/categories/[slug]/page.js"),
@@ -689,6 +745,7 @@ export const routes = [
   {
     id: "gallery/shell/posts",
     path: "/gallery/shell/posts",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/shell/posts/page.js"),
       meta: () => import("../src/routes/gallery/shell/posts/meta.js"),
@@ -701,6 +758,7 @@ export const routes = [
   {
     id: "gallery/shell/posts/[slug]",
     path: "/gallery/shell/posts/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/shell/posts/[slug]/page.js"),
       loader: () =>
@@ -715,6 +773,7 @@ export const routes = [
   {
     id: "gallery/shell/tags",
     path: "/gallery/shell/tags",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/shell/tags/page.js"),
       meta: () => import("../src/routes/gallery/shell/tags/meta.js"),
@@ -727,6 +786,7 @@ export const routes = [
   {
     id: "gallery/shell/tags/[slug]",
     path: "/gallery/shell/tags/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/shell/tags/[slug]/page.js"),
       loader: () => import("../src/routes/gallery/shell/tags/[slug]/loader.js"),
@@ -740,6 +800,7 @@ export const routes = [
   {
     id: "gallery/ssg/index",
     path: "/gallery/ssg",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/index/page.js"),
       meta: () => import("../src/routes/gallery/ssg/index/meta.js"),
@@ -752,6 +813,7 @@ export const routes = [
   {
     id: "gallery/ssg/authors",
     path: "/gallery/ssg/authors",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/authors/page.js"),
       meta: () => import("../src/routes/gallery/ssg/authors/meta.js"),
@@ -764,6 +826,7 @@ export const routes = [
   {
     id: "gallery/ssg/authors/[slug]",
     path: "/gallery/ssg/authors/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/authors/[slug]/page.js"),
       loader: () =>
@@ -780,6 +843,7 @@ export const routes = [
   {
     id: "gallery/ssg/categories",
     path: "/gallery/ssg/categories",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/categories/page.js"),
       meta: () => import("../src/routes/gallery/ssg/categories/meta.js"),
@@ -792,6 +856,7 @@ export const routes = [
   {
     id: "gallery/ssg/categories/[slug]",
     path: "/gallery/ssg/categories/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/categories/[slug]/page.js"),
       loader: () =>
@@ -808,6 +873,7 @@ export const routes = [
   {
     id: "gallery/ssg/posts",
     path: "/gallery/ssg/posts",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/posts/page.js"),
       meta: () => import("../src/routes/gallery/ssg/posts/meta.js"),
@@ -820,6 +886,7 @@ export const routes = [
   {
     id: "gallery/ssg/posts/[slug]",
     path: "/gallery/ssg/posts/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/posts/[slug]/page.js"),
       loader: () => import("../src/routes/gallery/ssg/posts/[slug]/loader.js"),
@@ -835,6 +902,7 @@ export const routes = [
   {
     id: "gallery/ssg/tags",
     path: "/gallery/ssg/tags",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/tags/page.js"),
       meta: () => import("../src/routes/gallery/ssg/tags/meta.js"),
@@ -847,6 +915,7 @@ export const routes = [
   {
     id: "gallery/ssg/tags/[slug]",
     path: "/gallery/ssg/tags/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssg/tags/[slug]/page.js"),
       loader: () => import("../src/routes/gallery/ssg/tags/[slug]/loader.js"),
@@ -861,6 +930,7 @@ export const routes = [
   {
     id: "gallery/ssr/index",
     path: "/gallery/ssr",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/index/page.js"),
       meta: () => import("../src/routes/gallery/ssr/index/meta.js"),
@@ -873,6 +943,7 @@ export const routes = [
   {
     id: "gallery/ssr/authors",
     path: "/gallery/ssr/authors",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/authors/page.js"),
       meta: () => import("../src/routes/gallery/ssr/authors/meta.js"),
@@ -885,6 +956,7 @@ export const routes = [
   {
     id: "gallery/ssr/authors/[slug]",
     path: "/gallery/ssr/authors/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/authors/[slug]/page.js"),
       loader: () =>
@@ -899,6 +971,7 @@ export const routes = [
   {
     id: "gallery/ssr/categories",
     path: "/gallery/ssr/categories",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/categories/page.js"),
       meta: () => import("../src/routes/gallery/ssr/categories/meta.js"),
@@ -911,6 +984,7 @@ export const routes = [
   {
     id: "gallery/ssr/categories/[slug]",
     path: "/gallery/ssr/categories/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/categories/[slug]/page.js"),
       loader: () =>
@@ -925,6 +999,7 @@ export const routes = [
   {
     id: "gallery/ssr/posts",
     path: "/gallery/ssr/posts",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/posts/page.js"),
       meta: () => import("../src/routes/gallery/ssr/posts/meta.js"),
@@ -937,6 +1012,7 @@ export const routes = [
   {
     id: "gallery/ssr/posts/[slug]",
     path: "/gallery/ssr/posts/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/posts/[slug]/page.js"),
       loader: () => import("../src/routes/gallery/ssr/posts/[slug]/loader.js"),
@@ -950,6 +1026,7 @@ export const routes = [
   {
     id: "gallery/ssr/tags",
     path: "/gallery/ssr/tags",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/tags/page.js"),
       meta: () => import("../src/routes/gallery/ssr/tags/meta.js"),
@@ -962,6 +1039,7 @@ export const routes = [
   {
     id: "gallery/ssr/tags/[slug]",
     path: "/gallery/ssr/tags/:slug",
+    chunked: false,
     files: {
       page: () => import("../src/routes/gallery/ssr/tags/[slug]/page.js"),
       loader: () => import("../src/routes/gallery/ssr/tags/[slug]/loader.js"),
@@ -975,6 +1053,7 @@ export const routes = [
   {
     id: "robots.txt",
     path: "/robots.txt",
+    chunked: false,
     files: {
       route: () => import("../src/routes/robots.txt/route.js"),
     },
@@ -986,6 +1065,7 @@ export const routes = [
   {
     id: "sitemap.xml",
     path: "/sitemap.xml",
+    chunked: false,
     files: {
       route: () => import("../src/routes/sitemap.xml/route.js"),
     },
@@ -997,6 +1077,7 @@ export const routes = [
   {
     id: "walkthrough/index",
     path: "/walkthrough",
+    chunked: false,
     files: {
       page: () => import("../src/routes/walkthrough/index/page.js"),
       meta: () => import("../src/routes/walkthrough/index/meta.js"),
@@ -1009,6 +1090,7 @@ export const routes = [
   {
     id: "walkthrough/chunked",
     path: "/walkthrough/chunked",
+    chunked: false,
     files: {
       page: () => import("../src/routes/walkthrough/chunked/page.js"),
       meta: () => import("../src/routes/walkthrough/chunked/meta.js"),
@@ -1021,6 +1103,7 @@ export const routes = [
   {
     id: "walkthrough/custom",
     path: "/walkthrough/custom",
+    chunked: false,
     files: {
       page: () => import("../src/routes/walkthrough/custom/page.js"),
       meta: () => import("../src/routes/walkthrough/custom/meta.js"),
@@ -1033,6 +1116,7 @@ export const routes = [
   {
     id: "walkthrough/hydrated",
     path: "/walkthrough/hydrated",
+    chunked: false,
     files: {
       page: () => import("../src/routes/walkthrough/hydrated/page.js"),
       meta: () => import("../src/routes/walkthrough/hydrated/meta.js"),
@@ -1045,6 +1129,7 @@ export const routes = [
   {
     id: "walkthrough/islands",
     path: "/walkthrough/islands",
+    chunked: false,
     files: {
       page: () => import("../src/routes/walkthrough/islands/page.js"),
       meta: () => import("../src/routes/walkthrough/islands/meta.js"),
@@ -1057,6 +1142,7 @@ export const routes = [
   {
     id: "walkthrough/shell",
     path: "/walkthrough/shell",
+    chunked: false,
     files: {
       page: () => import("../src/routes/walkthrough/shell/page.js"),
       meta: () => import("../src/routes/walkthrough/shell/meta.js"),
@@ -1069,6 +1155,7 @@ export const routes = [
   {
     id: "walkthrough/ssg",
     path: "/walkthrough/ssg",
+    chunked: false,
     files: {
       page: () => import("../src/routes/walkthrough/ssg/page.js"),
       loader: () => import("../src/routes/walkthrough/ssg/loader.js"),
@@ -1082,6 +1169,7 @@ export const routes = [
   {
     id: "walkthrough/ssr",
     path: "/walkthrough/ssr",
+    chunked: false,
     files: {
       page: () => import("../src/routes/walkthrough/ssr/page.js"),
       meta: () => import("../src/routes/walkthrough/ssr/meta.js"),

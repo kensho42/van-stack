@@ -33,6 +33,10 @@ describe("chunked csr demo", () => {
     expect(readFileSync(manifestPath, "utf8")).toContain(
       "export const routes = [",
     );
+    expect(readFileSync(manifestPath, "utf8")).toContain("chunked: true,");
+    expect(readFileSync(manifestPath, "utf8")).toMatch(
+      /id: "shell-workbench::sidebar"[\s\S]*?chunked: true,/,
+    );
     expect(assets.has("/assets/chunked-csr-hydrated.js")).toBe(true);
     expect(assets.has("/assets/chunked-csr-shell.js")).toBe(true);
     expect(assets.has("/assets/chunked-csr-custom.js")).toBe(true);
@@ -55,9 +59,10 @@ describe("chunked csr demo", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("javascript");
-    expect(await response.text()).toMatch(
-      /chunkedRouteContent|workbenchPanels/,
-    );
+
+    const emittedChunk = assets.get(chunkPath);
+    expect(emittedChunk).toBeTypeOf("string");
+    expect(await response.text()).toBe(emittedChunk);
   });
 
   test("renders hydrated, shell, and custom detail pages with matching assets", async () => {
@@ -84,6 +89,9 @@ describe("chunked csr demo", () => {
     expect(hydrated.html).toContain("Shared detail copy");
     expect(shell.html).toContain("Shared detail copy");
     expect(custom.html).toContain("Shared detail copy");
+    expect(hydrated.html).toContain("Increment remount counter");
+    expect(hydrated.html).toContain("default remount");
+    expect(hydrated.html).not.toContain("Hydration marker is active.");
   });
 
   test("renders the landing route without a client shell", async () => {

@@ -6,9 +6,8 @@ import {
   getClientRoot,
   renderClientLoading,
   renderClientPage,
-  shellClientRoutes,
-  wireClientNavigation,
-} from "./routes";
+} from "./rendering";
+import { shellClientRoutes, wireClientNavigation } from "./routes";
 
 const root = getClientRoot(document);
 const router = createRouter({

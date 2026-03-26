@@ -38,7 +38,14 @@ type BuildRouteManifestOptions = {
   root: string;
   outFile?: string;
   filePaths?: string[];
+  chunkedRoutes?: ChunkedRoutesOption;
 };
+
+export type ChunkedRoutesOption =
+  | boolean
+  | {
+      excludeRouteIds?: string[];
+    };
 
 type LoadRoutesOptions = {
   root: string;
@@ -46,9 +53,18 @@ type LoadRoutesOptions = {
 };
 
 export type RouteManifest = {
-  routes: NormalizedRoute[];
+  routes: ManifestRoute[];
   code: string;
   outFile: string;
+};
+
+export type ManifestSlotRoute = NormalizedSlotRoute & {
+  chunked: boolean;
+};
+
+export type ManifestRoute = Omit<NormalizedRoute, "slots"> & {
+  chunked: boolean;
+  slots?: Record<string, readonly ManifestSlotRoute[]>;
 };
 
 export type LoadedRoute = Pick<
@@ -172,6 +188,51 @@ function buildLoadedSlotRoute(
   };
 }
 
+function isRouteChunked(
+  routeId: string,
+  chunkedRoutes: ChunkedRoutesOption | undefined,
+): boolean {
+  if (!chunkedRoutes) {
+    return false;
+  }
+
+  if (chunkedRoutes === true) {
+    return true;
+  }
+
+  return !new Set(chunkedRoutes.excludeRouteIds ?? []).has(routeId);
+}
+
+function buildManifestSlotRoute(
+  route: NormalizedSlotRoute,
+  chunkedRoutes: ChunkedRoutesOption | undefined,
+): ManifestSlotRoute {
+  return {
+    ...route,
+    chunked: isRouteChunked(route.id, chunkedRoutes),
+  };
+}
+
+function buildManifestRoute(
+  route: NormalizedRoute,
+  chunkedRoutes: ChunkedRoutesOption | undefined,
+): ManifestRoute {
+  return {
+    ...route,
+    chunked: isRouteChunked(route.id, chunkedRoutes),
+    slots: route.slots
+      ? Object.fromEntries(
+          Object.entries(route.slots).map(([slot, slotRoutes]) => [
+            slot,
+            slotRoutes.map((slotRoute) =>
+              buildManifestSlotRoute(slotRoute, chunkedRoutes),
+            ),
+          ]),
+        )
+      : undefined,
+  };
+}
+
 function buildLoadedRoute(
   route: NormalizedRoute,
   routesRoot: string,
@@ -252,7 +313,7 @@ function renderLayoutChain(
 }
 
 function renderSlotRoute(
-  route: NormalizedSlotRoute,
+  route: ManifestSlotRoute,
   routesRoot: string,
   outFile: string,
 ): string[] {
@@ -279,6 +340,7 @@ function renderSlotRoute(
     `          id: "${route.id}",`,
     `          slot: "${route.slot}",`,
     `          path: "${route.path}",`,
+    `          chunked: ${route.chunked},`,
     fileLines.length === 0 ? "          files: {}," : "          files: {",
     ...fileLines,
     ...(fileLines.length === 0 ? [] : ["          },"]),
@@ -288,7 +350,7 @@ function renderSlotRoute(
 }
 
 function renderSlots(
-  route: NormalizedRoute,
+  route: ManifestRoute,
   routesRoot: string,
   outFile: string,
 ): string[] {
@@ -311,7 +373,7 @@ function renderSlots(
 }
 
 function renderManifestCode(
-  routes: NormalizedRoute[],
+  routes: ManifestRoute[],
   routesRoot: string,
   outFile: string,
 ): string {
@@ -325,6 +387,7 @@ function renderManifestCode(
     lines.push("  {");
     lines.push(`    id: "${route.id}",`);
     lines.push(`    path: "${route.path}",`);
+    lines.push(`    chunked: ${route.chunked},`);
     lines.push(...renderFiles(route, outFile));
     lines.push(renderLayoutChain(route, routesRoot, outFile));
     lines.push(
@@ -355,7 +418,9 @@ export async function buildRouteManifest(
   const outFile = inferOutFile(routesRoot, options.outFile);
   const filePaths =
     options.filePaths ?? (await discoverRoutes({ root: routesRoot }));
-  const routes = compileRoutesFromPaths(filePaths, { root: routesRoot });
+  const routes = compileRoutesFromPaths(filePaths, { root: routesRoot }).map(
+    (route) => buildManifestRoute(route, options.chunkedRoutes),
+  );
   const code = renderManifestCode(routes, routesRoot, outFile);
 
   return {

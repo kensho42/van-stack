@@ -53,10 +53,10 @@ Helpers such as `_components` are ignored unless they use a reserved filename.
 
 `loader.ts` receives `{ params, request }`, which gives SSR and hydrated routes access to per-request state like cookies or headers without leaving the route module model.
 
-`hydrate.ts` is the client-only route module for real DOM hydration of `app` routes. It receives the existing SSR root plus bootstrap data and should call `van.hydrate(...)` on the DOM nodes that need to become interactive.
+`hydrate.ts` is the client-only low-level enhance hook. On `app` branches it is optional: if present, VanStack preserves the existing SSR DOM for that route or named slot and lets `hydrate.ts` attach behavior with `van.hydrate(...)`; if absent, the matched `page.ts` remounts by default. On `islands` branches, `hydrate.ts` is the normal enhancement hook.
 
 `layout.ts` receives `{ children, data, slots, slotData, params, path }`. `children` is the default branch, while `slots` and `slotData` expose any active named `@slot` branches owned by that layout directory.
 
 `route.ts` is the raw `Request -> Response` escape hatch for non-HTML routes such as `robots.txt`, `sitemap.xml`, feeds, proxy endpoints, or webhooks.
 
-The runtime route manifest is the bridge between route files and the CSR, SSR, or SSG entrypoints. Most apps can keep it in memory; apps that need an explicit build artifact can persist `.van-stack/routes.generated.ts` and pass it into `startClientApp({ routes, ... })` for browser route chunking. Apps that do not want filesystem routing can still skip this and provide routes manually.
+The runtime route manifest is the bridge between route files and the CSR, SSR, or SSG entrypoints. Most apps can keep it in memory; apps that need an explicit build artifact can persist `.van-stack/routes.generated.ts` and pass it into `startClientApp({ routes, ... })` for browser route chunking. When chunking should be template-wide instead of ad hoc, the compiler also accepts `chunkedRoutes` so app templates can mark route branches chunked or eager at build time. Apps that do not want filesystem routing can still skip this and provide routes manually.
