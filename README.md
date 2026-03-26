@@ -1,6 +1,6 @@
 # van-stack
 
-`van-stack` is a router-first framework for VanJS with support for CSR, SSR, SSG, and adaptive navigation. It is built around one shared route model, one shared Van render facade, and multiple runtime entrypoints.
+`van-stack` is a router-first framework for VanJS with one shared route model across CSR, SSR, and SSG. The default path is filesystem routing from `src/routes`, shared route components through `van-stack/render`, and the same route graph flowing into the runtime you need.
 
 ## Install
 
@@ -8,13 +8,138 @@
 bun add van-stack
 ```
 
-## Build
+## Start Here
+
+1. Create route modules under `src/routes`.
+2. Load them with `loadRoutes({ root: "src/routes" })`.
+3. Write shared route components against `van-stack/render`.
+4. Pass those routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
+
+If you want one place to evaluate the full framework before wiring your own app, start with `demo/showcase` and run:
 
 ```bash
-bun run build
+bun run start
 ```
 
-That emits the publishable package into `dist/` with JavaScript and `.d.ts` files for the root entrypoint plus the public subpaths.
+## Happy-Path Quick Start
+
+The normal filesystem-routing path looks like this:
+
+```text
+src/routes/
+  app/
+    layout.ts
+    @sidebar/
+      page.ts
+    posts/
+      [slug]/
+        page.ts
+        loader.ts
+        meta.ts
+```
+
+`@slot` directories are pathless route branches that attach to the nearest owning `layout.ts`. The default branch is still exposed as `children`; named branches are exposed as `slots[name]`, and their resolved data is exposed as `slotData[name]`.
+
+Load the route tree in memory:
+
+```ts
+import { loadRoutes } from "van-stack/compiler";
+
+const routes = await loadRoutes({ root: "src/routes" });
+```
+
+Write route components against the framework-owned render facade:
+
+```ts
+import { van } from "van-stack/render";
+
+const { article, h1, p } = van.tags;
+
+export default function page(input: {
+  data: {
+    post: { title: string; excerpt: string };
+  };
+}) {
+  return article(h1(input.data.post.title), p(input.data.post.excerpt));
+}
+```
+
+Add route data and metadata with the reserved route-module files:
+
+```ts
+// loader.ts
+export default async function loader(input: {
+  params: { slug: string };
+  request: Request;
+}) {
+  return {
+    post: {
+      slug: input.params.slug,
+      title: `Post: ${input.params.slug}`,
+      excerpt: `Notes about ${input.params.slug}`,
+    },
+    requestUrl: input.request.url,
+  };
+}
+```
+
+```ts
+// meta.ts
+export default function meta(input: {
+  params: { slug: string };
+  data: {
+    post: { title: string; excerpt: string };
+  };
+}) {
+  return {
+    title: input.data.post.title,
+    description: input.data.post.excerpt,
+    canonical: `/posts/${input.params.slug}`,
+  };
+}
+```
+
+Choose the runtime handoff you want:
+
+```ts
+// CSR shell boot
+import { createRouter } from "van-stack/csr";
+
+const router = createRouter({
+  mode: "shell",
+  routes,
+  history: window.history,
+  transport: {
+    async load(match) {
+      const response = await fetch(`/_van-stack/data${match.pathname}`);
+      return response.json();
+    },
+  },
+});
+```
+
+```ts
+// SSR request rendering
+import { renderRequest } from "van-stack/ssr";
+
+const response = await renderRequest({
+  request,
+  routes,
+});
+```
+
+```ts
+// SSG export
+import { exportStaticSite } from "van-stack/ssg";
+
+await exportStaticSite({
+  routes,
+  outDir: "dist",
+  assets: [{ from: "public" }],
+});
+```
+
+That is the core flow: route files in `src/routes`, `loadRoutes({ root: "src/routes" })`, shared UI via `van-stack/render`, then CSR, SSR, or SSG on top of the same route graph.
 
 ## Why van-stack?
 
@@ -43,189 +168,20 @@ That emits the publishable package into `dist/` with JavaScript and `.d.ts` file
 ## How It Fits Together
 
 1. Author route modules under `src/routes`.
-2. Use `van-stack/compiler` to load those routes into memory with `loadRoutes({ root: "src/routes" })`, or emit `.van-stack/routes.generated.ts` when a browser CSR app wants route-level chunks.
+2. Use `van-stack/compiler` to load those routes into memory with `loadRoutes({ root: "src/routes" })`.
 3. Write shared route components against `van-stack/render`.
 4. Pass the loaded routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
 5. Add `van-stack/vite` only if you want route-aware DX on top of the compiler layer.
 
 Filesystem routing is the default path, but it is not mandatory. Manual route arrays still work when an app intentionally wants to bypass the compiler.
 
-## Quick Start
-
-### Route Files
-
-```text
-src/routes/
-  app/
-    layout.ts
-    @sidebar/
-      page.ts
-    users/
-      [id]/
-        page.ts
-        loader.ts
-        meta.ts
-```
-
-`@slot` directories are pathless route branches that attach to the nearest owning `layout.ts`. The default branch is still exposed as `children`; named branches are exposed as `slots[name]`, and their resolved data is exposed as `slotData[name]`.
-
-### Load Routes
-
-```ts
-import { loadRoutes } from "van-stack/compiler";
-
-const routes = await loadRoutes({ root: "src/routes" });
-```
-
-That gives you a runtime-ready route list. If a custom build pipeline needs a persisted artifact, the compiler can still write `.van-stack/routes.generated.ts` explicitly:
+If a custom build pipeline needs a persisted artifact, the compiler can still write `.van-stack/routes.generated.ts` explicitly:
 
 ```ts
 import { writeRouteManifest } from "van-stack/compiler";
 
 await writeRouteManifest({ root: "src/routes" });
 ```
-
-### Route Module Example
-
-`loader.ts`
-
-```ts
-export default async function loader(input: {
-  params: { slug: string };
-  request: Request;
-}) {
-  return {
-    post: {
-      slug: input.params.slug,
-      title: `Post: ${input.params.slug}`,
-      excerpt: `Notes about ${input.params.slug}`,
-    },
-    requestUrl: input.request.url,
-  };
-}
-```
-
-`page.ts`
-
-```ts
-import { van } from "van-stack/render";
-
-const { article, h1, p } = van.tags;
-
-export default function page(input: {
-  data: {
-    post: { title: string; excerpt: string };
-  };
-}) {
-  return article(h1(input.data.post.title), p(input.data.post.excerpt));
-}
-```
-
-`meta.ts`
-
-```ts
-export default function meta(input: {
-  params: { slug: string };
-  data: {
-    post: { title: string; excerpt: string };
-  };
-}) {
-  return {
-    title: input.data.post.title,
-    description: input.data.post.excerpt,
-    canonical: `/posts/${input.params.slug}`,
-  };
-}
-```
-
-`layout.ts`
-
-```ts
-import { van } from "van-stack/render";
-
-const { aside, div, main } = van.tags;
-
-export default function layout(input: {
-  children: unknown;
-  slots: Record<string, unknown>;
-  slotData: Record<string, unknown>;
-}) {
-  return div(
-    { class: "control-plane" },
-    aside(input.slots.sidebar),
-    main(input.children),
-  );
-}
-```
-
-`route.ts` is for raw `Request -> Response` handlers such as `robots.txt`, `sitemap.xml`, feeds, proxies, or webhook endpoints:
-
-```ts
-export default function route() {
-  return new Response("User-agent: *\nAllow: /\n", {
-    headers: {
-      "content-type": "text/plain; charset=utf-8",
-    },
-  });
-}
-```
-
-`hydrate.ts` is the optional low-level client enhance hook for SSR routes. `app` handoff uses it when a route or named slot needs to preserve and enhance existing SSR DOM; otherwise the matched `page.ts` remounts by default. `islands` routes use `hydrate.ts` as their normal enhancement hook:
-
-```ts
-import { van } from "van-stack/render";
-
-export default function hydrate(input: {
-  root: Element;
-  data: { post: { likes: number } };
-}) {
-  const likes = van.state(input.data.post.likes);
-  const button = input.root.querySelector("[data-like-button]");
-  const count = input.root.querySelector("[data-like-count]");
-
-  if (!(button instanceof HTMLButtonElement) || !(count instanceof HTMLSpanElement)) {
-    throw new Error("Missing hydration markers.");
-  }
-
-  van.hydrate(button, (dom) => {
-    dom.onclick = () => {
-      likes.val += 1;
-    };
-    return dom;
-  });
-
-  van.hydrate(count, (dom) => {
-    dom.textContent = String(likes.val);
-    return dom;
-  });
-}
-```
-
-### Shell CSR Boot
-
-```ts
-import { loadRoutes } from "van-stack/compiler";
-import { createRouter } from "van-stack/csr";
-
-const routes = await loadRoutes({ root: "src/routes" });
-
-const router = createRouter({
-  mode: "shell",
-  routes,
-  history: window.history,
-  transport: {
-    async load(match) {
-      const response = await fetch(`/_van-stack/data${match.pathname}`);
-      return response.json();
-    },
-  },
-});
-
-await router.load("/posts/agentic-coding-is-the-future");
-await router.navigate("/posts/github-down");
-```
-
-### Chunked CSR Boot
 
 Use the emitted route manifest when a browser CSR app wants bundler-visible lazy `import()` boundaries for per-route chunks:
 
@@ -244,165 +200,13 @@ await app.ready;
 
 The generated manifest is the opt-in chunking path. Apps that bundle everything eagerly can keep using `loadRoutes({ root: "src/routes" })`, while apps that want template-wide chunking can pass `chunkedRoutes` into `buildRouteManifest({ root, chunkedRoutes })` or `writeRouteManifest({ root, chunkedRoutes })`.
 
-### App Hydration Handoff
+## Runtime Model
 
-For SSR branches using `hydrationPolicy: "app"`, the recommended browser entry is the managed `hydrated` client mode:
+### CSR Modes
 
-```ts
-import { loadRoutes } from "van-stack/compiler";
-import { startClientApp } from "van-stack/csr";
-
-const routes = await loadRoutes({ root: "src/routes" });
-
-const app = startClientApp({
-  mode: "hydrated",
-  routes,
-  history: window.history,
-});
-
-await app.ready;
-```
-
-`startClientApp({ mode: "hydrated" })` uses `hydrateApp(...)` as the initial SSR handoff orchestrator. `hydrateApp(...)` reads the bootstrap payload, finds the app root, and then applies the default `app` strategy:
-
-- if the matched route or named slot ships `hydrate.ts`, run that low-level enhance hook against the existing SSR DOM
-- otherwise resolve the matched `page.ts` and remount that branch into the app root or slot root
-
-After the initial handoff, later client renders follow the same rule. `hydrated` remains the CSR mode name; `remount` is the default handoff strategy inside that mode, not a separate runtime mode.
-
-### Islands Hydration
-
-For SSR branches using `hydrationPolicy: "islands"`, you can hydrate focused route islands without creating a client router:
-
-```ts
-import { loadRoutes } from "van-stack/compiler";
-import { hydrateIslands } from "van-stack/csr";
-
-const routes = await loadRoutes({ root: "src/routes" });
-
-const hydration = hydrateIslands({ routes });
-await hydration.ready;
-```
-
-`hydrateIslands(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, and runs that low-level enhancement against the server-owned document without taking over navigation.
-
-## API Tour
-
-### `van-stack/compiler`
-
-Use the compiler when you want filesystem routing:
-
-```ts
-import { loadRoutes, writeRouteManifest } from "van-stack/compiler";
-
-const routes = await loadRoutes({ root: "src/routes" });
-
-// Optional emitted artifact for chunked browser CSR or custom build tooling.
-await writeRouteManifest({ root: "src/routes" });
-```
-
-`loadRoutes(...)` is still the recommended default. Writing `.van-stack/routes.generated.ts` is the opt-in path when a browser CSR app wants route-level JS chunks.
-
-### `van-stack/render`
-
-Route modules should import Van and VanX through the framework facade, not from concrete client or server packages:
-
-```ts
-import { van, vanX } from "van-stack/render";
-
-const { button, div, p } = van.tags;
-
-export default function page() {
-  const count = van.state(0);
-  const post = vanX.reactive({
-    title: "Increment Demo",
-    likes: 0,
-  });
-
-  return div(
-    p(() => post.title),
-    button(
-      {
-        onclick: () => {
-          count.val += 1;
-          post.likes += 1;
-        },
-      },
-      "Increment",
-    ),
-    p(() => `Count: ${count.val}`),
-    p(() => `Likes: ${post.likes}`),
-  );
-}
-```
-
-The render facade also exposes `van.hydrate(...)` for route-level `hydrate.ts` modules. In `app` handoff flows that file is the optional low-level enhance hook; in `islands` flows it is the normal activation path. Under the hood, CSR binds the real VanX runtime while SSR and SSG bind the server-safe VanX placeholder recommended by the official Van fullstack SSR pattern.
-
-### Third-Party Van Libraries
-
-First-party route code should still use `van-stack/render`. Compatibility shims exist for imported packages that hard-import `vanjs-core` or `vanjs-ext` directly:
-
-```ts
-import { vanStackVite, getVanStackCompatAliases } from "van-stack/vite";
-```
-
-Use `vanStackVite()` for Vite apps, or reuse `getVanStackCompatAliases()` in Vitest and custom Vite configs so those packages resolve through the bound `van-stack/render` environment. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
-
-For Bun SSR and SSG entrypoints, run Bun with the shipped compat override:
-
-```bash
-bun run --tsconfig-override ./node_modules/van-stack/compat/bun-tsconfig.json ./src/server.ts
-```
-
-`van-stack/compat/bun-preload` is intentionally unsupported. Bun runtime plugins do not intercept bare package imports during `bun run`, so Bun needs the `tsconfig` override path instead.
-
-For a repeatable app setup, add a dedicated Bun tsconfig and call it from package scripts:
-
-`tsconfig.bun.json`
-
-```json
-{
-  "extends": "./node_modules/van-stack/compat/bun-tsconfig.json"
-}
-```
-
-`package.json`
-
-```json
-{
-  "scripts": {
-    "ssr": "bun run --tsconfig-override ./tsconfig.bun.json ./src/server.ts",
-    "ssg": "bun run --tsconfig-override ./tsconfig.bun.json ./src/build.ts"
-  }
-}
-```
-
-`bunfig.toml` does not currently expose a `tsconfig` override setting, so the supported Bun DX path is a checked-in `tsconfig.bun.json` plus package script aliases.
-
-Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means you must bind the render env before module evaluation reaches any imported library that reads `van` or `vanX` eagerly.
-
-### `van-stack/csr`
-
-`van-stack/csr` supports three runtime modes:
-
-- `hydrated`: continue from SSR HTML and bootstrap data
-- `shell`: boot from a tiny document and use transport-backed loading
-- `custom`: boot from a tiny document and keep data ownership in the host app or in components
-
-For framework-owned client rendering, use `startClientApp({ routes, ... })`. It accepts either eager route arrays or lazy manifest-shaped routes from `.van-stack/routes.generated.ts`:
-
-```ts
-import routes from "../.van-stack/routes.generated";
-import { startClientApp } from "van-stack/csr";
-
-const app = startClientApp({
-  mode: "shell",
-  routes,
-  history: window.history,
-});
-
-await app.ready;
-```
+- `hydrated`: web browser starts from SSR HTML, then continues as a client app
+- `shell`: app starts from a tiny HTML shell and uses VanStack-owned route loading
+- `custom`: app starts from a tiny HTML shell and owns its data loading strategy
 
 Resolver-driven `custom` mode:
 
@@ -434,81 +238,45 @@ const router = createRouter({
 });
 ```
 
-In that second shape, VanStack owns route matching, params, query parsing, history, and navigation. Route data is not preloaded; components fetch for themselves.
-
-For SSR handoff in `app` hydration mode, prefer `hydrateApp(...)` over manual bootstrap wiring:
-
-```ts
-import { hydrateApp } from "van-stack/csr";
-
-const app = hydrateApp({ routes });
-await app.ready;
-
-app.router.subscribe((entry) => {
-  console.log(entry.path);
-});
-```
-
-### `van-stack/ssr`
-
-SSR consumes the same route graph and returns HTML plus bootstrap state:
-
-```ts
-import { loadRoutes } from "van-stack/compiler";
-import { renderRequest } from "van-stack/ssr";
-
-const routes = await loadRoutes({ root: "src/routes" });
-
-const response = await renderRequest({
-  request,
-  routes,
-});
-
-console.log(response.status);
-console.log(await response.text());
-```
-
-`request` is the incoming server/runtime request object.
-
-For non-HTML endpoints such as `robots.txt`, `sitemap.xml`, or reverse-proxy style content routes, define `route.ts` and return a raw `Response`.
-
-### `van-stack/ssg`
-
-SSG also consumes the same route graph:
-
-```ts
-import { loadRoutes } from "van-stack/compiler";
-import { buildStaticRoutes, exportStaticSite } from "van-stack/ssg";
-
-const routes = await loadRoutes({ root: "src/routes" });
-const artifacts = await buildStaticRoutes({ routes });
-
-await exportStaticSite({
-  routes,
-  outDir: "dist",
-  assets: [{ from: "public" }],
-});
-```
-
-`buildStaticRoutes(...)` is the in-memory primitive for caches, tests, and previews. `exportStaticSite(...)` writes deployable static output for generic web servers.
-
-Routes that participate in SSG should provide `entries.ts` so dynamic params can expand into concrete paths. That applies to both `page.ts` HTML routes and raw `route.ts` outputs such as `robots.txt`, `feed.xml`, or `sitemap.xml`.
-
-## Runtime Model
-
-### CSR Modes
-
-- `hydrated`: web browser starts from SSR HTML, then continues as a client app
-- `shell`: app starts from a tiny HTML shell and uses VanStack-owned route loading
-- `custom`: app starts from a tiny HTML shell and owns its data loading strategy
-
 ### Hydration Policies
 
 - `document-only`: SSR HTML only
 - `islands`: SSR HTML plus targeted client activation
 - `app`: SSR HTML followed by full client-router handoff
 
-In practice, `app` handoff means SSR emits bootstrap state and an app root, while the client uses the `hydrated` CSR mode to resume from that first route. If a route or named slot ships `hydrate.ts`, VanStack preserves the SSR DOM and runs that low-level enhance hook; otherwise it resolves the matching `page.ts` and remounts that branch by default before continuing with router takeover.
+For SSR branches using `hydrationPolicy: "app"`, the recommended browser entry is the managed `hydrated` client mode:
+
+```ts
+import { loadRoutes } from "van-stack/compiler";
+import { startClientApp } from "van-stack/csr";
+
+const routes = await loadRoutes({ root: "src/routes" });
+
+const app = startClientApp({
+  mode: "hydrated",
+  routes,
+  history: window.history,
+});
+
+await app.ready;
+```
+
+`startClientApp({ mode: "hydrated" })` uses `hydrateApp(...)` as the initial SSR handoff orchestrator. `hydrateApp(...)` reads the bootstrap payload, finds the app root, and then applies the default `app` strategy:
+
+- if the matched route or named slot ships `hydrate.ts`, run that low-level enhance hook against the existing SSR DOM
+- otherwise resolve the matched `page.ts` and remounts that branch by default before continuing with router takeover
+
+For SSR branches using `hydrationPolicy: "islands"`, you can hydrate focused route islands without creating a client router:
+
+```ts
+import { loadRoutes } from "van-stack/compiler";
+import { hydrateIslands } from "van-stack/csr";
+
+const routes = await loadRoutes({ root: "src/routes" });
+
+const hydration = hydrateIslands({ routes });
+await hydration.ready;
+```
 
 Hydration policy is about how SSR output becomes interactive. CSR mode is about how a client router boots and where data comes from.
 
@@ -519,34 +287,61 @@ Hydration policy is about how SSR output becomes interactive. CSR mode is about 
 
 Presentation is separate from route matching and data loading. The same route tree can present as `replace` on desktop and `stack` on mobile or Tauri shells.
 
-## Demos
+## Compatibility And Tooling Notes
 
-For the fastest evaluator path, run the showcase from the repo root:
+Route modules should import Van and VanX through `van-stack/render`, not from concrete client or server packages:
 
-```bash
-bun run start
+```ts
+import { van, vanX } from "van-stack/render";
 ```
 
-- `demo/showcase`: evaluator-first demo workspace for the shared blog app
-  - `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, `custom`, and `chunked` comparisons against one Northstar Journal blog app
-  - Post detail routes demonstrate server-backed likes and bookmarks, with default remount handoff for `hydrated` and low-level enhance hooks for `islands`
-  - `Guided Walkthrough`: annotated evaluator pages that explain those same seven modes and link back to the live routes
-  - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
-- `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
-- `demo/chunked-csr`: focused reference for route-level CSR chunking through `chunkedRoutes`, `.van-stack/routes.generated.ts`, and `startClientApp({ routes })`, including a `/shell-workbench/overview` control-plane route built from `layout.ts` plus a pathless `@sidebar` slot
-- `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
-- `demo/ssg-site`: focused reference for static generation from route entries, raw `route.ts` outputs, and exported asset trees that can be served by generic web servers; run `bun ./demo/ssg-site/build.ts` to write `demo/ssg-site/dist/`
-- `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation
-- `demo/third-party-compat`: focused reference for libraries that import `vanjs-core` and `vanjs-ext` directly, rendered through `van-stack/vite` in CSR, `van-stack/compat/node-register` in Node SSR and SSG, and `compat/bun-tsconfig.json` in Bun SSR and SSG
+First-party route code should still use `van-stack/render`. Compatibility shims exist for imported packages that hard-import `vanjs-core` or `vanjs-ext` directly:
 
-## Docs
+```ts
+import { vanStackVite, getVanStackCompatAliases } from "van-stack/vite";
+```
 
-- [Getting Started](./docs/getting-started.md)
-- [Route Conventions](./docs/route-conventions.md)
-- [Loaders And Actions](./docs/loaders-and-actions.md)
-- [Hydration Modes](./docs/hydration-modes.md)
-- [Shared Components](./docs/shared-components.md)
-- [Bun Runtime](./docs/bun.md)
-- [Adaptive Navigation](./docs/adaptive-navigation.md)
-- [Optional Vite Integration](./docs/vite.md)
-- [Demos](./docs/demos.md)
+Use `vanStackVite()` for Vite apps, or reuse `getVanStackCompatAliases()` in Vitest and custom Vite configs so those packages resolve through the bound `van-stack/render` environment. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
+
+For Bun SSR and SSG entrypoints, run Bun with the shipped compat override:
+
+```bash
+bun run --tsconfig-override ./node_modules/van-stack/compat/bun-tsconfig.json ./src/server.ts
+```
+
+For a repeatable app setup, add a dedicated Bun tsconfig and call it from package scripts:
+
+`tsconfig.bun.json`
+
+```json
+{
+  "extends": "./node_modules/van-stack/compat/bun-tsconfig.json"
+}
+```
+
+`package.json`
+
+```json
+{
+  "scripts": {
+    "ssr": "bun run --tsconfig-override ./tsconfig.bun.json ./src/server.ts",
+    "ssg": "bun run --tsconfig-override ./tsconfig.bun.json ./src/build.ts"
+  }
+}
+```
+
+`bunfig.toml` does not currently expose a `tsconfig` override setting, so the supported Bun DX path is a checked-in `tsconfig.bun.json` plus package script aliases. `van-stack/compat/bun-preload` is intentionally unsupported. Bun runtime plugins do not intercept bare package imports during `bun run`, so Bun needs the `tsconfig` override path instead.
+
+Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means you must bind the render env before module evaluation reaches any imported library that reads `van` or `vanX` eagerly.
+
+## Demos And Docs
+
+- `demo/showcase`: main evaluator demo covering gallery, guided walkthroughs, `ssr`, `ssg`, `hydrated`, `islands`, `shell`, `custom`, and chunked flows
+- `demo/chunked-csr`: chunked browser CSR demo using `.van-stack/routes.generated.ts`
+- `demo/third-party-compat`: compatibility demo for packages that import `vanjs-core` or `vanjs-ext`
+- `docs/getting-started.md`: focused setup and recommended defaults
+- `docs/demos.md`: demo index
+- `docs/bun.md`: Bun-specific compatibility and workflow guidance
+- `demo/adaptive-nav`: focused adaptive navigation demo
+
+For deployable static output, `exportStaticSite(...)` writes HTML pages, raw `route.ts` outputs, and copied asset files/directories into a static tree that generic web servers can serve directly.
