@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 
 import { handleShowcaseRequest } from "../../demo/showcase/src/runtime/app";
+import { warmShowcaseAssets } from "../../demo/showcase/src/runtime/assets";
 import {
   startShowcaseServer,
   startShowcaseServerWithFallback,
@@ -382,9 +383,12 @@ describe("showcase app", () => {
     expect(customSource.length).toBeLessThan(300_000);
     expect(chunkedSource.length).toBeLessThan(300_000);
 
-    const chunkImport = /chunk-[^"'`]+\.js/.exec(chunkedSource)?.[0];
+    const chunkImports = Array.from(
+      new Set(chunkedSource.match(/chunk-[^"'`]+\.js/g) ?? []),
+    );
+    const chunkImport = chunkImports[0];
     expect(chunkImport).toBeTruthy();
-    if (!chunkImport) {
+    if (chunkImports.length === 0) {
       throw new Error("Chunked asset build did not emit a secondary chunk.");
     }
 
@@ -393,6 +397,18 @@ describe("showcase app", () => {
     );
     expect(secondaryChunk.status).toBe(200);
     expect(secondaryChunk.headers.get("content-type")).toContain("javascript");
+    const secondaryChunkSource = await secondaryChunk.text();
+    expect(secondaryChunkSource.length).toBeLessThan(500_000);
+    let largestChunkLength = secondaryChunkSource.length;
+    for (const entry of chunkImports.slice(1)) {
+      const chunkResponse = await handleShowcaseRequest(
+        new Request(`https://example.com/assets/${entry}`),
+      );
+      expect(chunkResponse.status).toBe(200);
+      const chunkSource = await chunkResponse.text();
+      largestChunkLength = Math.max(largestChunkLength, chunkSource.length);
+    }
+    expect(largestChunkLength).toBeLessThan(500_000);
 
     const chunkedManifest = readFileSync(chunkedShowcaseManifestPath, "utf8");
     expect(chunkedManifest).toContain('id: "gallery/chunked/index"');
@@ -402,6 +418,17 @@ describe("showcase app", () => {
     expect(chunkedManifest).toMatch(
       /id: "gallery\/chunked\/posts\/\[slug\]"[\s\S]*?chunked: true,/,
     );
+
+    const chunkedAssets = await warmShowcaseAssets();
+    const largestChunk = [...chunkedAssets.entries()]
+      .filter(([path]) => path.startsWith("/assets/chunk-chunked-"))
+      .map(([path, source]) => ({
+        path,
+        length: source.length,
+      }))
+      .sort((left, right) => right.length - left.length)[0];
+    expect(largestChunk).toBeTruthy();
+    expect(largestChunk?.length).toBeLessThan(500_000);
   });
 
   test("serves route metadata from meta.ts for interactive routes", async () => {

@@ -7,6 +7,7 @@ export const routes = [
     chunked: false,
     files: {
       page: () => import("../src/routes/gallery/chunked/index/page.js"),
+      loader: () => import("../src/routes/gallery/chunked/index/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/index/meta.js"),
     },
     layoutChain: [],
@@ -20,6 +21,7 @@ export const routes = [
     chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/authors/page.js"),
+      loader: () => import("../src/routes/gallery/chunked/authors/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/authors/meta.js"),
     },
     layoutChain: [],
@@ -50,6 +52,8 @@ export const routes = [
     chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/categories/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/chunked/categories/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/categories/meta.js"),
     },
     layoutChain: [],
@@ -80,6 +84,7 @@ export const routes = [
     chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/posts/page.js"),
+      loader: () => import("../src/routes/gallery/chunked/posts/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/posts/meta.js"),
     },
     layoutChain: [],
@@ -108,6 +113,7 @@ export const routes = [
     chunked: true,
     files: {
       page: () => import("../src/routes/gallery/chunked/tags/page.js"),
+      loader: () => import("../src/routes/gallery/chunked/tags/loader.js"),
       meta: () => import("../src/routes/gallery/chunked/tags/meta.js"),
     },
     layoutChain: [],
