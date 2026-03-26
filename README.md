@@ -158,7 +158,7 @@ export default function route() {
 }
 ```
 
-`hydrate.ts` is for real DOM hydration of SSR routes using `hydrationPolicy: "app"`:
+`hydrate.ts` is the optional low-level client enhance hook for SSR routes. `app` handoff uses it when a route or named slot needs to preserve and enhance existing SSR DOM; otherwise the matched `page.ts` remounts by default. `islands` routes use `hydrate.ts` as their normal enhancement hook:
 
 ```ts
 import { van } from "van-stack/render";
@@ -234,23 +234,29 @@ The generated manifest is the opt-in chunking path. Apps that bundle everything 
 
 ### App Hydration Handoff
 
-For SSR branches using `hydrationPolicy: "app"`, the client handoff no longer has to be wired by hand:
+For SSR branches using `hydrationPolicy: "app"`, the recommended browser entry is the managed `hydrated` client mode:
 
 ```ts
 import { loadRoutes } from "van-stack/compiler";
-import { hydrateApp } from "van-stack/csr";
+import { startClientApp } from "van-stack/csr";
 
 const routes = await loadRoutes({ root: "src/routes" });
 
-const app = hydrateApp({ routes });
-await app.ready;
-
-app.router.subscribe((entry) => {
-  console.log(entry.path, entry.data);
+const app = startClientApp({
+  mode: "hydrated",
+  routes,
+  history: window.history,
 });
+
+await app.ready;
 ```
 
-`hydrateApp(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, waits for that route-level DOM hydration to finish via `app.ready`, then creates a `hydrated` router, intercepts same-origin in-app link clicks, and listens for `popstate`.
+`startClientApp({ mode: "hydrated" })` uses `hydrateApp(...)` as the initial SSR handoff orchestrator. `hydrateApp(...)` reads the bootstrap payload, finds the app root, and then applies the default `app` strategy:
+
+- if the matched route or named slot ships `hydrate.ts`, run that low-level enhance hook against the existing SSR DOM
+- otherwise resolve the matched `page.ts` and remount that branch into the app root or slot root
+
+After the initial handoff, later client renders follow the same rule. `hydrated` remains the CSR mode name; `remount` is the default handoff strategy inside that mode, not a separate runtime mode.
 
 ### Islands Hydration
 
@@ -266,7 +272,7 @@ const hydration = hydrateIslands({ routes });
 await hydration.ready;
 ```
 
-`hydrateIslands(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, and runs that route-level hydration against the server-owned document without taking over navigation.
+`hydrateIslands(...)` reads the SSR bootstrap payload, resolves the matched route `hydrate.ts`, and runs that low-level enhancement against the server-owned document without taking over navigation.
 
 ## API Tour
 
@@ -318,7 +324,7 @@ export default function page() {
 }
 ```
 
-The render facade also exposes `van.hydrate(...)` for route-level DOM hydration modules. Under the hood, CSR binds the real VanX runtime while SSR and SSG bind the server-safe VanX placeholder recommended by the official Van fullstack SSR pattern.
+The render facade also exposes `van.hydrate(...)` for route-level `hydrate.ts` modules. In `app` handoff flows that file is the optional low-level enhance hook; in `islands` flows it is the normal activation path. Under the hood, CSR binds the real VanX runtime while SSR and SSG bind the server-safe VanX placeholder recommended by the official Van fullstack SSR pattern.
 
 ### Third-Party Van Libraries
 
@@ -490,7 +496,7 @@ Routes that participate in SSG should provide `entries.ts` so dynamic params can
 - `islands`: SSR HTML plus targeted client activation
 - `app`: SSR HTML followed by full client-router handoff
 
-In practice, `app` handoff means SSR emits bootstrap state and an app root, while the client calls `hydrateApp({ routes })`, awaits `app.ready`, and then continues from that initial route with real DOM hydration plus router takeover.
+In practice, `app` handoff means SSR emits bootstrap state and an app root, while the client uses the `hydrated` CSR mode to resume from that first route. If a route or named slot ships `hydrate.ts`, VanStack preserves the SSR DOM and runs that low-level enhance hook; otherwise it resolves the matching `page.ts` and remounts that branch by default before continuing with router takeover.
 
 Hydration policy is about how SSR output becomes interactive. CSR mode is about how a client router boots and where data comes from.
 
@@ -511,7 +517,7 @@ bun run start
 
 - `demo/showcase`: evaluator-first demo workspace for the shared blog app
   - `Runtime Gallery`: live `ssg`, `ssr`, `hydrated`, `islands`, `shell`, `custom`, and `chunked` comparisons against one Northstar Journal blog app
-  - Post detail routes demonstrate server-backed likes and bookmarks, with component-level hydration for `hydrated` and `islands`
+  - Post detail routes demonstrate server-backed likes and bookmarks, with default remount handoff for `hydrated` and low-level enhance hooks for `islands`
   - `Guided Walkthrough`: annotated evaluator pages that explain those same seven modes and link back to the live routes
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns

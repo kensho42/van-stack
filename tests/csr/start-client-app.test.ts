@@ -510,6 +510,111 @@ describe("startClientApp", () => {
     await app.router.navigate("/posts/github-down");
 
     expect(env.root.innerHTML).toBe("<article><h1>GitHub Down</h1></article>");
+    expect(hydrateRoute).toHaveBeenLastCalledWith({
+      root: env.root,
+      data: { post: { slug: "github-down", title: "GitHub Down" } },
+      params: { slug: "github-down" },
+      path: "/posts/github-down",
+    });
+    expect(hydrateRoute).toHaveBeenCalledTimes(2);
+  });
+
+  test("remounts the initial hydrated route through hydrateApp when no hydrate.ts is present", async () => {
+    bindRenderEnv({
+      van: {
+        tags: {},
+        state(value: unknown) {
+          return { val: value };
+        },
+        derive(fn: () => unknown) {
+          return fn();
+        },
+        add(root: RootNode, child: unknown) {
+          root.replaceChildren(child);
+        },
+        hydrate: vi.fn(),
+      },
+      vanX: {
+        calc(fn: () => unknown) {
+          return fn();
+        },
+        reactive<T>(value: T) {
+          return value;
+        },
+        noreactive<T>(value: T) {
+          return value;
+        },
+        stateFields<T>(value: T) {
+          return value;
+        },
+        raw<T>(value: T) {
+          return value;
+        },
+        list() {
+          return [];
+        },
+        replace<T>(_value: T, replacement: T) {
+          return replacement;
+        },
+        compact<T>(value: T) {
+          return value;
+        },
+      },
+    });
+
+    const env = createClientDocument();
+    env.root.innerHTML = "<article><h1>Server HTML</h1></article>";
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/server-html",
+      pathname: "/posts/server-html",
+      params: { slug: "server-html" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "server-html", title: "Client HTML" } },
+    });
+
+    const app = startClientApp({
+      mode: "hydrated",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          files: {
+            async page() {
+              return {
+                default({ data }: { data: unknown }) {
+                  const typedData = data as {
+                    post: { title: string };
+                  };
+
+                  return `<article><h1>${typedData.post.title}</h1></article>`;
+                },
+              };
+            },
+          },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: {
+        load: vi.fn(async (match: { params: Record<string, string> }) => ({
+          post: { slug: match.params.slug, title: "GitHub Down" },
+        })),
+      },
+      document: env.document as never,
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/server-html",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(env.root.innerHTML).toBe("<article><h1>Client HTML</h1></article>");
   });
 
   test("renders eager custom routes through van.add and app-owned resolve", async () => {

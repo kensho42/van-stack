@@ -5,6 +5,10 @@ import type { ShowcaseInteractionState } from "../runtime/interactions";
 
 const { button, p, section, span, strong } = van.tags;
 
+type StateLike<T> = {
+  val: T;
+};
+
 type QueryRootLike = {
   querySelector: (selector: string) => unknown;
 };
@@ -21,6 +25,16 @@ type TextLike = {
 type LikeCounterPost = {
   readTimeMinutes: number;
 };
+
+type LikeCounterRenderOptions = {
+  interactions?: ShowcaseInteractionState;
+  likes?: StateLike<number>;
+  onLike?: (() => Promise<void> | void) | undefined;
+};
+
+function getInitialLikeCount(post: LikeCounterPost) {
+  return post.readTimeMinutes + 2;
+}
 
 function isQueryRootLike(value: unknown): value is QueryRootLike {
   return Boolean(
@@ -41,14 +55,12 @@ function isTextLike(value: unknown): value is TextLike {
   return Boolean(value && typeof value === "object" && "textContent" in value);
 }
 
-function getInitialLikeCount(post: LikeCounterPost) {
-  return post.readTimeMinutes + 2;
-}
-
 export function renderLikeCounter(
   post: LikeCounterPost,
-  interactions?: ShowcaseInteractionState,
+  options?: LikeCounterRenderOptions,
 ) {
+  const likeCount = options?.likes;
+
   return section(
     { class: "runtime-panel" },
     p({ class: "showcase-eyebrow" }, "Reaction"),
@@ -56,11 +68,20 @@ export function renderLikeCounter(
     p(
       span(
         { "data-like-count": "" },
-        String(interactions?.likes ?? getInitialLikeCount(post)),
+        likeCount
+          ? () => String(likeCount.val)
+          : String(options?.interactions?.likes ?? getInitialLikeCount(post)),
       ),
       " readers found this helpful",
     ),
-    button({ "data-like-button": "", type: "button" }, "Like this post"),
+    button(
+      {
+        "data-like-button": "",
+        type: "button",
+        ...(options?.onLike ? { onclick: options.onLike } : {}),
+      },
+      "Like this post",
+    ),
   );
 }
 

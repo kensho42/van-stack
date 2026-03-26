@@ -339,113 +339,129 @@ export function renderShowcaseFrame(input: {
   currentModeId?: ShowcaseLiveModeId;
   children: unknown[];
 }) {
+  const navigation = [
+    a(
+      {
+        href: "/",
+        "data-van-stack-ignore": "",
+        "data-active": isActiveSection(input.currentPath, "/")
+          ? "true"
+          : undefined,
+      },
+      "Home",
+    ),
+    a(
+      {
+        href: "/gallery",
+        "data-van-stack-ignore": "",
+        "data-active": isActiveSection(input.currentPath, "/gallery")
+          ? "true"
+          : undefined,
+      },
+      "Runtime Gallery",
+    ),
+    a(
+      {
+        href: "/walkthrough",
+        "data-van-stack-ignore": "",
+        "data-active": isActiveSection(input.currentPath, "/walkthrough")
+          ? "true"
+          : undefined,
+      },
+      "Guided Walkthrough",
+    ),
+    a(
+      {
+        href: "/adaptive",
+        "data-van-stack-ignore": "",
+        "data-active": isActiveSection(input.currentPath, "/adaptive")
+          ? "true"
+          : undefined,
+      },
+      "Adaptive Navigation",
+    ),
+  ];
+
+  const modeNavigation = input.currentPath.startsWith("/gallery/")
+    ? nav(
+        { class: "showcase-mode-nav" },
+        ...showcaseModes.map((mode) =>
+          a(
+            {
+              href: mode.galleryPath,
+              "data-van-stack-ignore": "",
+              "data-active":
+                input.currentModeId === mode.id ? "true" : undefined,
+            },
+            mode.title,
+          ),
+        ),
+      )
+    : null;
+
+  const headerNodes = [
+    header(
+      { class: "showcase-header" },
+      div(
+        { class: "showcase-topline" },
+        div(
+          { class: "showcase-branding" },
+          p({ class: "showcase-eyebrow" }, showcasePublication.issue),
+          h1(showcasePublication.name),
+          p({ class: "showcase-subtle" }, showcasePublication.description),
+        ),
+        input.currentModeId ? renderModePill(input.currentModeId) : null,
+      ),
+      nav({ class: "showcase-nav" }, ...navigation),
+      modeNavigation,
+    ),
+  ];
+
+  const body = [
+    input.title || input.summary
+      ? section(
+          { class: "showcase-section-block" },
+          input.title
+            ? p({ class: "showcase-eyebrow" }, "Section overview")
+            : null,
+          input.title ? h1(input.title) : null,
+          input.summary ? p({ class: "showcase-lede" }, input.summary) : null,
+        )
+      : null,
+    ...input.children,
+  ];
+
+  if (input.currentModeId === "chunked") {
+    return div(
+      { class: "showcase-app" },
+      style(showcaseCss),
+      div(
+        { class: "showcase-frame" },
+        ...headerNodes,
+        div(
+          {
+            "data-showcase-client-root": "",
+            "data-showcase-mode": "chunked",
+          },
+          main({ class: "showcase-main" }, ...body),
+        ),
+        footer(
+          { class: "showcase-footer" },
+          small(
+            "Northstar Journal is the shared blog app used to compare runtime delivery and adaptive navigation on one route graph.",
+          ),
+        ),
+      ),
+    );
+  }
+
   return div(
     { class: "showcase-app" },
     style(showcaseCss),
     div(
       { class: "showcase-frame" },
-      header(
-        { class: "showcase-header" },
-        div(
-          { class: "showcase-topline" },
-          div(
-            { class: "showcase-branding" },
-            p({ class: "showcase-eyebrow" }, showcasePublication.issue),
-            h1(showcasePublication.name),
-            p({ class: "showcase-subtle" }, showcasePublication.description),
-          ),
-          input.currentModeId ? renderModePill(input.currentModeId) : null,
-        ),
-        nav(
-          { class: "showcase-nav" },
-          a(
-            {
-              href: "/",
-              "data-van-stack-ignore": "",
-              "data-active": isActiveSection(input.currentPath, "/"),
-            },
-            "Home",
-          ),
-          a(
-            {
-              href: "/gallery",
-              "data-van-stack-ignore": "",
-              "data-active": isActiveSection(input.currentPath, "/gallery"),
-            },
-            "Runtime Gallery",
-          ),
-          a(
-            {
-              href: "/walkthrough",
-              "data-van-stack-ignore": "",
-              "data-active": isActiveSection(input.currentPath, "/walkthrough"),
-            },
-            "Guided Walkthrough",
-          ),
-          a(
-            {
-              href: "/adaptive",
-              "data-van-stack-ignore": "",
-              "data-active": isActiveSection(input.currentPath, "/adaptive"),
-            },
-            "Adaptive Navigation",
-          ),
-        ),
-        input.currentPath.startsWith("/gallery/")
-          ? nav(
-              { class: "showcase-mode-nav" },
-              ...showcaseModes.map((mode) =>
-                a(
-                  {
-                    href: mode.galleryPath,
-                    "data-van-stack-ignore": "",
-                    "data-active": input.currentModeId === mode.id,
-                  },
-                  mode.title,
-                ),
-              ),
-            )
-          : null,
-      ),
-      input.currentModeId === "chunked"
-        ? div(
-            {
-              "data-showcase-client-root": "",
-              "data-showcase-mode": "chunked",
-            },
-            main(
-              { class: "showcase-main" },
-              input.title || input.summary
-                ? section(
-                    { class: "showcase-section-block" },
-                    input.title
-                      ? p({ class: "showcase-eyebrow" }, "Section overview")
-                      : null,
-                    input.title ? h1(input.title) : null,
-                    input.summary
-                      ? p({ class: "showcase-lede" }, input.summary)
-                      : null,
-                  )
-                : null,
-              ...input.children,
-            ),
-          )
-        : main(
-            { class: "showcase-main" },
-            input.title || input.summary
-              ? section(
-                  { class: "showcase-section-block" },
-                  input.title
-                    ? p({ class: "showcase-eyebrow" }, "Section overview")
-                    : null,
-                  input.title ? h1(input.title) : null,
-                  input.summary
-                    ? p({ class: "showcase-lede" }, input.summary)
-                    : null,
-                )
-              : null,
-            ...input.children,
-          ),
+      ...headerNodes,
+      main({ class: "showcase-main" }, ...body),
       footer(
         { class: "showcase-footer" },
         small(

@@ -84,6 +84,9 @@ describe("chunked csr demo", () => {
     expect(hydrated.html).toContain("Shared detail copy");
     expect(shell.html).toContain("Shared detail copy");
     expect(custom.html).toContain("Shared detail copy");
+    expect(hydrated.html).toContain("Increment remount counter");
+    expect(hydrated.html).toContain("default remount");
+    expect(hydrated.html).not.toContain("Hydration marker is active.");
   });
 
   test("renders the landing route without a client shell", async () => {

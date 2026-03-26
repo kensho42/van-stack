@@ -1,6 +1,6 @@
 import { renderGalleryPage } from "../../../../route-helpers/gallery";
-import { createCategoriesIndexData } from "../../../../runtime/data";
+import type { GalleryPageData } from "../../../../runtime/data";
 
-export default function page() {
-  return renderGalleryPage(createCategoriesIndexData("hydrated"));
+export default function page(input: { data: unknown }) {
+  return renderGalleryPage(input.data as GalleryPageData);
 }

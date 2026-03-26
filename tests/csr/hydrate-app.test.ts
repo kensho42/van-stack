@@ -15,7 +15,9 @@ function createHydrationEnv() {
   let clickHandler: ((event: Record<string, unknown>) => unknown) | undefined;
   let popstateHandler: (() => unknown) | undefined;
   const appRoot = {
+    innerHTML: "",
     querySelector: vi.fn(),
+    replaceChildren: vi.fn(),
   };
   const createHeadNode = () => ({
     textContent: "",
@@ -281,6 +283,50 @@ describe("csr hydrate app", () => {
     );
   });
 
+  test("remounts the initial app route from page.ts when no hydrate.ts is present", async () => {
+    const env = createHydrationEnv();
+    env.appRoot.innerHTML = "<article><h1>Server HTML</h1></article>";
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/server-html",
+      pathname: "/posts/server-html",
+      params: { slug: "server-html" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "server-html", title: "Client HTML" } },
+    });
+
+    const app = hydrateApp({
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          files: {
+            async page() {
+              return {
+                default({ data }: { data: unknown }) {
+                  const typedData = data as {
+                    post: { title: string };
+                  };
+
+                  return `<article><h1>${typedData.post.title}</h1></article>`;
+                },
+              };
+            },
+          },
+        },
+      ],
+      history: env.history,
+      document: env.document as never,
+      window: env.window as never,
+    });
+
+    await app.ready;
+
+    expect(env.appRoot.innerHTML).toBe(
+      "<article><h1>Client HTML</h1></article>",
+    );
+  });
+
   test("hydrates named slot roots from bootstrap slot data", async () => {
     const env = createHydrationEnv();
     const defaultSlotRoot = { id: "default-slot" };
@@ -402,6 +448,96 @@ describe("csr hydrate app", () => {
     });
   });
 
+  test("remounts slot roots without hydrate.ts and enhances slot roots with hydrate.ts", async () => {
+    const env = createHydrationEnv();
+    const defaultSlotRoot = {
+      innerHTML: "",
+      replaceChildren: vi.fn(),
+    };
+    const sidebarSlotRoot = {
+      innerHTML: "",
+      replaceChildren: vi.fn(),
+    };
+    const sidebarHydrate = vi.fn();
+
+    env.appRoot.querySelector = vi.fn((selector: string) => {
+      if (selector === '[data-van-stack-slot-root="default"]') {
+        return defaultSlotRoot;
+      }
+      if (selector === '[data-van-stack-slot-root="sidebar"]') {
+        return sidebarSlotRoot;
+      }
+      return null;
+    });
+
+    env.setBootstrapScript({
+      routeId: "app/users/[id]",
+      path: "/app/users/ada",
+      pathname: "/app/users/ada",
+      params: { id: "ada" },
+      hydrationPolicy: "app",
+      data: {
+        user: { name: "Ada Lovelace" },
+      },
+      slotData: {
+        sidebar: {
+          navigation: { label: "Workspace" },
+        },
+      },
+    });
+
+    const app = hydrateApp({
+      routes: [
+        {
+          id: "app/users/[id]",
+          path: "/app/users/:id",
+          files: {
+            async page() {
+              return {
+                default({ data }: { data: unknown }) {
+                  const typedData = data as { user: { name: string } };
+                  return `<main>${typedData.user.name}</main>`;
+                },
+              };
+            },
+          },
+          slotOwnerLayout: "app",
+          slotOwnerLayoutIndex: 0,
+          slots: {
+            sidebar: [
+              {
+                id: "app::sidebar",
+                slot: "sidebar",
+                path: "/app",
+                files: {
+                  async hydrate() {
+                    return { default: sidebarHydrate };
+                  },
+                },
+                layoutChain: [],
+              },
+            ],
+          },
+        },
+      ],
+      history: env.history,
+      document: env.document as never,
+      window: env.window as never,
+    });
+
+    await app.ready;
+
+    expect(defaultSlotRoot.innerHTML).toBe("<main>Ada Lovelace</main>");
+    expect(sidebarHydrate).toHaveBeenCalledWith({
+      root: sidebarSlotRoot,
+      data: {
+        navigation: { label: "Workspace" },
+      },
+      params: {},
+      path: "/app/users/ada",
+    });
+  });
+
   test("skips unmatched or opted-out links during hydrated navigation", async () => {
     const env = createHydrationEnv();
     env.setBootstrapScript({
@@ -418,7 +554,22 @@ describe("csr hydrate app", () => {
     }));
 
     const app = hydrateApp({
-      routes,
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          files: {
+            async page() {
+              return {
+                default({ data }: { data: unknown }) {
+                  const typedData = data as { post: { slug: string } };
+                  return `<article>${typedData.post.slug}</article>`;
+                },
+              };
+            },
+          },
+        },
+      ],
       history: env.history,
       transport: { load },
       document: env.document as never,

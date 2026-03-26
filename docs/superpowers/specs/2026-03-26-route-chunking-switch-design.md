@@ -28,15 +28,19 @@ This keeps chunking in the same category as output shape and deployment wiring:
 
 ## Proposed Shape
 
-### Template Config
+### Configuration Surface
 
-Add a template-level build option, for example:
+Add chunking to the app template build configuration, not to route modules or runtime modes.
+
+The intended shape is something like:
 
 ```ts
-{
-  chunkedRoutes: true
-}
+createAppTemplate({
+  chunkedRoutes: true,
+})
 ```
+
+The exact helper name can follow the repo's existing app-template wiring, but the option should live beside the build-time template config that decides how the client entry is produced.
 
 The option should be inherited by all routes in the template.
 
@@ -61,6 +65,8 @@ Example intent:
 - individual route declares `chunking: false`
 
 This is meant as an exception path, not a normal per-route configuration surface.
+
+If the route override is implemented, it should only affect client-module delivery. It should not change SSR, SSG, or the route's public URL surface.
 
 ### Runtime Behavior
 
@@ -97,6 +103,7 @@ Chunking should be consumed by the client entry, not by the route components.
 - `custom` should still boot from app-owned data resolution
 
 If chunking is enabled for a template, the entry should import route modules through manifest-backed lazy loaders rather than static eager imports.
+The entry should not care whether the template is `hydrated`, `shell`, or `custom` beyond choosing the correct boot path for that mode.
 
 ### Showcase Usage
 
@@ -110,6 +117,7 @@ This keeps the demo story aligned with the framework capability:
 
 - the mode explains how data is loaded
 - the chunking switch explains how route modules are delivered
+- the same chunking switch should be usable by any template that wants the manifest-backed path
 
 ## Alternatives
 
@@ -172,4 +180,3 @@ This keeps chunking as a first-class framework capability while preserving a sta
   - runtime mode choice
   - hydration strategy choice
   - chunking delivery choice
-

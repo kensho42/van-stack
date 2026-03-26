@@ -381,6 +381,7 @@ export const routes = [
     path: "/gallery/hydrated",
     files: {
       page: () => import("../src/routes/gallery/hydrated/index/page.js"),
+      loader: () => import("../src/routes/gallery/hydrated/index/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/index/meta.js"),
     },
     layoutChain: [],
@@ -393,6 +394,7 @@ export const routes = [
     path: "/gallery/hydrated/authors",
     files: {
       page: () => import("../src/routes/gallery/hydrated/authors/page.js"),
+      loader: () => import("../src/routes/gallery/hydrated/authors/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/authors/meta.js"),
     },
     layoutChain: [],
@@ -421,6 +423,8 @@ export const routes = [
     path: "/gallery/hydrated/categories",
     files: {
       page: () => import("../src/routes/gallery/hydrated/categories/page.js"),
+      loader: () =>
+        import("../src/routes/gallery/hydrated/categories/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/categories/meta.js"),
     },
     layoutChain: [],
@@ -449,6 +453,7 @@ export const routes = [
     path: "/gallery/hydrated/posts",
     files: {
       page: () => import("../src/routes/gallery/hydrated/posts/page.js"),
+      loader: () => import("../src/routes/gallery/hydrated/posts/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/posts/meta.js"),
     },
     layoutChain: [],
@@ -461,8 +466,6 @@ export const routes = [
     path: "/gallery/hydrated/posts/:slug",
     files: {
       page: () => import("../src/routes/gallery/hydrated/posts/[slug]/page.js"),
-      hydrate: () =>
-        import("../src/routes/gallery/hydrated/posts/[slug]/hydrate.js"),
       loader: () =>
         import("../src/routes/gallery/hydrated/posts/[slug]/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/posts/[slug]/meta.js"),
@@ -477,6 +480,7 @@ export const routes = [
     path: "/gallery/hydrated/tags",
     files: {
       page: () => import("../src/routes/gallery/hydrated/tags/page.js"),
+      loader: () => import("../src/routes/gallery/hydrated/tags/loader.js"),
       meta: () => import("../src/routes/gallery/hydrated/tags/meta.js"),
     },
     layoutChain: [],

@@ -1,6 +1,6 @@
-import { renderGalleryPage } from "../../../../route-helpers/gallery";
+import { renderGalleryChunkedPage } from "../../../../route-helpers/gallery";
 import { createAuthorsIndexData } from "../../../../runtime/data";
 
 export default function page() {
-  return renderGalleryPage(createAuthorsIndexData("chunked"));
+  return renderGalleryChunkedPage(createAuthorsIndexData("chunked"));
 }

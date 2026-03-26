@@ -31,7 +31,6 @@ export const routes = [
     path: "/hydrated/:slug",
     files: {
       page: () => import("../src/routes/hydrated/[slug]/page.js"),
-      hydrate: () => import("../src/routes/hydrated/[slug]/hydrate.js"),
       loader: () => import("../src/routes/hydrated/[slug]/loader.js"),
       meta: () => import("../src/routes/hydrated/[slug]/meta.js"),
     },

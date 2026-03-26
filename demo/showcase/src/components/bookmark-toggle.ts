@@ -5,6 +5,16 @@ import type { ShowcaseInteractionState } from "../runtime/interactions";
 
 const { button, p, section, strong } = van.tags;
 
+type StateLike<T> = {
+  val: T;
+};
+
+type BookmarkToggleRenderOptions = {
+  bookmarked?: StateLike<boolean>;
+  interactions?: ShowcaseInteractionState;
+  onToggle?: (() => Promise<void> | void) | undefined;
+};
+
 type QueryRootLike = {
   querySelector: (selector: string) => unknown;
 };
@@ -46,18 +56,32 @@ function setBookmarkCopy(
   stateElement.textContent = saved ? "Saved for this session" : "Not saved";
 }
 
-export function renderBookmarkToggle(interactions?: ShowcaseInteractionState) {
+export function renderBookmarkToggle(options?: BookmarkToggleRenderOptions) {
+  const bookmarked = options?.bookmarked;
+
   return section(
     { class: "runtime-panel" },
     p({ class: "showcase-eyebrow" }, "Save state"),
     strong("Reading list"),
     p(
       { "data-bookmark-state": "" },
-      interactions?.bookmarked ? "Saved for this session" : "Not saved",
+      bookmarked
+        ? () => (bookmarked.val ? "Saved for this session" : "Not saved")
+        : options?.interactions?.bookmarked
+          ? "Saved for this session"
+          : "Not saved",
     ),
     button(
-      { "data-bookmark-button": "", type: "button" },
-      interactions?.bookmarked ? "Remove bookmark" : "Save for later",
+      {
+        "data-bookmark-button": "",
+        type: "button",
+        ...(options?.onToggle ? { onclick: options.onToggle } : {}),
+      },
+      bookmarked
+        ? () => (bookmarked.val ? "Remove bookmark" : "Save for later")
+        : options?.interactions?.bookmarked
+          ? "Remove bookmark"
+          : "Save for later",
     ),
   );
 }
