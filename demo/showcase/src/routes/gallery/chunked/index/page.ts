@@ -1,6 +1,6 @@
 import { renderGalleryChunkedPage } from "../../../../route-helpers/gallery";
-import { createGalleryHomeData } from "../../../../runtime/data";
+import type { GalleryHomeData } from "../../../../runtime/data";
 
-export default function page() {
-  return renderGalleryChunkedPage(createGalleryHomeData("chunked"));
+export default function page(input: { data: unknown }) {
+  return renderGalleryChunkedPage(input.data as GalleryHomeData);
 }

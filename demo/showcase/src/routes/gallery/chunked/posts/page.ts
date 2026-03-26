@@ -1,6 +1,6 @@
 import { renderGalleryChunkedPage } from "../../../../route-helpers/gallery";
-import { createPostsIndexData } from "../../../../runtime/data";
+import type { GalleryPostsIndexData } from "../../../../runtime/data";
 
-export default function page() {
-  return renderGalleryChunkedPage(createPostsIndexData("chunked"));
+export default function page(input: { data: unknown }) {
+  return renderGalleryChunkedPage(input.data as GalleryPostsIndexData);
 }

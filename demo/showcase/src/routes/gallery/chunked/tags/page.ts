@@ -1,6 +1,6 @@
 import { renderGalleryChunkedPage } from "../../../../route-helpers/gallery";
-import { createTagsIndexData } from "../../../../runtime/data";
+import type { GalleryTagsIndexData } from "../../../../runtime/data";
 
-export default function page() {
-  return renderGalleryChunkedPage(createTagsIndexData("chunked"));
+export default function page(input: { data: unknown }) {
+  return renderGalleryChunkedPage(input.data as GalleryTagsIndexData);
 }
