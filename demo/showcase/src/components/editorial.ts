@@ -7,7 +7,7 @@ import type {
   ShowcaseTag,
 } from "../content/blog";
 import { showcasePublication } from "../content/publication";
-import { getPostByline, getPostEyebrow } from "./blog";
+import { getPostEyebrow } from "./blog";
 
 const {
   a,
@@ -65,7 +65,7 @@ export function renderPostCard(
     p({ class: "editorial-summary" }, post.summary),
     div(
       { class: "editorial-meta" },
-      span(post.author.name),
+      a({ href: buildPath("authors", post.author.slug) }, post.author.name),
       span("·"),
       time({ datetime: post.publishedOn }, post.publishedAt),
     ),
@@ -181,7 +181,12 @@ export function renderArticleLayout(
       p({ class: "showcase-eyebrow" }, getPostEyebrow(post)),
       h1(post.title),
       p({ class: "showcase-lede" }, post.summary),
-      p({ class: "showcase-subtle" }, getPostByline(post)),
+      p(
+        { class: "showcase-subtle" },
+        "By ",
+        a({ href: buildPath("authors", post.author.slug) }, post.author.name),
+        ` · ${post.publishedAt}`,
+      ),
       div(
         { class: "taxonomy-row" },
         ...post.tags.map((tag) => renderTagChip(tag, buildPath)),

@@ -155,6 +155,7 @@ describe("showcase app", () => {
 
     expect(response.status).toBe(200);
     expect(html).toContain("Runtime Gallery Tour");
+    expect(html).toContain("/gallery/ssr/authors/niko-drummond");
     expect(html).not.toContain('data-van-stack-app-root=""');
     expect(html).not.toContain("data-van-stack-bootstrap");
     expect(html).not.toContain("showcase-hydrated");
