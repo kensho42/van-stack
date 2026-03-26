@@ -129,6 +129,52 @@ const response = await renderRequest({
 ```
 
 ```ts
+// SSR server wiring
+import { createServer } from "node:http";
+import { renderRequest } from "van-stack/ssr";
+
+const port = Number(process.env.PORT ?? "3000");
+
+createServer(async (req, res) => {
+  const request = new Request(`http://${req.headers.host}${req.url ?? "/"}`, {
+    method: req.method,
+    headers: req.headers as Record<string, string>,
+  });
+  const response = await renderRequest({ request, routes });
+
+  res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+  res.end(Buffer.from(await response.arrayBuffer()));
+}).listen(port);
+```
+
+```ts
+// SSR with Express
+import express from "express";
+import { renderRequest } from "van-stack/ssr";
+
+const app = express();
+const port = Number(process.env.PORT ?? "3000");
+
+app.use(async (req, res) => {
+  const request = new Request(`${req.protocol}://${req.get("host")}${req.originalUrl}`, {
+    method: req.method,
+    headers: req.headers as Record<string, string>,
+  });
+  const response = await renderRequest({ request, routes });
+
+  res.status(response.status);
+  response.headers.forEach((value, name) => {
+    res.setHeader(name, value);
+  });
+  res.send(Buffer.from(await response.arrayBuffer()));
+});
+
+app.listen(port);
+```
+
+`van-stack/ssr` renders a `Request` into a `Response`, but it does not create a server or choose a listen port. The app-owned server entrypoint is responsible for calling `listen(...)`, usually from `process.env.PORT`.
+
+```ts
 // SSG export
 import { exportStaticSite } from "van-stack/ssg";
 
