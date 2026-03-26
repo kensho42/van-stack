@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 
-import { loadRoutes } from "../../../../packages/compiler/src/index";
-import { buildStaticRoutes } from "../../../../packages/ssg/src/index";
+import { loadRoutes } from "van-stack/compiler";
+import { buildStaticRoutes } from "van-stack/ssg";
 
 const routesRoot = fileURLToPath(new URL("../routes", import.meta.url));
 let pagesPromise: Promise<Map<string, string>> | null = null;

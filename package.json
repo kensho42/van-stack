@@ -1,30 +1,40 @@
 {
   "name": "van-stack",
-  "private": true,
+  "version": "0.0.0",
+  "private": false,
   "type": "module",
   "packageManager": "bun@1.3.10",
+  "types": "./dist/packages/core/src/index.d.ts",
+  "main": "./dist/packages/core/src/index.js",
   "exports": {
-    ".": "./packages/core/src/index.ts",
-    "./compiler": "./packages/compiler/src/index.ts",
-    "./render": "./packages/core/src/render.ts",
-    "./compat/vanjs-core": "./packages/core/src/compat/vanjs-core.ts",
-    "./compat/vanjs-ext": "./packages/core/src/compat/vanjs-ext.ts",
-    "./compat/bun-preload": "./packages/core/src/compat/bun-preload.ts",
-    "./compat/node-register": "./packages/core/src/compat/node-register.ts",
-    "./csr": "./packages/csr/src/index.ts",
-    "./ssr": "./packages/ssr/src/index.ts",
-    "./ssg": "./packages/ssg/src/index.ts",
-    "./vite": "./packages/vite/src/index.ts"
+    ".": "./dist/packages/core/src/index.js",
+    "./compiler": "./dist/packages/compiler/src/index.js",
+    "./render": "./dist/packages/core/src/render.js",
+    "./compat/vanjs-core": "./dist/packages/core/src/compat/vanjs-core.js",
+    "./compat/vanjs-ext": "./dist/packages/core/src/compat/vanjs-ext.js",
+    "./compat/bun-preload": "./dist/packages/core/src/compat/bun-preload.js",
+    "./compat/node-register": "./dist/packages/core/src/compat/node-register.js",
+    "./csr": "./dist/packages/csr/src/index.js",
+    "./ssr": "./dist/packages/ssr/src/index.js",
+    "./ssg": "./dist/packages/ssg/src/index.js",
+    "./vite": "./dist/packages/vite/src/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "compat"
+  ],
   "workspaces": [
     "packages/*",
     "demo/*"
   ],
   "scripts": {
     "start": "bun -e \"await import('./demo/showcase/src/runtime/start.ts')\"",
-    "test": "vitest run",
-    "check": "biome check .",
-    "build": "tsc -p tsconfig.json --noEmit"
+    "build:package": "bun scripts/build-package.mjs",
+    "build": "bun run build:package",
+    "prepack": "bun run build:package",
+    "test": "bun run build:package && vitest run",
+    "check": "biome check ."
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
@@ -37,7 +47,6 @@
     "actual-vanjs-core": "npm:vanjs-core@1.6.0",
     "actual-vanjs-ext": "npm:vanjs-ext@0.6.3",
     "mini-van-plate": "0.6.3",
-    "third-party-lib": "workspace:*",
     "vanjs-core": "1.6.0",
     "vanjs-ext": "0.6.3"
   }

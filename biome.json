@@ -1,5 +1,19 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "files": {
+    "includes": [
+      "AGENTS.md",
+      "README.md",
+      "package.json",
+      "tsconfig*.json",
+      "compat/**/*.json",
+      "docs/**/*",
+      "demo/**/*",
+      "packages/**/*",
+      "tests/**/*",
+      "scripts/**/*"
+    ]
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space"

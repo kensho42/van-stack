@@ -1,9 +1,8 @@
 import { fileURLToPath } from "node:url";
 
 import { internalDataBasePath } from "van-stack";
-
-import { loadRoutes } from "../../../../packages/compiler/src/index";
-import { renderRequest } from "../../../../packages/ssr/src/index";
+import { loadRoutes } from "van-stack/compiler";
+import { renderRequest } from "van-stack/ssr";
 import { handleCustomApiRequest, handleInternalDataRequest } from "./api";
 import { createShowcaseAssetResponse } from "./assets";
 import { ShowcaseRouteNotFoundError } from "./data";

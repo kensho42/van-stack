@@ -4,6 +4,24 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "allowJs": false,
+    "baseUrl": ".",
+    "paths": {
+      "van-stack": ["packages/core/src/index.ts"],
+      "van-stack/render": ["packages/core/src/render.ts"],
+      "van-stack/compiler": ["packages/compiler/src/index.ts"],
+      "van-stack/csr": ["packages/csr/src/index.ts"],
+      "van-stack/ssr": ["packages/ssr/src/index.ts"],
+      "van-stack/ssg": ["packages/ssg/src/index.ts"],
+      "van-stack/vite": ["packages/vite/src/index.ts"],
+      "van-stack/compat/vanjs-core": ["packages/core/src/compat/vanjs-core.ts"],
+      "van-stack/compat/vanjs-ext": ["packages/core/src/compat/vanjs-ext.ts"],
+      "van-stack/compat/bun-preload": [
+        "packages/core/src/compat/bun-preload.ts"
+      ],
+      "van-stack/compat/node-register": [
+        "packages/core/src/compat/node-register.ts"
+      ]
+    },
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,

@@ -8,6 +8,14 @@
 bun add van-stack
 ```
 
+## Build
+
+```bash
+bun run build
+```
+
+That emits the publishable package into `dist/` with JavaScript and `.d.ts` files for the root entrypoint plus the public subpaths.
+
 ## Why van-stack?
 
 - filesystem routing with reserved route-module filenames
@@ -27,6 +35,10 @@ bun add van-stack
 - `van-stack/ssr`: request-to-HTML rendering with bootstrap payloads
 - `van-stack/ssg`: static generation from the same route graph
 - `van-stack/vite`: optional DX adapter
+- `van-stack/compat/vanjs-core`: compatibility facade for code that imports `vanjs-core`
+- `van-stack/compat/vanjs-ext`: compatibility facade for code that imports `vanjs-ext`
+- `van-stack/compat/bun-preload`: explicit Bun preload guard for unsupported runtime-plugin usage
+- `van-stack/compat/node-register`: Node resolver hook that maps `vanjs-core` and `vanjs-ext` through the bound render env
 
 ## How It Fits Together
 

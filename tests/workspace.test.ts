@@ -4,6 +4,8 @@ import { describe, expect, test } from "vitest";
 const requiredFiles = [
   "AGENTS.md",
   "compat/bun-tsconfig.json",
+  "scripts/build-package.mjs",
+  "tsconfig.build.json",
   "packages/core/src/index.ts",
   "packages/core/src/compat/vanjs-core.ts",
   "packages/core/src/compat/vanjs-ext.ts",
@@ -26,23 +28,29 @@ describe("workspace layout", () => {
 
   test("exports the compiler from the root package instead of a separate package", () => {
     const rootPackage = JSON.parse(readFileSync("package.json", "utf8")) as {
+      private?: boolean;
+      files?: string[];
       exports?: Record<string, string>;
     };
 
+    expect(rootPackage.private).toBe(false);
+    expect(rootPackage.files).toEqual(
+      expect.arrayContaining(["dist", "README.md", "compat"]),
+    );
     expect(rootPackage.exports?.["./compiler"]).toBe(
-      "./packages/compiler/src/index.ts",
+      "./dist/packages/compiler/src/index.js",
     );
     expect(rootPackage.exports?.["./compat/vanjs-core"]).toBe(
-      "./packages/core/src/compat/vanjs-core.ts",
+      "./dist/packages/core/src/compat/vanjs-core.js",
     );
     expect(rootPackage.exports?.["./compat/vanjs-ext"]).toBe(
-      "./packages/core/src/compat/vanjs-ext.ts",
+      "./dist/packages/core/src/compat/vanjs-ext.js",
     );
     expect(rootPackage.exports?.["./compat/bun-preload"]).toBe(
-      "./packages/core/src/compat/bun-preload.ts",
+      "./dist/packages/core/src/compat/bun-preload.js",
     );
     expect(rootPackage.exports?.["./compat/node-register"]).toBe(
-      "./packages/core/src/compat/node-register.ts",
+      "./dist/packages/core/src/compat/node-register.js",
     );
     expect(existsSync("packages/compiler/package.json")).toBe(false);
   });

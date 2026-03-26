@@ -1,5 +1,5 @@
 {
-  "name": "van-stack",
+  "name": "@van-stack/core",
   "version": "0.0.0",
   "type": "module",
   "exports": {

@@ -2,8 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "vanjs-core": ["../packages/core/src/compat/vanjs-core.ts"],
-      "vanjs-ext": ["../packages/core/src/compat/vanjs-ext.ts"]
+      "vanjs-core": ["../dist/packages/core/src/compat/vanjs-core.js"],
+      "vanjs-ext": ["../dist/packages/core/src/compat/vanjs-ext.js"]
     }
   }
 }

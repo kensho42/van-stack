@@ -7,8 +7,12 @@ describe("compatibility shims", () => {
   test("exports vanjs-core and vanjs-ext compatibility modules through the root package", async () => {
     bindRenderEnv(null);
 
-    const vanCompatModule = await import("van-stack/compat/vanjs-core");
-    const vanExtCompatModule = await import("van-stack/compat/vanjs-ext");
+    const vanCompatModule = await import(
+      "../../packages/core/src/compat/vanjs-core"
+    );
+    const vanExtCompatModule = await import(
+      "../../packages/core/src/compat/vanjs-ext"
+    );
 
     expect(vanCompatModule.default).toBeDefined();
     expect(vanExtCompatModule.reactive).toBeDefined();
@@ -61,8 +65,12 @@ describe("compatibility shims", () => {
       vanX: fakeVanX,
     });
 
-    const vanCompatModule = await import("van-stack/compat/vanjs-core");
-    const vanExtCompatModule = await import("van-stack/compat/vanjs-ext");
+    const vanCompatModule = await import(
+      "../../packages/core/src/compat/vanjs-core"
+    );
+    const vanExtCompatModule = await import(
+      "../../packages/core/src/compat/vanjs-ext"
+    );
 
     expect(vanCompatModule.default.tags.div("child")).toEqual({
       tag: "div",
@@ -76,8 +84,12 @@ describe("compatibility shims", () => {
   test("keeps the existing unbound render-env failure through the compatibility modules", async () => {
     bindRenderEnv(null);
 
-    const vanCompatModule = await import("van-stack/compat/vanjs-core");
-    const vanExtCompatModule = await import("van-stack/compat/vanjs-ext");
+    const vanCompatModule = await import(
+      "../../packages/core/src/compat/vanjs-core"
+    );
+    const vanExtCompatModule = await import(
+      "../../packages/core/src/compat/vanjs-ext"
+    );
 
     expect(() => vanCompatModule.default.state(0)).toThrowError(
       "van-stack/render has not been bound to a Van runtime yet.",
@@ -90,7 +102,9 @@ describe("compatibility shims", () => {
   test("keeps server-side hydrate unavailable through the vanjs-core compatibility module", async () => {
     bindServerRenderEnv();
 
-    const vanCompatModule = await import("van-stack/compat/vanjs-core");
+    const vanCompatModule = await import(
+      "../../packages/core/src/compat/vanjs-core"
+    );
 
     expect(() =>
       vanCompatModule.default.hydrate({ id: "root" }, (dom: { id: string }) => {
@@ -100,7 +114,9 @@ describe("compatibility shims", () => {
   });
 
   test("fails fast on the unsupported bun preload path", async () => {
-    await expect(import("van-stack/compat/bun-preload")).rejects.toThrowError(
+    await expect(
+      import("../../packages/core/src/compat/bun-preload"),
+    ).rejects.toThrowError(
       "Use `bun run --tsconfig-override ./node_modules/van-stack/compat/bun-tsconfig.json <entry>` instead.",
     );
   });

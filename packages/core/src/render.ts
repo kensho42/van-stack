@@ -27,9 +27,24 @@ export type RenderEnv = {
   vanX: VanXLike;
 };
 
-let renderEnv: RenderEnv | null = null;
+const renderEnvKey = Symbol.for("van-stack.render-env");
+
+type GlobalRenderEnv = typeof globalThis & {
+  [renderEnvKey]?: RenderEnv | null;
+};
+
+function getRenderEnvState() {
+  const globalRenderEnv = globalThis as GlobalRenderEnv;
+  return globalRenderEnv[renderEnvKey] ?? null;
+}
+
+function setRenderEnvState(env: RenderEnv | null) {
+  const globalRenderEnv = globalThis as GlobalRenderEnv;
+  globalRenderEnv[renderEnvKey] = env;
+}
 
 function getBoundRenderEnv(): RenderEnv {
+  const renderEnv = getRenderEnvState();
   if (!renderEnv) {
     throw new Error(
       "van-stack/render has not been bound to a Van runtime yet.",
@@ -48,11 +63,11 @@ function getBoundVanX(): VanXLike {
 }
 
 export function bindRenderEnv(env: RenderEnv | null) {
-  renderEnv = env;
+  setRenderEnvState(env);
 }
 
 export function getRenderEnv() {
-  return renderEnv;
+  return getRenderEnvState();
 }
 
 export const van: VanLike = {

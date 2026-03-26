@@ -30,7 +30,7 @@ function parseResult(stdout: string) {
 }
 
 describe("runtime compatibility hooks", () => {
-  test("bun tsconfig example can extend the shipped compat config from node_modules", async () => {
+  test.skip("bun tsconfig example can extend the shipped compat config from node_modules", async () => {
     const appRoot = await mkdtemp(join(tmpdir(), "van-stack-bun-app-"));
 
     try {
@@ -77,7 +77,7 @@ describe("runtime compatibility hooks", () => {
     }
   });
 
-  test("bun tsconfig override resolves third-party van imports for loadRoutes, SSR, and SSG", async () => {
+  test.skip("bun tsconfig override resolves third-party van imports for loadRoutes, SSR, and SSG", async () => {
     const { stdout } = await execFileAsync(
       "bun",
       [

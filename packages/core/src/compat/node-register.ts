@@ -4,8 +4,20 @@ import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 function getCompatUrl(relativePath: string) {
-  return pathToFileURL(fileURLToPath(new URL(relativePath, import.meta.url)))
-    .href;
+  const basePath = fileURLToPath(new URL(relativePath, import.meta.url));
+
+  for (const extension of [".js", ".ts", ".tsx", ".mjs"]) {
+    const candidate = `${basePath}${extension}`;
+    if (existsSync(candidate)) {
+      return pathToFileURL(candidate).href;
+    }
+  }
+
+  if (existsSync(basePath)) {
+    return pathToFileURL(basePath).href;
+  }
+
+  return pathToFileURL(basePath).href;
 }
 
 function resolveTypeScriptSpecifier(
@@ -40,14 +52,14 @@ export function registerVanStackNodeCompat() {
       if (specifier === "vanjs-core") {
         return {
           shortCircuit: true,
-          url: getCompatUrl("./vanjs-core.ts"),
+          url: getCompatUrl("./vanjs-core"),
         };
       }
 
       if (specifier === "vanjs-ext") {
         return {
           shortCircuit: true,
-          url: getCompatUrl("./vanjs-ext.ts"),
+          url: getCompatUrl("./vanjs-ext"),
         };
       }
 
