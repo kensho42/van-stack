@@ -230,7 +230,7 @@ const app = startClientApp({
 await app.ready;
 ```
 
-The generated manifest is the opt-in chunking path. Apps that bundle everything eagerly can keep using `loadRoutes({ root: "src/routes" })`.
+The generated manifest is the opt-in chunking path. Apps that bundle everything eagerly can keep using `loadRoutes({ root: "src/routes" })`, while apps that want template-wide chunking can pass `chunkedRoutes` into `buildRouteManifest({ root, chunkedRoutes })` or `writeRouteManifest({ root, chunkedRoutes })`.
 
 ### App Hydration Handoff
 
@@ -521,7 +521,7 @@ bun run start
   - `Guided Walkthrough`: annotated evaluator pages that explain those same seven modes and link back to the live routes
   - `Adaptive Navigation`: a separate `stack` presentation track over the same blog graph
 - `demo/csr`: focused reference for `hydrated`, `shell`, and `custom` client boot patterns
-- `demo/chunked-csr`: focused reference for route-level CSR chunking through `.van-stack/routes.generated.ts` and `startClientApp({ routes })`, including a `/shell-workbench/overview` control-plane route built from `layout.ts` plus a pathless `@sidebar` slot
+- `demo/chunked-csr`: focused reference for route-level CSR chunking through `chunkedRoutes`, `.van-stack/routes.generated.ts`, and `startClientApp({ routes })`, including a `/shell-workbench/overview` control-plane route built from `layout.ts` plus a pathless `@sidebar` slot
 - `demo/ssr-blog`: focused reference for SSR blog routes, slug loaders, and bootstrap handoff
 - `demo/ssg-site`: focused reference for static generation from route entries, raw `route.ts` outputs, and exported asset trees that can be served by generic web servers; run `bun ./demo/ssg-site/build.ts` to write `demo/ssg-site/dist/`
 - `demo/adaptive-nav`: focused reference for `replace` vs `stack` presentation

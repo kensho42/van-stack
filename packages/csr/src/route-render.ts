@@ -16,6 +16,10 @@ export type AppRootLike = {
   replaceChildren?: (...children: unknown[]) => void;
 };
 
+type ChunkedBranchLike = {
+  chunked?: boolean;
+};
+
 type ActiveSlotState = {
   data: unknown;
   key: string;
@@ -67,12 +71,21 @@ function escapeAttribute(value: string) {
     .replaceAll(">", "&gt;");
 }
 
+function shouldPreferLazyBranchModule(branch: ChunkedBranchLike | undefined) {
+  return branch?.chunked === true;
+}
+
 export async function resolveRouteModule<T>(
   directValue: T | undefined,
   factory: RouteModuleLoader<T> | undefined,
+  branch?: ChunkedBranchLike,
 ) {
-  if (directValue) return directValue;
-  if (!factory) return undefined;
+  if (!shouldPreferLazyBranchModule(branch) && directValue) {
+    return directValue;
+  }
+  if (!factory) {
+    return directValue;
+  }
 
   const module = await factory();
   return module.default;
@@ -292,6 +305,7 @@ async function renderSlotBody(state: ActiveSlotState, path: string) {
   const page = await resolveRouteModule<RoutePageModule>(
     state.route.page,
     state.route.files?.page,
+    state.route,
   );
 
   if (!page) {
@@ -474,6 +488,7 @@ export async function renderEntryToRoot(
   const page = await resolveRouteModule<RoutePageModule>(
     match.route.page,
     match.route.files?.page,
+    match.route,
   );
 
   if (!page) {
@@ -584,15 +599,18 @@ type RunRouteHydrateInput = {
 
 async function runRouteHydrate(
   route: {
+    chunked?: boolean;
     files?: Pick<NonNullable<RuntimeRouteDefinition["files"]>, "hydrate">;
     hydrate?: RouteHydrateModule;
   },
   input: RunRouteHydrateInput,
 ) {
   const hydrateFactory = route.files?.hydrate;
-  const hydrate =
-    route.hydrate ??
-    (hydrateFactory ? (await hydrateFactory()).default : undefined);
+  const hydrate = await resolveRouteModule<RouteHydrateModule>(
+    route.hydrate,
+    hydrateFactory,
+    route,
+  );
   if (!hydrate) {
     return false;
   }
@@ -623,6 +641,7 @@ export async function applyInitialRouteStrategy(
     const page = await resolveRouteModule<RoutePageModule>(
       route.page,
       route.files?.page,
+      route,
     );
     if (!page) {
       throw new Error(`Route "${route.id}" is missing a page module.`);

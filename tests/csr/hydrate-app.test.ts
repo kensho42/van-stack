@@ -327,6 +327,49 @@ describe("csr hydrate app", () => {
     );
   });
 
+  test("hydrates chunked initial routes through lazy hydrate modules", async () => {
+    const env = createHydrationEnv();
+    const eagerHydrate = vi.fn();
+    const chunkedHydrate = vi.fn();
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/chunked-hydrated",
+      pathname: "/posts/chunked-hydrated",
+      params: { slug: "chunked-hydrated" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "chunked-hydrated" } },
+    });
+
+    const app = hydrateApp({
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          chunked: true,
+          hydrate: eagerHydrate,
+          files: {
+            async hydrate() {
+              return { default: chunkedHydrate };
+            },
+          },
+        },
+      ] as never,
+      history: env.history,
+      document: env.document as never,
+      window: env.window as never,
+    });
+
+    await app.ready;
+
+    expect(chunkedHydrate).toHaveBeenCalledWith({
+      root: env.appRoot,
+      data: { post: { slug: "chunked-hydrated" } },
+      params: { slug: "chunked-hydrated" },
+      path: "/posts/chunked-hydrated",
+    });
+    expect(eagerHydrate).not.toHaveBeenCalled();
+  });
+
   test("hydrates named slot roots from bootstrap slot data", async () => {
     const env = createHydrationEnv();
     const defaultSlotRoot = { id: "default-slot" };
@@ -536,6 +579,88 @@ describe("csr hydrate app", () => {
       params: {},
       path: "/app/users/ada",
     });
+  });
+
+  test("hydrates chunked slot routes through lazy slot hydrate modules", async () => {
+    const env = createHydrationEnv();
+    const defaultSlotRoot = { id: "default-slot" };
+    const sidebarSlotRoot = { id: "sidebar-slot" };
+    const eagerSidebarHydrate = vi.fn();
+    const chunkedSidebarHydrate = vi.fn();
+
+    env.appRoot.querySelector = vi.fn((selector: string) => {
+      if (selector === '[data-van-stack-slot-root="default"]') {
+        return defaultSlotRoot;
+      }
+      if (selector === '[data-van-stack-slot-root="sidebar"]') {
+        return sidebarSlotRoot;
+      }
+      return null;
+    });
+
+    env.setBootstrapScript({
+      routeId: "app/users/[id]",
+      path: "/app/users/ada",
+      pathname: "/app/users/ada",
+      params: { id: "ada" },
+      hydrationPolicy: "app",
+      data: { user: { name: "Ada Lovelace" } },
+      slotData: {
+        sidebar: {
+          navigation: { label: "Workspace" },
+        },
+      },
+    });
+
+    const app = hydrateApp({
+      routes: [
+        {
+          id: "app/users/[id]",
+          path: "/app/users/:id",
+          files: {
+            async hydrate() {
+              return {
+                default: vi.fn(),
+              };
+            },
+          },
+          slotOwnerLayout: "app",
+          slotOwnerLayoutIndex: 0,
+          slots: {
+            sidebar: [
+              {
+                id: "app::sidebar",
+                slot: "sidebar",
+                path: "/app",
+                chunked: true,
+                hydrate: eagerSidebarHydrate,
+                files: {
+                  async hydrate() {
+                    return { default: chunkedSidebarHydrate };
+                  },
+                },
+                layoutChain: [],
+              },
+            ],
+          },
+        },
+      ] as never,
+      history: env.history,
+      document: env.document as never,
+      window: env.window as never,
+    });
+
+    await app.ready;
+
+    expect(chunkedSidebarHydrate).toHaveBeenCalledWith({
+      root: sidebarSlotRoot,
+      data: {
+        navigation: { label: "Workspace" },
+      },
+      params: {},
+      path: "/app/users/ada",
+    });
+    expect(eagerSidebarHydrate).not.toHaveBeenCalled();
   });
 
   test("skips unmatched or opted-out links during hydrated navigation", async () => {

@@ -32,7 +32,7 @@ The adaptive route surface mirrors the same blog graph under `/adaptive`:
 - `/adaptive/tags`
 - `/adaptive/tags/:slug`
 
-On post detail routes, likes and bookmarks are stored on the server for the current session. `hydrated` pre-renders those values into the HTML and then remounts the live route by default; `islands` keeps the document server-owned and uses `hydrate.ts` as the low-level enhance hook for the marked controls. `shell`, `custom`, and `chunked` reuse the same interaction API after client-side rendering. `chunked` keeps the same gallery content but loads route modules from a browser-safe generated manifest so the browser entry can split one chunk per route family.
+On post detail routes, likes and bookmarks are stored on the server for the current session. `hydrated` pre-renders those values into the HTML and then remounts the live route by default; `islands` keeps the document server-owned and uses `hydrate.ts` as the low-level enhance hook for the marked controls. `shell`, `custom`, and `chunked` reuse the same interaction API after client-side rendering. `chunked` keeps the same gallery content but loads route modules from a browser-safe generated manifest, with `chunkedRoutes` used at build time to keep selected branches eager while the rest of the browser entry splits one chunk per route family.
 
 Run it from the repo root:
 

@@ -43,6 +43,7 @@ const chunkedBrowserRoutesManifestPath = join(
   ".van-stack",
   "routes.chunked.generated.ts",
 );
+const chunkedBrowserEagerRouteIds = ["gallery/chunked/index"];
 
 async function getBunBuild() {
   const bunGlobal = (
@@ -166,6 +167,9 @@ async function buildChunkedAsset(entrypoint: string) {
     filePaths: chunkedRouteFiles,
     outFile: chunkedBrowserRoutesManifestPath,
     root: routesRoot,
+    chunkedRoutes: {
+      excludeRouteIds: chunkedBrowserEagerRouteIds,
+    },
   });
   await writeFile(
     chunkedBrowserRoutesManifestPath,

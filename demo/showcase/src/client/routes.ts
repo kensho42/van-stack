@@ -25,6 +25,8 @@ type WindowLike = Window & {
   history: HistoryLike;
 };
 
+const chunkedEagerRouteId = "gallery/chunked/index";
+
 export const hydratedClientRoutes: HydratableRoute[] = [
   {
     id: "gallery/hydrated/index",
@@ -432,6 +434,32 @@ export const customClientRoutes: ClientRouteDefinition[] = [
     },
   },
 ] as const;
+
+export async function loadChunkedClientRoutes(): Promise<
+  ClientRouteDefinition[]
+> {
+  const [
+    { default: chunkedRoutes },
+    { default: chunkedIndexPage },
+    { default: chunkedIndexMeta },
+  ] = await Promise.all([
+    import("../../.van-stack/routes.chunked.generated"),
+    import("../routes/gallery/chunked/index/page"),
+    import("../routes/gallery/chunked/index/meta"),
+  ]);
+  const typedChunkedRoutes =
+    chunkedRoutes as unknown as ClientRouteDefinition[];
+
+  return [...typedChunkedRoutes].map((route) =>
+    route.id === chunkedEagerRouteId
+      ? {
+          ...route,
+          meta: chunkedIndexMeta,
+          page: chunkedIndexPage,
+        }
+      : route,
+  );
+}
 
 function getAnchor(event: MouseEvent) {
   return (event.target as Element | null)?.closest?.("a[href]") ?? null;

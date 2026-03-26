@@ -12,6 +12,6 @@ Each route module imports `van` from `van-stack/render`, not `vanjs-core` direct
 
 In the filesystem-routing path, the demo would typically call `await loadRoutes({ root: "src/routes" })`. Writing `.van-stack/routes.generated.ts` stays available for custom tooling, but it is not the default path.
 
-For the opt-in chunked manifest path, use `demo/chunked-csr`. That demo writes `.van-stack/routes.generated.ts`, imports it into `startClientApp({ routes, ... })`, and serves the emitted secondary JS chunks.
+For the opt-in chunked manifest path, use `demo/chunked-csr`. That demo writes `.van-stack/routes.generated.ts` with `chunkedRoutes: true`, imports it into `startClientApp({ routes, ... })`, and serves the emitted secondary JS chunks.
 
 This folder stays as a focused reference for the CSR-specific pieces after the six-mode showcase demo.

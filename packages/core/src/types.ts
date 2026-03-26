@@ -93,6 +93,7 @@ export type RuntimeSlotDefinition = {
   id: string;
   slot: string;
   path: string;
+  chunked?: boolean;
   error?: RouteErrorModule;
   hydrate?: RouteHydrateModule;
   loader?: RouteLoaderModule;
@@ -115,6 +116,7 @@ export type RuntimeRouteFiles = {
 export type RuntimeRouteDefinition = {
   id: string;
   path: string;
+  chunked?: boolean;
   hydrationPolicy?: HydrationPolicy;
   action?: RouteActionModule;
   entries?: RouteEntriesModule;
@@ -135,6 +137,7 @@ export type NormalizedSlotRoute = {
   id: string;
   slot: string;
   path: string;
+  chunked?: boolean;
   directorySegments: string[];
   files: Partial<Record<SlotRouteFileKind, string>>;
   layoutChain: string[];
@@ -144,6 +147,7 @@ export type NormalizedSlotRoute = {
 export type NormalizedRoute = {
   id: string;
   path: string;
+  chunked?: boolean;
   directorySegments: string[];
   files: Partial<Record<RouteFileKind, string>>;
   layoutChain: string[];

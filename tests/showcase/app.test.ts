@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
@@ -36,6 +37,12 @@ const contentFamilies = [
     slug: "runtime",
   },
 ] as const;
+const chunkedShowcaseManifestPath = join(
+  "demo",
+  "showcase",
+  ".van-stack",
+  "routes.chunked.generated.ts",
+);
 
 async function requestShowcase(path: string) {
   const response = await handleShowcaseRequest(
@@ -365,6 +372,8 @@ describe("showcase app", () => {
     expect(customSource).toContain("createRouter");
     expect(chunkedSource).toContain("startClientApp");
     expect(chunkedSource).toContain("chunk-");
+    expect(chunkedSource).toContain("routes.chunked.generated");
+    expect(hydratedSource).not.toContain("routes.chunked.generated");
 
     expect(hydratedSource.length).toBeLessThan(1_500_000);
     expect(islandsSource.length).toBeLessThan(300_000);
@@ -383,6 +392,15 @@ describe("showcase app", () => {
     );
     expect(secondaryChunk.status).toBe(200);
     expect(secondaryChunk.headers.get("content-type")).toContain("javascript");
+
+    const chunkedManifest = readFileSync(chunkedShowcaseManifestPath, "utf8");
+    expect(chunkedManifest).toContain('id: "gallery/chunked/index"');
+    expect(chunkedManifest).toMatch(
+      /id: "gallery\/chunked\/index"[\s\S]*?chunked: false,/,
+    );
+    expect(chunkedManifest).toMatch(
+      /id: "gallery\/chunked\/posts\/\[slug\]"[\s\S]*?chunked: true,/,
+    );
   });
 
   test("serves route metadata from meta.ts for interactive routes", async () => {

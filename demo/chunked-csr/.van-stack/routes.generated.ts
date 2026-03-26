@@ -4,6 +4,7 @@ export const routes = [
   {
     id: "index",
     path: "/",
+    chunked: true,
     files: {
       page: () => import("../src/routes/index/page.js"),
       meta: () => import("../src/routes/index/meta.js"),
@@ -16,6 +17,7 @@ export const routes = [
   {
     id: "custom/[slug]",
     path: "/custom/:slug",
+    chunked: true,
     files: {
       page: () => import("../src/routes/custom/[slug]/page.js"),
       loader: () => import("../src/routes/custom/[slug]/loader.js"),
@@ -29,6 +31,7 @@ export const routes = [
   {
     id: "hydrated/[slug]",
     path: "/hydrated/:slug",
+    chunked: true,
     files: {
       page: () => import("../src/routes/hydrated/[slug]/page.js"),
       loader: () => import("../src/routes/hydrated/[slug]/loader.js"),
@@ -42,6 +45,7 @@ export const routes = [
   {
     id: "shell-workbench",
     path: "/shell-workbench",
+    chunked: true,
     files: {
       page: () => import("../src/routes/shell-workbench/page.js"),
     },
@@ -54,6 +58,7 @@ export const routes = [
           id: "shell-workbench::sidebar",
           slot: "sidebar",
           path: "/shell-workbench",
+          chunked: true,
           files: {
             page: () =>
               import("../src/routes/shell-workbench/@sidebar/page.js"),
@@ -66,6 +71,7 @@ export const routes = [
   {
     id: "shell-workbench/[slug]",
     path: "/shell-workbench/:slug",
+    chunked: true,
     files: {
       page: () => import("../src/routes/shell-workbench/[slug]/page.js"),
       loader: () => import("../src/routes/shell-workbench/[slug]/loader.js"),
@@ -80,6 +86,7 @@ export const routes = [
           id: "shell-workbench::sidebar",
           slot: "sidebar",
           path: "/shell-workbench",
+          chunked: true,
           files: {
             page: () =>
               import("../src/routes/shell-workbench/@sidebar/page.js"),
@@ -92,6 +99,7 @@ export const routes = [
   {
     id: "shell/[slug]",
     path: "/shell/:slug",
+    chunked: true,
     files: {
       page: () => import("../src/routes/shell/[slug]/page.js"),
       loader: () => import("../src/routes/shell/[slug]/loader.js"),
