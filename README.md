@@ -148,6 +148,23 @@ createServer(async (req, res) => {
 ```
 
 ```ts
+// SSR with Cloudflare Workers
+import { loadRoutes } from "van-stack/compiler";
+import { renderRequest } from "van-stack/ssr";
+
+const routes = await loadRoutes({ root: "src/routes" });
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    return renderRequest({
+      request,
+      routes,
+    });
+  },
+};
+```
+
+```ts
 // SSR with Express
 import express from "express";
 import { renderRequest } from "van-stack/ssr";
