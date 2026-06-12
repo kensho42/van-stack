@@ -1,6 +1,9 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { RuntimeRouteDefinition } from "../../packages/core/src/index";
+import type {
+  RouteDataContext,
+  RuntimeRouteDefinition,
+} from "../../packages/core/src/index";
 import type { StartClientAppOptions } from "../../packages/csr/src/index";
 
 test("startClientApp accepts eager and lazy route records", () => {
@@ -81,4 +84,24 @@ test("startClientApp accepts readonly generated route arrays", () => {
   expectTypeOf(options.routes).toMatchTypeOf<
     readonly RuntimeRouteDefinition[]
   >();
+});
+
+test("route pages can read matched URL context", () => {
+  const route = {
+    id: "new-esim/[iccid]",
+    path: "/new-esim/:iccid",
+    page(input) {
+      expectTypeOf(input).toMatchTypeOf<RouteDataContext>();
+
+      return [
+        input.params.iccid,
+        input.query.get("step"),
+        input.path,
+        input.pathname,
+        input.data,
+      ].join(":");
+    },
+  } satisfies RuntimeRouteDefinition;
+
+  expectTypeOf(route).toMatchTypeOf<RuntimeRouteDefinition>();
 });

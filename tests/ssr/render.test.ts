@@ -46,6 +46,29 @@ describe("ssr renderer", () => {
     expect(html).toContain('"hydrationPolicy":"app"');
   });
 
+  test("passes route URL context into page modules", async () => {
+    const response = await renderRequest({
+      request: new Request("https://example.com/new-esim/890123?step=scan"),
+      routes: [
+        {
+          id: "new-esim/[iccid]",
+          path: "/new-esim/:iccid",
+          page({ params, path, pathname, query }) {
+            return `<article data-iccid="${params.iccid}" data-path="${path}" data-pathname="${pathname}" data-step="${query.get("step")}">New eSIM</article>`;
+          },
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+
+    const html = await response.text();
+
+    expect(html).toContain(
+      '<article data-iccid="890123" data-path="/new-esim/890123?step=scan" data-pathname="/new-esim/890123" data-step="scan">New eSIM</article>',
+    );
+  });
+
   test("renders a manifest-style route by loading route modules lazily", async () => {
     const response = await renderRequest({
       request: new Request("https://example.com/posts/manifest-route"),

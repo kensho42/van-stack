@@ -6,7 +6,7 @@ Demonstrates all three CSR runtime modes:
 
 - `hydrated`: start from SSR HTML and continue on the client with `startClientApp({ mode: "hydrated", routes })`, which uses `hydrateApp({ routes })` for the initial handoff
 - `shell`: boot from a tiny HTML shell and use VanStack transport-backed route loading
-- `custom`: boot from a tiny HTML shell and let the app shell provide data resolution, or keep data fetching inside components
+- `custom`: boot from a tiny HTML shell and let the app shell provide data resolution, or keep data fetching inside components. The dynamic `/new-esim/:iccid` custom route reads `params`, `query`, `path`, and `pathname` directly from its `page.ts` input without a router resolver.
 
 Each route module imports `van` from `vanjs-core` directly. Browser CSR resolves that to the real browser package.
 

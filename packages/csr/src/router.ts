@@ -159,18 +159,19 @@ function findMatchedRoute(
   routes: readonly ClientRouteDefinition[],
   path: string,
 ) {
-  const { pathname, query } = parsePath(path);
+  const parsed = parsePath(path);
 
   for (const route of routes) {
-    const match = matchPath(route.path, pathname);
+    const match = matchPath(route.path, parsed.pathname);
     if (!match) {
       continue;
     }
 
     return {
-      pathname,
+      path: parsed.path,
+      pathname: parsed.pathname,
       params: match.params,
-      query,
+      query: parsed.query,
       route,
     };
   }
@@ -290,6 +291,9 @@ export async function applyRouteHead(options: ApplyRouteHeadOptions) {
     ? await metaModule({
         data: options.data,
         params: match.params,
+        path: match.path,
+        pathname: match.pathname,
+        query: match.query,
       })
     : undefined;
 
@@ -309,14 +313,16 @@ export function createRouter(options: CreateRouterOptions) {
   }
 
   if (options.mode === "hydrated") {
-    findMatchedRoute(
+    const match = findMatchedRoute(
       options.routes,
       options.bootstrap.path ?? options.bootstrap.pathname,
     );
 
     current = {
-      path: parsePath(options.bootstrap.path ?? options.bootstrap.pathname)
-        .path,
+      path: match.path,
+      pathname: match.pathname,
+      params: match.params,
+      query: match.query,
       data: options.bootstrap.data,
       slotData: options.bootstrap.slotData,
     };
@@ -345,7 +351,10 @@ export function createRouter(options: CreateRouterOptions) {
     );
 
     current = {
-      path: parsePath(path).path,
+      path: match.path,
+      pathname: match.pathname,
+      params: match.params,
+      query: match.query,
       data: resolved.data,
       slotData: resolved.slotData,
     };

@@ -154,10 +154,15 @@ describe("csr router", () => {
       "",
       "/posts/github-down",
     );
-    expect(result).toEqual({
-      path: "/posts/github-down",
-      data: { post: { slug: "github-down" } },
-    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        path: "/posts/github-down",
+        pathname: "/posts/github-down",
+        params: { slug: "github-down" },
+        data: { post: { slug: "github-down" } },
+      }),
+    );
+    expect(result.query.toString()).toBe("");
   });
 
   test("notifies subscribers with the current entry and later route changes", async () => {
@@ -179,17 +184,27 @@ describe("csr router", () => {
 
     const unsubscribe = router.subscribe(listener);
 
-    expect(listener).toHaveBeenCalledWith({
-      path: "/posts/agentic-coding-is-the-future?tab=summary",
-      data: { post: { slug: "agentic-coding-is-the-future" } },
-    });
+    expect(listener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/posts/agentic-coding-is-the-future?tab=summary",
+        pathname: "/posts/agentic-coding-is-the-future",
+        params: { slug: "agentic-coding-is-the-future" },
+        data: { post: { slug: "agentic-coding-is-the-future" } },
+      }),
+    );
+    expect(listener.mock.calls[0][0].query.toString()).toBe("tab=summary");
 
     await router.navigate("/posts/github-down?tab=summary");
 
-    expect(listener).toHaveBeenLastCalledWith({
-      path: "/posts/github-down?tab=summary",
-      data: { post: { slug: "github-down" } },
-    });
+    expect(listener).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        path: "/posts/github-down?tab=summary",
+        pathname: "/posts/github-down",
+        params: { slug: "github-down" },
+        data: { post: { slug: "github-down" } },
+      }),
+    );
+    expect(listener.mock.calls[1][0].query.toString()).toBe("tab=summary");
 
     unsubscribe();
     await router.navigate("/posts/hn-posts");
@@ -213,14 +228,24 @@ describe("csr router", () => {
     const next = await router.navigate("/posts/github-down");
 
     expect(load).toHaveBeenCalledTimes(2);
-    expect(initial).toEqual({
-      path: "/posts/agentic-coding-is-the-future",
-      data: { post: { slug: "agentic-coding-is-the-future" } },
-    });
-    expect(next).toEqual({
-      path: "/posts/github-down",
-      data: { post: { slug: "github-down" } },
-    });
+    expect(initial).toEqual(
+      expect.objectContaining({
+        path: "/posts/agentic-coding-is-the-future",
+        pathname: "/posts/agentic-coding-is-the-future",
+        params: { slug: "agentic-coding-is-the-future" },
+        data: { post: { slug: "agentic-coding-is-the-future" } },
+      }),
+    );
+    expect(initial.query.toString()).toBe("");
+    expect(next).toEqual(
+      expect.objectContaining({
+        path: "/posts/github-down",
+        pathname: "/posts/github-down",
+        params: { slug: "github-down" },
+        data: { post: { slug: "github-down" } },
+      }),
+    );
+    expect(next.query.toString()).toBe("");
     expect(pushState).toHaveBeenCalledTimes(1);
   });
 
@@ -254,10 +279,15 @@ describe("csr router", () => {
       "",
       "/posts/graphql-app?tab=summary",
     );
-    expect(result).toEqual({
-      path: "/posts/graphql-app?tab=summary",
-      data: { post: { slug: "graphql-app", source: "graphql" } },
-    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        path: "/posts/graphql-app?tab=summary",
+        pathname: "/posts/graphql-app",
+        params: { slug: "graphql-app" },
+        data: { post: { slug: "graphql-app", source: "graphql" } },
+      }),
+    );
+    expect(result.query.toString()).toBe("tab=summary");
   });
 
   test("allows custom mode without a resolver for component-level fetching", async () => {
@@ -271,14 +301,24 @@ describe("csr router", () => {
     const initial = await router.load("/posts/component-owned");
     const next = await router.navigate("/posts/component-owned?tab=comments");
 
-    expect(initial).toEqual({
-      path: "/posts/component-owned",
-      data: undefined,
-    });
-    expect(next).toEqual({
-      path: "/posts/component-owned?tab=comments",
-      data: undefined,
-    });
+    expect(initial).toEqual(
+      expect.objectContaining({
+        path: "/posts/component-owned",
+        pathname: "/posts/component-owned",
+        params: { slug: "component-owned" },
+        data: undefined,
+      }),
+    );
+    expect(initial.query.toString()).toBe("");
+    expect(next).toEqual(
+      expect.objectContaining({
+        path: "/posts/component-owned?tab=comments",
+        pathname: "/posts/component-owned",
+        params: { slug: "component-owned" },
+        data: undefined,
+      }),
+    );
+    expect(next.query.toString()).toBe("tab=comments");
     expect(pushState).toHaveBeenCalledWith(
       { path: "/posts/component-owned?tab=comments" },
       "",

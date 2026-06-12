@@ -130,12 +130,19 @@ describe("csr hydrate app", () => {
       data: bootstrap.data,
       params: bootstrap.params,
       path: bootstrap.path,
+      pathname: bootstrap.pathname,
+      query: expect.any(URLSearchParams),
     });
     expect(hydrateSpy).toHaveBeenCalledWith(env.appRoot, expect.any(Function));
-    expect(listener).toHaveBeenCalledWith({
-      path: "/posts/agentic-coding-is-the-future?tab=summary",
-      data: { post: { slug: "agentic-coding-is-the-future" } },
-    });
+    expect(listener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/posts/agentic-coding-is-the-future?tab=summary",
+        pathname: "/posts/agentic-coding-is-the-future",
+        params: { slug: "agentic-coding-is-the-future" },
+        data: { post: { slug: "agentic-coding-is-the-future" } },
+      }),
+    );
+    expect(listener.mock.calls[0][0].query.toString()).toBe("tab=summary");
 
     const clickHandler = env.getClickHandler();
     expect(clickHandler).toBeTypeOf("function");
@@ -173,10 +180,17 @@ describe("csr hydrate app", () => {
       "/posts/github-down?tab=related",
     );
     expect(preventDefault).toHaveBeenCalledTimes(1);
-    expect(listener).toHaveBeenLastCalledWith({
-      path: "/posts/github-down?tab=related",
-      data: { post: { slug: "github-down" } },
-    });
+    expect(listener).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        path: "/posts/github-down?tab=related",
+        pathname: "/posts/github-down",
+        params: { slug: "github-down" },
+        data: { post: { slug: "github-down" } },
+      }),
+    );
+    expect(listener.mock.calls.at(-1)?.[0].query.toString()).toBe(
+      "tab=related",
+    );
 
     env.window.location.pathname = "/posts/back";
     env.window.location.search = "?tab=history";
@@ -194,10 +208,17 @@ describe("csr hydrate app", () => {
         pathname: "/posts/back",
       }),
     );
-    expect(listener).toHaveBeenLastCalledWith({
-      path: "/posts/back?tab=history",
-      data: { post: { slug: "back" } },
-    });
+    expect(listener).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        path: "/posts/back?tab=history",
+        pathname: "/posts/back",
+        params: { slug: "back" },
+        data: { post: { slug: "back" } },
+      }),
+    );
+    expect(listener.mock.calls.at(-1)?.[0].query.toString()).toBe(
+      "tab=history",
+    );
 
     app.dispose();
 
@@ -326,6 +347,8 @@ describe("csr hydrate app", () => {
       data: { post: { slug: "chunked-hydrated" } },
       params: { slug: "chunked-hydrated" },
       path: "/posts/chunked-hydrated",
+      pathname: "/posts/chunked-hydrated",
+      query: expect.any(URLSearchParams),
     });
     expect(eagerHydrate).not.toHaveBeenCalled();
   });
@@ -400,6 +423,8 @@ describe("csr hydrate app", () => {
       data: { user: { name: "Ada Lovelace" } },
       params: { id: "ada" },
       path: "/app/users/ada",
+      pathname: "/app/users/ada",
+      query: expect.any(URLSearchParams),
     });
     expect(sidebarHydrate).toHaveBeenCalledWith({
       root: sidebarSlotRoot,
@@ -408,6 +433,8 @@ describe("csr hydrate app", () => {
       },
       params: {},
       path: "/app/users/ada",
+      pathname: "/app/users/ada",
+      query: expect.any(URLSearchParams),
     });
   });
 
@@ -498,6 +525,8 @@ describe("csr hydrate app", () => {
       },
       params: {},
       path: "/app/users/ada",
+      pathname: "/app/users/ada",
+      query: expect.any(URLSearchParams),
     });
   });
 
@@ -579,6 +608,8 @@ describe("csr hydrate app", () => {
       },
       params: {},
       path: "/app/users/ada",
+      pathname: "/app/users/ada",
+      query: expect.any(URLSearchParams),
     });
     expect(eagerSidebarHydrate).not.toHaveBeenCalled();
   });
@@ -712,6 +743,8 @@ describe("csr hydrate app", () => {
       data: { post: { slug: "runtime-gallery-tour" } },
       params: { slug: "runtime-gallery-tour" },
       path: "/posts/runtime-gallery-tour",
+      pathname: "/posts/runtime-gallery-tour",
+      query: expect.any(URLSearchParams),
     });
     expect(env.document.addEventListener).not.toHaveBeenCalled();
     expect(env.window.addEventListener).not.toHaveBeenCalled();

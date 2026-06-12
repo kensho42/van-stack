@@ -1,6 +1,6 @@
 import van from "vanjs-core";
 
-const { article, button, h1, p } = van.tags;
+const { a, article, button, h1, p } = van.tags;
 
 export default function page() {
   const taps = van.state(0);
@@ -10,6 +10,7 @@ export default function page() {
     p(
       "Lets the app shell own GraphQL, REST, RPC, or native data access, or keep data fetching inside components.",
     ),
+    p(a({ href: "/new-esim/890123?step=scan" }, "Open dynamic custom route")),
     button(
       {
         onclick: () => {

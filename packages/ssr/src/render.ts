@@ -34,6 +34,17 @@ function getRequestPath(request: Request) {
   return {
     pathname: url.pathname,
     path: `${url.pathname}${url.search}`,
+    query: new URLSearchParams(url.searchParams),
+  };
+}
+
+function parseRoutePath(path: string) {
+  const url = new URL(path, "https://van-stack.local");
+
+  return {
+    path: `${url.pathname}${url.search}`,
+    pathname: url.pathname,
+    query: new URLSearchParams(url.searchParams),
   };
 }
 
@@ -159,6 +170,7 @@ async function applyLayoutChain(
   slotData: Record<string, unknown> = {},
 ) {
   let output = body;
+  const context = parseRoutePath(path);
 
   for (const layoutLoader of [...(layoutChain ?? [])].reverse()) {
     const module = await layoutLoader();
@@ -168,7 +180,9 @@ async function applyLayoutChain(
       slots,
       slotData,
       params,
-      path,
+      path: context.path,
+      pathname: context.pathname,
+      query: context.query,
     });
   }
 
@@ -225,7 +239,14 @@ async function renderSlotOutput(
     );
   }
 
-  const pageOutput = await page({ data: state.data });
+  const context = parseRoutePath(path);
+  const pageOutput = await page({
+    data: state.data,
+    params: state.params,
+    path: context.path,
+    pathname: context.pathname,
+    query: context.query,
+  });
   const body = await applyLayoutChain(
     pageOutput,
     state.route.layoutChain,
@@ -246,7 +267,14 @@ async function renderRouteBody(options: {
   slotData: Record<string, unknown>;
   slotOutputs: Record<string, unknown>;
 }) {
-  const pageOutput = await options.page({ data: options.data });
+  const context = parseRoutePath(options.path);
+  const pageOutput = await options.page({
+    data: options.data,
+    params: options.params,
+    path: context.path,
+    pathname: context.pathname,
+    query: context.query,
+  });
   const ownerIndex = options.route.slotOwnerLayoutIndex;
 
   if (ownerIndex === undefined) {
@@ -277,7 +305,9 @@ async function renderRouteBody(options: {
       slots: options.slotOutputs,
       slotData: options.slotData,
       params: options.params,
-      path: options.path,
+      path: context.path,
+      pathname: context.pathname,
+      query: context.query,
     });
   }
 
@@ -347,7 +377,13 @@ export async function renderRequest(input: RenderRequestInput) {
         ),
       );
       const meta = metaHandler
-        ? await metaHandler({ params: match.params, data })
+        ? await metaHandler({
+            params: match.params,
+            data,
+            path: requestPath.path,
+            pathname: requestPath.pathname,
+            query: requestPath.query,
+          })
         : undefined;
       const body = wrapPageBody(
         await renderRouteBody({

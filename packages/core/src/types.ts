@@ -53,34 +53,42 @@ export type RouteActionModule = (input: {
 
 export type RouteEntriesModule = () => Awaitable<Record<string, string>[]>;
 
-export type RouteMetaModule = (input: {
-  data: unknown;
-  params: Record<string, string>;
-}) => Awaitable<RouteMeta | undefined>;
-
-export type RoutePageModule = (input: { data: unknown }) => Awaitable<unknown>;
-
-export type RouteHydrateModule = (input: {
-  root: unknown;
-  data: unknown;
+export type RouteUrlContext = {
   params: Record<string, string>;
   path: string;
-}) => unknown;
+  pathname: string;
+  query: URLSearchParams;
+};
 
-export type RouteErrorModule = (input: {
-  error: unknown;
-  params: Record<string, string>;
-  path: string;
-}) => Awaitable<unknown>;
-
-export type RouteLayoutModule = (input: {
-  children: unknown;
+export type RouteDataContext = RouteUrlContext & {
   data: unknown;
-  slots: Record<string, unknown>;
-  slotData: Record<string, unknown>;
-  params: Record<string, string>;
-  path: string;
-}) => Awaitable<unknown>;
+};
+
+export type RouteMetaModule = (
+  input: RouteDataContext,
+) => Awaitable<RouteMeta | undefined>;
+
+export type RoutePageModule = (input: RouteDataContext) => Awaitable<unknown>;
+
+export type RouteHydrateModule = (
+  input: RouteDataContext & {
+    root: unknown;
+  },
+) => unknown;
+
+export type RouteErrorModule = (
+  input: RouteUrlContext & {
+    error: unknown;
+  },
+) => Awaitable<unknown>;
+
+export type RouteLayoutModule = (
+  input: RouteDataContext & {
+    children: unknown;
+    slots: Record<string, unknown>;
+    slotData: Record<string, unknown>;
+  },
+) => Awaitable<unknown>;
 
 export type RuntimeSlotFiles = {
   error?: RouteModuleLoader<RouteErrorModule>;
@@ -189,6 +197,9 @@ export type Resolve = (
 
 export type RouterEntry = {
   path: string;
+  pathname: string;
+  params: Record<string, string>;
+  query: URLSearchParams;
   data: unknown;
   slotData?: Record<string, unknown>;
 };

@@ -65,8 +65,9 @@ function buildBranchKey(
   routeId: string,
   params: Record<string, string>,
   data: unknown,
+  path: string,
 ) {
-  return `${routeId}|${serializeBranchValue(params)}|${serializeBranchValue(data)}`;
+  return `${routeId}|${path}|${serializeBranchValue(params)}|${serializeBranchValue(data)}`;
 }
 
 function escapeAttribute(value: string) {
@@ -79,6 +80,16 @@ function escapeAttribute(value: string) {
 
 function shouldPreferLazyBranchModule(branch: ChunkedBranchLike | undefined) {
   return branch?.chunked === true;
+}
+
+function parseRoutePath(path: string) {
+  const url = new URL(path, "https://van-stack.local");
+
+  return {
+    path: `${url.pathname}${url.search}`,
+    pathname: url.pathname,
+    query: new URLSearchParams(url.searchParams),
+  };
 }
 
 export async function resolveRouteModule<T>(
@@ -101,16 +112,19 @@ export function findMatchedRoute(
   routes: readonly RuntimeRouteDefinition[],
   path: string,
 ) {
-  const pathname = new URL(path, "https://van-stack.local").pathname;
+  const parsed = parseRoutePath(path);
 
   for (const route of routes) {
-    const match = matchPath(route.path, pathname);
+    const match = matchPath(route.path, parsed.pathname);
     if (!match) {
       continue;
     }
 
     return {
+      path: parsed.path,
+      pathname: parsed.pathname,
       params: match.params,
+      query: parsed.query,
       route,
     };
   }
@@ -177,7 +191,7 @@ function resolveActiveSlots(
       route: matched.route,
       params: matched.params,
       data,
-      key: buildBranchKey(matched.route.id, matched.params, data),
+      key: buildBranchKey(matched.route.id, matched.params, data, path),
     };
   }
 
@@ -194,6 +208,7 @@ async function applyLayouts(
   slotData: Record<string, unknown> = {},
 ) {
   let output = body;
+  const context = parseRoutePath(path);
 
   for (const layoutLoader of [...(layoutChain ?? [])].reverse()) {
     const module = await layoutLoader();
@@ -203,7 +218,9 @@ async function applyLayouts(
       slots,
       slotData,
       params,
-      path,
+      path: context.path,
+      pathname: context.pathname,
+      query: context.query,
     });
   }
 
@@ -377,7 +394,14 @@ async function renderDefaultBody(
   params: Record<string, string>,
   path: string,
 ) {
-  const pageOutput = await page({ data });
+  const context = parseRoutePath(path);
+  const pageOutput = await page({
+    data,
+    params,
+    path: context.path,
+    pathname: context.pathname,
+    query: context.query,
+  });
   const ownerIndex = route.slotOwnerLayoutIndex;
 
   if (ownerIndex === undefined) {
@@ -406,7 +430,14 @@ async function renderSlotBody(state: ActiveSlotState, path: string) {
     );
   }
 
-  const pageOutput = await page({ data: state.data });
+  const context = parseRoutePath(path);
+  const pageOutput = await page({
+    data: state.data,
+    params: state.params,
+    path: context.path,
+    pathname: context.pathname,
+    query: context.query,
+  });
   return applyLayouts(
     pageOutput,
     state.route.layoutChain,
@@ -475,6 +506,8 @@ async function mountFreshRoute(
       slotData,
       params: match.params,
       path: entry.path,
+      pathname: entry.pathname,
+      query: entry.query,
     });
   }
 
@@ -517,7 +550,12 @@ async function mountFreshRoute(
       ownerId,
       ownerIndex,
       defaultRoot,
-      defaultKey: buildBranchKey(match.route.id, match.params, entry.data),
+      defaultKey: buildBranchKey(
+        match.route.id,
+        match.params,
+        entry.data,
+        entry.path,
+      ),
       slotNames,
       slotKeys: Object.fromEntries(
         Object.entries(activeSlots).map(([slot, state]) => [slot, state.key]),
@@ -561,7 +599,7 @@ export function captureMountedSlotState(
     ownerId,
     ownerIndex,
     defaultRoot,
-    defaultKey: buildBranchKey(route.id, params, entry.data),
+    defaultKey: buildBranchKey(route.id, params, entry.data, entry.path),
     slotNames,
     slotKeys: Object.fromEntries(
       Object.entries(activeSlots).map(([slot, state]) => [slot, state.key]),
@@ -639,6 +677,7 @@ export async function renderEntryToRoot(
     match.route.id,
     match.params,
     entry.data,
+    entry.path,
   );
   if (mountedSlots.defaultKey !== nextDefaultKey) {
     const defaultBody = await renderDefaultBody(
@@ -686,6 +725,8 @@ type RunRouteHydrateInput = {
   data: unknown;
   params: Record<string, string>;
   path: string;
+  pathname: string;
+  query: URLSearchParams;
   root: AppRootLike;
 };
 
@@ -727,6 +768,8 @@ export async function applyInitialRouteStrategy(
     data: entry.data,
     params,
     path: entry.path,
+    pathname: entry.pathname,
+    query: entry.query,
   });
 
   if (!defaultEnhanced) {
@@ -762,6 +805,8 @@ export async function applyInitialRouteStrategy(
         data: state.data,
         params: state.params,
         path: entry.path,
+        pathname: entry.pathname,
+        query: entry.query,
       });
 
       if (slotEnhanced) {
@@ -792,6 +837,8 @@ export async function enhanceRenderedEntry(
       data: entry.data,
       params: match.params,
       path: entry.path,
+      pathname: entry.pathname,
+      query: entry.query,
     });
   }
 
@@ -817,6 +864,8 @@ export async function enhanceRenderedEntry(
         data: state.data,
         params: state.params,
         path: entry.path,
+        pathname: entry.pathname,
+        query: entry.query,
       });
     }),
   );

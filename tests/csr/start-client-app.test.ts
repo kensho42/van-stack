@@ -396,6 +396,8 @@ describe("startClientApp", () => {
       data: { post: { slug: "server-html", title: "Server HTML" } },
       params: { slug: "server-html" },
       path: "/posts/server-html",
+      pathname: "/posts/server-html",
+      query: expect.any(URLSearchParams),
     });
     expect(env.root.innerHTML).toBe("<article><h1>Server HTML</h1></article>");
 
@@ -407,6 +409,8 @@ describe("startClientApp", () => {
       data: { post: { slug: "github-down", title: "GitHub Down" } },
       params: { slug: "github-down" },
       path: "/posts/github-down",
+      pathname: "/posts/github-down",
+      query: expect.any(URLSearchParams),
     });
     expect(hydrateRoute).toHaveBeenCalledTimes(2);
   });
@@ -645,6 +649,79 @@ describe("startClientApp", () => {
     ]);
   });
 
+  test("passes route params and query into resolver-free custom pages", async () => {
+    const env = createClientDocument();
+    const page = vi.fn((input) => ({
+      iccid: input.params.iccid,
+      kind: "esim-view",
+      path: input.path,
+      pathname: input.pathname,
+      step: input.query.get("step"),
+    }));
+
+    const app = startClientApp({
+      mode: "custom",
+      routes: [
+        {
+          id: "new-esim/[iccid]",
+          path: "/new-esim/:iccid",
+          page,
+        },
+      ],
+      history: { pushState: vi.fn() },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/new-esim/890123",
+          search: "?step=scan",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(page).toHaveBeenCalledWith({
+      data: undefined,
+      params: { iccid: "890123" },
+      path: "/new-esim/890123?step=scan",
+      pathname: "/new-esim/890123",
+      query: expect.any(URLSearchParams),
+    });
+    expect(env.root.children).toEqual([
+      {
+        iccid: "890123",
+        kind: "esim-view",
+        path: "/new-esim/890123?step=scan",
+        pathname: "/new-esim/890123",
+        step: "scan",
+      },
+    ]);
+
+    await app.router.navigate("/new-esim/890123?step=confirm");
+
+    expect(page).toHaveBeenCalledTimes(2);
+    expect(page).toHaveBeenLastCalledWith({
+      data: undefined,
+      params: { iccid: "890123" },
+      path: "/new-esim/890123?step=confirm",
+      pathname: "/new-esim/890123",
+      query: expect.any(URLSearchParams),
+    });
+    expect(env.root.children).toEqual([
+      {
+        iccid: "890123",
+        kind: "esim-view",
+        path: "/new-esim/890123?step=confirm",
+        pathname: "/new-esim/890123",
+        step: "confirm",
+      },
+    ]);
+  });
+
   test("loads chunked slot routes through lazy slot page modules", async () => {
     const env = createClientDocument();
     const eagerSidebarPage = vi.fn(() =>
@@ -773,7 +850,7 @@ describe("startClientApp", () => {
     await expect(app.ready).rejects.toThrow("chunk import failed");
   });
 
-  test("rerenders only changed slot roots for slot-aware shell routes", async () => {
+  test("rerenders slot roots when the route context changes", async () => {
     const env = createClientDocument();
     const sidebarPage = vi.fn(() => createViewNode("aside", {}, ["Sidebar"]));
     const workspacePage = vi.fn(({ data }: { data: unknown }) => {
@@ -876,7 +953,7 @@ describe("startClientApp", () => {
 
     await app.router.navigate("/app/users/grace");
 
-    expect(sidebarPage).toHaveBeenCalledTimes(1);
+    expect(sidebarPage).toHaveBeenCalledTimes(2);
     expect(workspacePage).toHaveBeenCalledTimes(2);
     expect(
       env.root.querySelector?.('[data-van-stack-slot-root="sidebar"]'),

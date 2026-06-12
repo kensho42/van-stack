@@ -60,8 +60,18 @@ export default function page(input: {
   data: {
     post: { title: string; excerpt: string };
   };
+  params: { slug: string };
+  query: URLSearchParams;
+  path: string;
+  pathname: string;
 }) {
-  return article(h1(input.data.post.title), p(input.data.post.excerpt));
+  const view = input.query.get("view") ?? "summary";
+
+  return article(
+    h1(input.data.post.title),
+    p(input.data.post.excerpt),
+    p(`Route ${input.params.slug} is showing ${view}.`),
+  );
 }
 ```
 
@@ -326,6 +336,31 @@ const router = createRouter({
   routes,
   history: window.history,
 });
+```
+
+In `custom` mode without a resolver, route components still receive the matched route context:
+
+```ts
+// src/routes/new-esim/[iccid]/page.ts
+import van from "vanjs-core";
+
+const { article, h1, p } = van.tags;
+
+export default function page(input: {
+  params: { iccid: string };
+  query: URLSearchParams;
+  path: string;
+  pathname: string;
+  data: unknown;
+}) {
+  const step = input.query.get("step") ?? "start";
+
+  return article(
+    h1(`eSIM ${input.params.iccid}`),
+    p(`Current step: ${step}`),
+    p(`Matched path: ${input.pathname}`),
+  );
+}
 ```
 
 ### Hydration Policies

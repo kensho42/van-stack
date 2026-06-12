@@ -97,6 +97,8 @@ export type RouteHydrateInput = {
   data: unknown;
   params: Record<string, string>;
   path: string;
+  pathname: string;
+  query: URLSearchParams;
 };
 
 export type { RouteHydrateModule } from "../../core/src/index";
@@ -153,6 +155,16 @@ function readBootstrapPayload(
 
 function getCurrentPath(window: WindowLike) {
   return `${window.location.pathname}${window.location.search}`;
+}
+
+function parseRoutePath(path: string) {
+  const url = new URL(path, "https://van-stack.local");
+
+  return {
+    path: `${url.pathname}${url.search}`,
+    pathname: url.pathname,
+    query: new URLSearchParams(url.searchParams),
+  };
 }
 
 function getAppRoot(document: DocumentLike, selector = defaultAppRootSelector) {
@@ -273,11 +285,15 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
   });
   const root = getAppRoot(document, options.rootSelector);
   const matchedRoute = getMatchedRoute(options.routes, bootstrap);
+  const bootstrapPath = parseRoutePath(bootstrap.path ?? bootstrap.pathname);
   const ready = Promise.all([
     applyInitialRouteStrategy(
       matchedRoute.route,
       {
-        path: bootstrap.path ?? bootstrap.pathname,
+        path: bootstrapPath.path,
+        pathname: bootstrapPath.pathname,
+        params: matchedRoute.params,
+        query: bootstrapPath.query,
         data: bootstrap.data,
         slotData: bootstrap.slotData,
       },
@@ -286,7 +302,7 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     ),
     applyRouteHead({
       routes: options.routes,
-      path: bootstrap.path ?? bootstrap.pathname,
+      path: bootstrapPath.path,
       data: bootstrap.data,
       document: document as never,
     }),
@@ -341,13 +357,16 @@ export function hydrateIslands(
   }
 
   const matchedRoute = getMatchedRoute(options.routes, bootstrap);
+  const bootstrapPath = parseRoutePath(bootstrap.path ?? bootstrap.pathname);
   const ready = hydrateRouteRoot(
     matchedRoute.route,
     {
       root: document as unknown as AppRootLike,
       data: bootstrap.data,
       params: matchedRoute.params,
-      path: bootstrap.path ?? bootstrap.pathname,
+      path: bootstrapPath.path,
+      pathname: bootstrapPath.pathname,
+      query: bootstrapPath.query,
     },
     document as unknown as AppRootLike,
   ).then(() => {});
