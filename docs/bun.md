@@ -56,7 +56,7 @@ The focused reference for that path in this repo is `demo/ssg-site`, which you c
 
 ## Third-Party Van Packages
 
-If imported packages hard-import `vanjs-core` or `vanjs-ext`, Bun needs a `tsconfig` override so those imports resolve through the active `van-stack/render` environment.
+If SSR or SSG entrypoints import packages that hard-import `vanjs-core` or `vanjs-ext`, Bun needs a `tsconfig` override so those imports resolve through VanStack's server-safe compatibility environment.
 
 Create `tsconfig.bun.json` in the app root:
 

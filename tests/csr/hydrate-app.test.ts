@@ -102,32 +102,6 @@ describe("csr hydrate app", () => {
         add(..._args: unknown[]) {},
         hydrate: hydrateSpy,
       },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list(..._args: unknown[]) {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
-      },
     });
     const bootstrap = {
       routeId: "posts/[slug]",
@@ -398,32 +372,6 @@ describe("csr hydrate app", () => {
         },
         add(..._args: unknown[]) {},
         hydrate(..._args: unknown[]) {},
-      },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list(..._args: unknown[]) {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
       },
     });
 

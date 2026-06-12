@@ -1,5 +1,7 @@
 # VanX Render Facade Design
 
+> Superseded: VanX is no longer exposed from `van-stack/render`. CSR apps that need VanX import `vanjs-ext` directly, while SSR/SSG compatibility continues through `van-stack/compat/vanjs-ext`.
+
 ## Summary
 
 `van-stack/render` should expose `vanX` alongside `van`, so shared application code can import both from one framework-owned facade:

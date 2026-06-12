@@ -69,32 +69,6 @@ function bindComponentRenderEnv() {
         return bind(dom);
       },
     },
-    vanX: {
-      calc(fn: () => unknown) {
-        return fn();
-      },
-      reactive<T>(value: T) {
-        return value;
-      },
-      noreactive<T>(value: T) {
-        return value;
-      },
-      stateFields<T>(value: T) {
-        return value;
-      },
-      raw<T>(value: T) {
-        return value;
-      },
-      list() {
-        return [];
-      },
-      replace<T>(_value: T, replacement: T) {
-        return replacement;
-      },
-      compact<T>(value: T) {
-        return value;
-      },
-    },
   });
 }
 

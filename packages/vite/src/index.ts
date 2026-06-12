@@ -1,8 +1,6 @@
-import { existsSync } from "node:fs";
 import { relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
-import { type Alias, normalizePath, type Plugin } from "vite";
+import { normalizePath, type Plugin } from "vite";
 
 import { discoverRoutes } from "../../compiler/src/discover-routes";
 import { compileRoutesFromPaths } from "../../compiler/src/fs-routes";
@@ -19,7 +17,6 @@ export type VanStackViteOptions = {
   routes?: {
     root: string;
   };
-  compatVanImports?: boolean;
 };
 
 const virtualRoutesId = "virtual:van-stack/routes";
@@ -40,82 +37,6 @@ const csrSlotRouteFileOrder = [
 
 type CsrRouteFileKind = (typeof csrRouteFileOrder)[number];
 type CsrSlotRouteFileKind = (typeof csrSlotRouteFileOrder)[number];
-
-function resolveCompatPath(relativePath: string) {
-  const basePath = fileURLToPath(new URL(relativePath, import.meta.url));
-
-  for (const extension of [".js", ".ts", ".tsx", ".mjs"]) {
-    const candidate = `${basePath}${extension}`;
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
-  return basePath;
-}
-
-export function getVanStackCompatAliases(): Alias[] {
-  return [
-    {
-      find: "vanjs-core",
-      replacement: resolveCompatPath("../../core/src/compat/vanjs-core"),
-    },
-    {
-      find: "vanjs-ext",
-      replacement: resolveCompatPath("../../core/src/compat/vanjs-ext"),
-    },
-  ];
-}
-
-function isVanSpecifier(source: string) {
-  return source === "vanjs-core" || source === "vanjs-ext";
-}
-
-function getActualVanSpecifier(source: string) {
-  return source === "vanjs-core" ? "actual-vanjs-core" : "actual-vanjs-ext";
-}
-
-function getCompatPath(source: string) {
-  return source === "vanjs-core"
-    ? resolveCompatPath("../../core/src/compat/vanjs-core")
-    : resolveCompatPath("../../core/src/compat/vanjs-ext");
-}
-
-function cleanImporter(importer: string | undefined) {
-  return normalizePath((importer ?? "").split("?")[0]);
-}
-
-function isVanStackImporter(importer: string | undefined) {
-  const clean = cleanImporter(importer);
-
-  return [
-    "/packages/core/src/",
-    "/packages/compiler/src/",
-    "/packages/csr/src/",
-    "/packages/ssg/src/",
-    "/packages/ssr/src/",
-    "/packages/vite/src/",
-    "/dist/packages/core/src/",
-    "/dist/packages/compiler/src/",
-    "/dist/packages/csr/src/",
-    "/dist/packages/ssg/src/",
-    "/dist/packages/ssr/src/",
-    "/dist/packages/vite/src/",
-  ].some((segment) => clean.includes(segment));
-}
-
-function isVanRuntimePackageImporter(importer: string | undefined) {
-  const clean = cleanImporter(importer);
-
-  return [
-    "/node_modules/actual-vanjs-core/",
-    "/node_modules/actual-vanjs-ext/",
-    "/node_modules/vanjs-core/",
-    "/node_modules/vanjs-ext/",
-    "/node_modules/.bun/vanjs-core@",
-    "/node_modules/.bun/vanjs-ext@",
-  ].some((segment) => clean.includes(segment));
-}
 
 function toViteFileSpecifier(filePath: string) {
   const normalized = normalizePath(resolve(filePath));
@@ -350,25 +271,12 @@ export function vanStackVite(options: VanStackViteOptions = {}): Plugin {
     configResolved(config) {
       routesRoot = resolveRoutesRoot(config.root, options);
     },
-    async resolveId(source, importer) {
+    async resolveId(source) {
       if (source === virtualRoutesId) {
         return resolvedVirtualRoutesId;
       }
 
-      if (!options.compatVanImports || !isVanSpecifier(source)) {
-        return null;
-      }
-
-      if (
-        isVanStackImporter(importer) ||
-        isVanRuntimePackageImporter(importer)
-      ) {
-        return this.resolve(getActualVanSpecifier(source), importer, {
-          skipSelf: true,
-        });
-      }
-
-      return getCompatPath(source);
+      return null;
     },
     async load(id) {
       if (id !== resolvedVirtualRoutesId) {

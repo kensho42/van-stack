@@ -8,11 +8,12 @@ import {
   defaultPresentationMode,
   internalDataBasePath,
 } from "../../packages/core/src/index";
+import * as renderModule from "../../packages/core/src/render";
 import {
   bindRenderEnv,
   getRenderEnv,
+  type RenderEnv,
   van,
-  vanX,
 } from "../../packages/core/src/render";
 import { bindClientRenderEnv } from "../../packages/csr/src/index";
 import { bindStaticRenderEnv } from "../../packages/ssg/src/index";
@@ -45,17 +46,17 @@ describe("core primitives", () => {
     expect(() => van.state(0)).toThrowError(
       "van-stack/render has not been bound to a Van runtime yet.",
     );
-    expect(() => vanX.stateFields({ count: 0 })).toThrowError(
-      "van-stack/render has not been bound to a Van runtime yet.",
-    );
   });
 
-  test("forwards the shared Van and VanX APIs after binding", () => {
+  test("does not expose VanX from the shared render facade", () => {
+    expect("vanX" in renderModule).toBe(false);
+  });
+
+  test("forwards the shared Van API after binding", () => {
     const hydrate = (
       dom: { id: string },
       fn: (dom: { id: string }) => string,
     ) => fn(dom);
-    const stateFieldsValue = { counter: 0 };
     const fakeVan = {
       tags: {
         div: (...children: unknown[]) => ({
@@ -72,36 +73,10 @@ describe("core primitives", () => {
       add(..._args: unknown[]) {},
       hydrate,
     };
-    const fakeVanX = {
-      stateFields() {
-        return stateFieldsValue;
-      },
-      calc(fn: () => string) {
-        return fn();
-      },
-      reactive<T>(value: T) {
-        return value;
-      },
-      noreactive<T>(value: T) {
-        return value;
-      },
-      raw<T>(value: T) {
-        return value;
-      },
-      list(..._args: unknown[]) {
-        return [];
-      },
-      replace<T>(_value: T, replacement: T) {
-        return replacement;
-      },
-      compact<T>(value: T) {
-        return value;
-      },
-    };
 
-    bindRenderEnv({ van: fakeVan, vanX: fakeVanX });
+    bindRenderEnv({ van: fakeVan });
 
-    expect(getRenderEnv()).toEqual({ van: fakeVan, vanX: fakeVanX });
+    expect(getRenderEnv()).toEqual({ van: fakeVan });
     expect(van.tags.div("hello")).toEqual({
       tag: "div",
       children: ["hello"],
@@ -111,8 +86,6 @@ describe("core primitives", () => {
     expect(van.hydrate({ id: "root" }, (dom: { id: string }) => dom.id)).toBe(
       "root",
     );
-    expect(vanX.stateFields()).toBe(stateFieldsValue);
-    expect(vanX.calc(() => "ok")).toBe("ok");
   });
 
   test("allows CSR and SSR runtimes to bind concrete Van implementations", () => {
@@ -124,7 +97,7 @@ describe("core primitives", () => {
     expect(typeof clientVan.tags.div).toBe("function");
     expect(typeof clientVan.state).toBe("function");
     expect(typeof clientVan.hydrate).toBe("function");
-    expect(clientEnv?.vanX).toBeDefined();
+    expect("vanX" in (clientEnv as RenderEnv)).toBe(false);
 
     const serverVan = bindServerRenderEnv();
     const serverEnv = getRenderEnv();
@@ -132,7 +105,7 @@ describe("core primitives", () => {
     expect(typeof serverVan.tags.div).toBe("function");
     expect(typeof serverVan.state).toBe("function");
     expect(typeof serverVan.hydrate).toBe("function");
-    expect(serverEnv?.vanX).toBeDefined();
+    expect("vanX" in (serverEnv as RenderEnv)).toBe(false);
 
     const staticVan = bindStaticRenderEnv();
     expect(staticVan).toBe(serverVan);

@@ -92,7 +92,7 @@ describe("runtime compatibility hooks", () => {
     );
     const result = parseResult(stdout);
 
-    expect(result.routeIds).toEqual(["csr", "ssg", "ssr"]);
+    expect(result.routeIds).toEqual(["ssg", "ssr"]);
     expect(result.ssr).toContain('data-third-party-card=""');
     expect(result.ssr).toContain("Third-party SSR compatibility");
     expect(result.ssg).toContain('data-third-party-reactive=""');
@@ -108,7 +108,7 @@ describe("runtime compatibility hooks", () => {
     );
     const result = parseResult(stdout);
 
-    expect(result.routeIds).toEqual(["csr", "ssg", "ssr"]);
+    expect(result.routeIds).toEqual(["ssg", "ssr"]);
     expect(result.ssr).toContain('data-third-party-card=""');
     expect(result.ssr).toContain("Third-party SSR compatibility");
     expect(result.ssg).toContain('data-third-party-reactive=""');

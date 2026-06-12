@@ -1,6 +1,7 @@
 import { dummyVanX, registerEnv } from "mini-van-plate/shared";
 import vanPlate from "mini-van-plate/van-plate";
 
+import { bindCompatVanX } from "../../core/src/compat/vanx-env";
 import {
   bindRenderEnv,
   type RenderEnv,
@@ -23,10 +24,10 @@ export function bindServerRenderEnv() {
   if (!serverEnv) {
     serverEnv = {
       van: createServerVan(),
-      vanX: dummyVanX,
     };
   }
   const env = serverEnv;
   bindRenderEnv(env);
+  bindCompatVanX(dummyVanX);
   return env.van;
 }

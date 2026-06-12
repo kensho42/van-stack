@@ -3,20 +3,12 @@ import * as vanX from "vanjs-ext";
 
 const { article, code, h1, li, p, strong, ul } = van.tags;
 
-type ThirdPartyRuntime = "csr" | "ssr" | "ssg";
-
-function getResolverLabel(runtime: ThirdPartyRuntime) {
-  if (runtime === "csr") {
-    return "vanStackVite({ compatVanImports: true }) or shared Vitest aliases";
-  }
-
-  return "van-stack/compat/node-register";
-}
+type ThirdPartyRuntime = "ssr" | "ssg";
 
 export function renderThirdPartyCompatPage(runtime: ThirdPartyRuntime) {
   const details = vanX.reactive({
     source: "vanjs-core + vanjs-ext",
-    resolver: getResolverLabel(runtime),
+    resolver: "van-stack/compat/node-register",
   });
 
   return article(

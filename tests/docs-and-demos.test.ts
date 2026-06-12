@@ -22,7 +22,6 @@ const requiredShowcaseFiles = [
 ] as const;
 
 const requiredCompatDemoFiles = [
-  "demo/third-party-compat/src/routes/csr/page.ts",
   "demo/third-party-compat/src/routes/ssr/page.ts",
   "demo/third-party-compat/src/routes/ssg/page.ts",
   "demo/third-party-compat/tsconfig.bun.json.example",
@@ -61,7 +60,7 @@ describe("docs and demos", () => {
     expect(readme).toContain(
       'vanStackVite({ routes: { root: "src/routes" } })',
     );
-    expect(readme).toContain("compatVanImports: true");
+    expect(readme).not.toContain("compatVanImports");
     expect(readme).toContain("van-stack/vite/client");
     expect(readme).toContain("compat/bun-tsconfig.json");
     expect(readme).toContain("tsconfig.bun.json");
@@ -70,7 +69,7 @@ describe("docs and demos", () => {
     expect(readme).toContain("van-stack/compat/node-register");
     expect(readme).toContain("exportStaticSite");
     expect(readme).toContain("generic web servers");
-    expect(readme).toContain("bind the render env before module evaluation");
+    expect(readme).toContain("install the hook before module evaluation");
     expect(readme).toContain("ssg");
     expect(readme).toContain("ssr");
     expect(readme).toContain("hydrated");
@@ -118,10 +117,6 @@ describe("docs and demos", () => {
       "demo/third-party-compat/README.md",
       "utf8",
     );
-    const csrPage = readFileSync(
-      "demo/third-party-compat/src/routes/csr/page.ts",
-      "utf8",
-    );
     const ssrPage = readFileSync(
       "demo/third-party-compat/src/routes/ssr/page.ts",
       "utf8",
@@ -156,8 +151,8 @@ describe("docs and demos", () => {
     expect(bunDoc).toContain("van-stack/vite");
     expect(bunDoc).toContain("exportStaticSite");
     expect(bunDoc).toContain("any web server");
-    expect(viteDoc).toContain("compatVanImports: true");
-    expect(sharedComponents).toContain("compatVanImports: true");
+    expect(viteDoc).not.toContain("compatVanImports");
+    expect(sharedComponents).not.toContain("compatVanImports");
     expect(gettingStarted).toContain("exportStaticSite");
     expect(gettingStarted).toContain("route.ts");
     expect(gettingStarted).toContain("startClientApp");
@@ -202,14 +197,12 @@ describe("docs and demos", () => {
     expect(compatReadme).toContain("third-party");
     expect(compatReadme).toContain("vanjs-core");
     expect(compatReadme).toContain("vanjs-ext");
-    expect(compatReadme).toContain("van-stack/vite");
-    expect(compatReadme).toContain("compatVanImports: true");
+    expect(compatReadme).not.toContain("van-stack/vite");
+    expect(compatReadme).not.toContain("compatVanImports");
     expect(compatReadme).toContain("compat/bun-tsconfig.json");
     expect(compatReadme).toContain("tsconfig.bun.json");
     expect(compatReadme).toContain("bunfig.toml");
     expect(compatReadme).toContain("van-stack/compat/node-register");
-    expect(csrPage).toContain('from "third-party-lib"');
-    expect(csrPage).not.toContain("van-stack/render");
     expect(ssrPage).toContain('from "third-party-lib"');
     expect(ssrPage).not.toContain("van-stack/render");
     expect(ssgPage).toContain('from "third-party-lib"');

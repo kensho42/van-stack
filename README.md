@@ -376,29 +376,15 @@ Presentation is separate from route matching and data loading. The same route tr
 
 ## Compatibility And Tooling Notes
 
-Route modules should import Van and VanX through `van-stack/render`, not from concrete client or server packages:
+Route modules should import Van through `van-stack/render`, not from concrete client or server packages:
 
 ```ts
-import { van, vanX } from "van-stack/render";
+import { van } from "van-stack/render";
 ```
 
-First-party route code should still use `van-stack/render`. Compatibility shims exist for imported packages that hard-import `vanjs-core` or `vanjs-ext` directly:
+First-party route code should still use `van-stack/render`. In browser-only CSR code, import optional VanX helpers directly from `vanjs-ext` when needed.
 
-```ts
-import { defineConfig } from "vite";
-import { vanStackVite } from "van-stack/vite";
-
-export default defineConfig({
-  plugins: [
-    vanStackVite({
-      routes: { root: "src/routes" },
-      compatVanImports: true,
-    }),
-  ],
-});
-```
-
-Use `compatVanImports: true` only when a Vite app imports packages that hard-import Van directly and need to resolve through the bound `van-stack/render` environment. The Vite plugin keeps that resolver guarded so VanStack's own runtime dependencies still resolve to the real Van packages. `getVanStackCompatAliases()` remains available for legacy Vitest or custom resolver setups that need the older direct alias map. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
+Compatibility shims exist for SSR and SSG entrypoints that import packages which hard-import `vanjs-core` or `vanjs-ext` directly. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
 
 For Bun SSR and SSG entrypoints, run Bun with the shipped compat override:
 
@@ -429,7 +415,7 @@ For a repeatable app setup, add a dedicated Bun tsconfig and call it from packag
 
 `bunfig.toml` does not currently expose a `tsconfig` override setting, so the supported Bun DX path is a checked-in `tsconfig.bun.json` plus package script aliases. `van-stack/compat/bun-preload` is intentionally unsupported. Bun runtime plugins do not intercept bare package imports during `bun run`, so Bun needs the `tsconfig` override path instead.
 
-Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means you must bind the render env before module evaluation reaches any imported library that reads `van` or `vanX` eagerly.
+Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means server and static entrypoints must install the hook before module evaluation reaches any imported library that reads Van eagerly.
 
 ## Demos And Docs
 

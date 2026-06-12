@@ -283,32 +283,6 @@ describe("startClientApp", () => {
         },
         hydrate() {},
       },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
-      },
     });
 
     const env = createClientDocument();
@@ -414,32 +388,6 @@ describe("startClientApp", () => {
         },
         hydrate: vi.fn(),
       },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
-      },
     });
 
     const env = createClientDocument();
@@ -534,32 +482,6 @@ describe("startClientApp", () => {
         },
         hydrate: vi.fn(),
       },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
-      },
     });
 
     const env = createClientDocument();
@@ -632,32 +554,6 @@ describe("startClientApp", () => {
           root.innerHTML = "";
         },
         hydrate() {},
-      },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
       },
     });
 
@@ -733,32 +629,6 @@ describe("startClientApp", () => {
           root.replaceChildren(child);
         },
         hydrate() {},
-      },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
       },
     });
 
@@ -842,32 +712,6 @@ describe("startClientApp", () => {
         },
         hydrate() {},
       },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
-      },
     });
 
     const env = createClientDocument();
@@ -941,32 +785,6 @@ describe("startClientApp", () => {
           root.replaceChildren(child);
         },
         hydrate() {},
-      },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
       },
     });
 
@@ -1077,32 +895,6 @@ describe("startClientApp", () => {
         },
         hydrate() {},
       },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
-      },
     });
 
     const env = createClientDocument();
@@ -1157,32 +949,6 @@ describe("startClientApp", () => {
           root.replaceChildren(child);
         },
         hydrate() {},
-      },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
       },
     });
 
@@ -1310,32 +1076,6 @@ describe("startClientApp", () => {
           root.replaceChildren(child);
         },
         hydrate() {},
-      },
-      vanX: {
-        calc(fn: () => unknown) {
-          return fn();
-        },
-        reactive<T>(value: T) {
-          return value;
-        },
-        noreactive<T>(value: T) {
-          return value;
-        },
-        stateFields<T>(value: T) {
-          return value;
-        },
-        raw<T>(value: T) {
-          return value;
-        },
-        list() {
-          return [];
-        },
-        replace<T>(_value: T, replacement: T) {
-          return replacement;
-        },
-        compact<T>(value: T) {
-          return value;
-        },
       },
     });
 

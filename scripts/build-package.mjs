@@ -49,9 +49,8 @@ async function main() {
     const result = await Bun.build({
       entrypoints: [entrypoint],
       external: [
-        "actual-vanjs-core",
-        "actual-vanjs-ext",
         "mini-van-plate",
+        "vanjs-core",
         "vite",
         "van-stack/render",
         "van-stack/ssr",

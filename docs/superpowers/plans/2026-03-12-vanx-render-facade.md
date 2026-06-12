@@ -1,5 +1,7 @@
 # VanX Render Facade Implementation Plan
 
+> Superseded: VanX is no longer exposed from `van-stack/render`. CSR apps that need VanX import `vanjs-ext` directly, while SSR/SSG compatibility continues through `van-stack/compat/vanjs-ext`.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add first-class VanX support to `van-stack/render` so shared app code can import `van` and `vanX` from one framework-owned facade.

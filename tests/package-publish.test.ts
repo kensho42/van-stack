@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { promisify } from "node:util";
 
 import { describe, expect, test } from "vitest";
@@ -22,6 +23,9 @@ describe("npm package publishing", () => {
       files: PackFile[];
     }>;
     const packageInfo = packResult[0];
+    const rootPackage = JSON.parse(readFileSync("package.json", "utf8")) as {
+      version: string;
+    };
 
     expect(packageInfo).toBeTruthy();
     if (!packageInfo) {
@@ -33,7 +37,7 @@ describe("npm package publishing", () => {
     );
 
     expect(packageInfo.name).toBe("van-stack");
-    expect(packageInfo.version).toBe("0.0.0");
+    expect(packageInfo.version).toBe(rootPackage.version);
     expect(filePaths).toContain("README.md");
     expect(filePaths).toContain("compat/bun-tsconfig.json");
     expect(filePaths).toContain("dist/packages/core/src/index.js");
@@ -55,5 +59,19 @@ describe("npm package publishing", () => {
     expect(filePaths.some((path) => path.startsWith("packages/"))).toBe(false);
     expect(filePaths.some((path) => path.startsWith("tests/"))).toBe(false);
     expect(filePaths.some((path) => path.startsWith("demo/"))).toBe(false);
+  });
+
+  test("keeps CSR bundle on real browser Van without CSR compat aliases or VanX", () => {
+    const csrBundle = readFileSync("dist/packages/csr/src/index.js", "utf8");
+    const renderBundle = readFileSync(
+      "dist/packages/core/src/render.js",
+      "utf8",
+    );
+
+    expect(csrBundle).toContain("vanjs-core");
+    expect(csrBundle).not.toContain("vanjs-ext");
+    expect(csrBundle).not.toContain("actual-vanjs-core");
+    expect(csrBundle).not.toContain("actual-vanjs-ext");
+    expect(renderBundle).not.toContain("vanX");
   });
 });

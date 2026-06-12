@@ -395,13 +395,12 @@ describe("van-stack/vite virtual routes", () => {
       "src/routes/page.ts",
       [
         'import { van } from "van-stack/render";',
-        'import { readThirdPartyCompatSnapshot } from "third-party-lib";',
         "",
         "const { main } = van.tags;",
         "",
         "export default function page() {",
-        "  const snapshot = readThirdPartyCompatSnapshot();",
-        '  return main("Vite CSR root route. Third-party " + snapshot.state.val + ": " + snapshot.reactive.title);',
+        "  const count = van.state(2);",
+        '  return main("Vite CSR root route. Count " + count.val);',
         "}",
       ].join("\n"),
     );
@@ -429,7 +428,6 @@ describe("van-stack/vite virtual routes", () => {
       plugins: [
         vanStackVite({
           routes: { root: "src/routes" },
-          compatVanImports: true,
         }),
       ],
       resolve: {
@@ -468,10 +466,10 @@ describe("van-stack/vite virtual routes", () => {
     }
 
     expect(root.textContent).toContain("Vite CSR root route");
-    expect(root.textContent).toContain("Third-party 2: Compat Fixture");
+    expect(root.textContent).toContain("Count 2");
   });
 
-  test("does not resolve third-party Van imports through compat by default", async () => {
+  test("does not resolve browser Van imports through compat", async () => {
     const app = createTempApp();
     const server = await createServer({
       root: app.appRoot,
@@ -488,12 +486,12 @@ describe("van-stack/vite virtual routes", () => {
       );
       expect(broadAliases).toEqual([]);
 
-      const actualVanXImporter = require.resolve("actual-vanjs-ext");
-      const actualVanCore = await server.pluginContainer.resolveId(
+      const vanCoreImporter = require.resolve("vanjs-core");
+      const vanCoreSelfImport = await server.pluginContainer.resolveId(
         "vanjs-core",
-        actualVanXImporter,
+        vanCoreImporter,
       );
-      expect(actualVanCore?.id).not.toContain(
+      expect(vanCoreSelfImport?.id).not.toContain(
         "packages/core/src/compat/vanjs-core",
       );
 
@@ -502,44 +500,6 @@ describe("van-stack/vite virtual routes", () => {
         join(repoRoot, "packages/third-party-lib/src/index.ts"),
       );
       expect(thirdPartyVanCore?.id).not.toContain(
-        "packages/core/src/compat/vanjs-core",
-      );
-    } finally {
-      await server.close();
-    }
-  });
-
-  test("resolves third-party Van imports through compat when opted in", async () => {
-    const app = createTempApp();
-    const server = await createServer({
-      root: app.appRoot,
-      configFile: false,
-      logLevel: "silent",
-      plugins: [vanStackVite({ compatVanImports: true })],
-    });
-
-    try {
-      const broadAliases = server.config.resolve.alias.filter(
-        (alias) =>
-          typeof alias.find === "string" &&
-          (alias.find === "vanjs-core" || alias.find === "vanjs-ext"),
-      );
-      expect(broadAliases).toEqual([]);
-
-      const actualVanXImporter = require.resolve("actual-vanjs-ext");
-      const actualVanCore = await server.pluginContainer.resolveId(
-        "vanjs-core",
-        actualVanXImporter,
-      );
-      expect(actualVanCore?.id).not.toContain(
-        "packages/core/src/compat/vanjs-core",
-      );
-
-      const thirdPartyVanCore = await server.pluginContainer.resolveId(
-        "vanjs-core",
-        join(repoRoot, "packages/third-party-lib/src/index.ts"),
-      );
-      expect(thirdPartyVanCore?.id).toContain(
         "packages/core/src/compat/vanjs-core",
       );
     } finally {
