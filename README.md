@@ -11,7 +11,7 @@ bun add van-stack
 ## Start Here
 
 1. Create route modules under `src/routes`.
-2. Load them with `loadRoutes({ root: "src/routes" })`.
+2. Load them with `loadRoutes({ root: "src/routes" })` in Node/build/server code, or `virtual:van-stack/routes` in Vite browser CSR.
 3. Write shared route components against `van-stack/render`.
 4. Pass those routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
 
@@ -40,7 +40,7 @@ src/routes/
 
 `@slot` directories are pathless route branches that attach to the nearest owning `layout.ts`. The default branch is still exposed as `children`; named branches are exposed as `slots[name]`, and their resolved data is exposed as `slotData[name]`.
 
-Load the route tree in memory:
+Load the route tree in memory from Node, build, SSR, SSG, or custom tooling:
 
 ```ts
 import { loadRoutes } from "van-stack/compiler";
@@ -97,6 +97,32 @@ export default function meta(input: {
     canonical: `/posts/${input.params.slug}`,
   };
 }
+```
+
+For a Vite browser CSR entry, let `van-stack/vite` run the compiler during dev/build and import the browser-safe route module:
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import { vanStackVite } from "van-stack/vite";
+
+export default defineConfig({
+  plugins: [vanStackVite({ routes: { root: "src/routes" } })],
+});
+```
+
+```ts
+/// <reference types="van-stack/vite/client" />
+import routes from "virtual:van-stack/routes";
+import { startClientApp } from "van-stack/csr";
+
+const app = startClientApp({
+  mode: "custom",
+  routes,
+  history: window.history,
+});
+
+await app.ready;
 ```
 
 Choose the runtime handoff you want:
@@ -202,7 +228,7 @@ await exportStaticSite({
 });
 ```
 
-That is the core flow: route files in `src/routes`, `loadRoutes({ root: "src/routes" })`, shared UI via `van-stack/render`, then CSR, SSR, or SSG on top of the same route graph.
+That is the core flow: route files in `src/routes`, shared UI via `van-stack/render`, route loading through the compiler or Vite virtual module, then CSR, SSR, or SSG on top of the same route graph.
 
 ## Why van-stack?
 
@@ -231,7 +257,7 @@ That is the core flow: route files in `src/routes`, `loadRoutes({ root: "src/rou
 ## How It Fits Together
 
 1. Author route modules under `src/routes`.
-2. Use `van-stack/compiler` to load those routes into memory with `loadRoutes({ root: "src/routes" })`.
+2. Use `van-stack/compiler` to load those routes in Node/build/server code with `loadRoutes({ root: "src/routes" })`, or use `vanStackVite({ routes: { root: "src/routes" } })` plus `virtual:van-stack/routes` in Vite browser CSR.
 3. Write shared route components against `van-stack/render`.
 4. Pass the loaded routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
 5. Add `van-stack/vite` only if you want route-aware DX on top of the compiler layer.
@@ -261,7 +287,7 @@ const app = startClientApp({
 await app.ready;
 ```
 
-The generated manifest is the opt-in chunking path. Apps that bundle everything eagerly can keep using `loadRoutes({ root: "src/routes" })`, while apps that want template-wide chunking can pass `chunkedRoutes` into `buildRouteManifest({ root, chunkedRoutes })` or `writeRouteManifest({ root, chunkedRoutes })`.
+The generated manifest is the opt-in artifact and chunking path. Node, SSR, SSG, and build tooling can keep using `loadRoutes({ root: "src/routes" })`; Vite browser CSR apps should use `virtual:van-stack/routes`; apps that want template-wide emitted chunk metadata can pass `chunkedRoutes` into `buildRouteManifest({ root, chunkedRoutes })` or `writeRouteManifest({ root, chunkedRoutes })`.
 
 ## Runtime Model
 
@@ -310,10 +336,9 @@ const router = createRouter({
 For SSR branches using `hydrationPolicy: "app"`, the recommended browser entry is the managed `hydrated` client mode:
 
 ```ts
-import { loadRoutes } from "van-stack/compiler";
+/// <reference types="van-stack/vite/client" />
+import routes from "virtual:van-stack/routes";
 import { startClientApp } from "van-stack/csr";
-
-const routes = await loadRoutes({ root: "src/routes" });
 
 const app = startClientApp({
   mode: "hydrated",
@@ -332,10 +357,9 @@ await app.ready;
 For SSR branches using `hydrationPolicy: "islands"`, you can hydrate focused route islands without creating a client router:
 
 ```ts
-import { loadRoutes } from "van-stack/compiler";
+/// <reference types="van-stack/vite/client" />
+import routes from "virtual:van-stack/routes";
 import { hydrateIslands } from "van-stack/csr";
-
-const routes = await loadRoutes({ root: "src/routes" });
 
 const hydration = hydrateIslands({ routes });
 await hydration.ready;
@@ -361,10 +385,10 @@ import { van, vanX } from "van-stack/render";
 First-party route code should still use `van-stack/render`. Compatibility shims exist for imported packages that hard-import `vanjs-core` or `vanjs-ext` directly:
 
 ```ts
-import { vanStackVite, getVanStackCompatAliases } from "van-stack/vite";
+import { vanStackVite } from "van-stack/vite";
 ```
 
-Use `vanStackVite()` for Vite apps, or reuse `getVanStackCompatAliases()` in Vitest and custom Vite configs so those packages resolve through the bound `van-stack/render` environment. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
+Use `vanStackVite()` for Vite apps so imported third-party packages resolve through the bound `van-stack/render` environment without affecting VanStack's own runtime dependencies. `getVanStackCompatAliases()` remains available for legacy Vitest or custom resolver setups that need the older direct alias map. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
 
 For Bun SSR and SSG entrypoints, run Bun with the shipped compat override:
 

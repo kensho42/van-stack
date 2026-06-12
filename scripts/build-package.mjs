@@ -32,6 +32,7 @@ const buildEntries = [
   ["packages/ssr/src/index.ts", "dist/packages/ssr/src/index.js"],
   ["packages/ssg/src/index.ts", "dist/packages/ssg/src/index.js"],
   ["packages/vite/src/index.ts", "dist/packages/vite/src/index.js"],
+  ["packages/vite/src/client.ts", "dist/packages/vite/src/client.js"],
 ];
 
 async function main() {

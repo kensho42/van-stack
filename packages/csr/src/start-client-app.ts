@@ -63,7 +63,7 @@ type BaseStartClientAppOptions = {
   document?: ClientDocumentLike;
   history?: HistoryLike;
   rootSelector?: string;
-  routes: RuntimeRouteDefinition[];
+  routes: readonly RuntimeRouteDefinition[];
   window?: WindowLike;
 };
 
@@ -158,7 +158,10 @@ function getAnchor(event: ClickEventLike) {
   return event.target?.closest?.("a[href]") ?? null;
 }
 
-function hasMatchingRoute(routes: RuntimeRouteDefinition[], path: string) {
+function hasMatchingRoute(
+  routes: readonly RuntimeRouteDefinition[],
+  path: string,
+) {
   const pathname = new URL(path, "https://van-stack.local").pathname;
 
   return routes.some((route) => Boolean(matchPath(route.path, pathname)));
@@ -168,7 +171,7 @@ function shouldInterceptNavigation(
   event: ClickEventLike,
   anchor: AnchorLike,
   window: WindowLike,
-  routes: RuntimeRouteDefinition[],
+  routes: readonly RuntimeRouteDefinition[],
 ) {
   if (event.defaultPrevented) return false;
   if ((event.button ?? 0) !== 0) return false;

@@ -92,7 +92,7 @@ export async function resolveRouteModule<T>(
 }
 
 export function findMatchedRoute(
-  routes: RuntimeRouteDefinition[],
+  routes: readonly RuntimeRouteDefinition[],
   path: string,
 ) {
   const pathname = new URL(path, "https://van-stack.local").pathname;
@@ -113,7 +113,7 @@ export function findMatchedRoute(
 }
 
 export function tryFindMatchedRoute(
-  routes: RuntimeRouteDefinition[],
+  routes: readonly RuntimeRouteDefinition[],
   path: string,
 ) {
   try {
@@ -479,7 +479,7 @@ export function captureMountedSlotState(
 }
 
 export async function renderEntryToRoot(
-  routes: RuntimeRouteDefinition[],
+  routes: readonly RuntimeRouteDefinition[],
   root: AppRootLike,
   entry: RouterEntry,
   mountedSlots: MountedSlotState | null,
@@ -735,7 +735,7 @@ type RenderQueue = ((entry: RouterEntry) => Promise<RenderedEntry>) & {
 };
 
 export function createRenderQueue(
-  routes: RuntimeRouteDefinition[],
+  routes: readonly RuntimeRouteDefinition[],
   root: AppRootLike,
   afterRender?: (entry: RouterEntry, rendered: RenderedEntry) => Promise<void>,
 ) {

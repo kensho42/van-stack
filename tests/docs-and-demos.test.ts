@@ -57,6 +57,11 @@ describe("docs and demos", () => {
     expect(readme).toContain("demo/third-party-compat");
     expect(readme).toContain("bun run start");
     expect(readme).toContain("van-stack/vite");
+    expect(readme).toContain("virtual:van-stack/routes");
+    expect(readme).toContain(
+      'vanStackVite({ routes: { root: "src/routes" } })',
+    );
+    expect(readme).toContain("van-stack/vite/client");
     expect(readme).toContain("compat/bun-tsconfig.json");
     expect(readme).toContain("tsconfig.bun.json");
     expect(readme).toContain("bunfig.toml");
@@ -151,6 +156,8 @@ describe("docs and demos", () => {
     expect(gettingStarted).toContain("exportStaticSite");
     expect(gettingStarted).toContain("route.ts");
     expect(gettingStarted).toContain("startClientApp");
+    expect(gettingStarted).toContain("virtual:van-stack/routes");
+    expect(gettingStarted).toContain("van-stack/vite/client");
     expect(gettingStarted).toContain(".van-stack/routes.generated.ts");
     expect(gettingStarted).toContain("@sidebar");
     expect(gettingStarted).toContain("slots");

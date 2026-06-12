@@ -1,6 +1,6 @@
 # Route Conventions
 
-Filesystem routing autoloads from `src/routes` and usually stays in memory via `loadRoutes({ root: "src/routes" })`. If you need an emitted artifact, the compiler can also write `.van-stack/routes.generated.ts`.
+Filesystem routing autoloads from `src/routes` and usually stays in memory via `loadRoutes({ root: "src/routes" })` for Node, SSR, SSG, and build tooling. Vite browser CSR apps should configure `vanStackVite({ routes: { root: "src/routes" } })` and import `virtual:van-stack/routes`. If you need an emitted artifact, the compiler can also write `.van-stack/routes.generated.ts`.
 
 Reserved route filenames:
 
@@ -59,4 +59,4 @@ Helpers such as `_components` are ignored unless they use a reserved filename.
 
 `route.ts` is the raw `Request -> Response` escape hatch for non-HTML routes such as `robots.txt`, `sitemap.xml`, feeds, proxy endpoints, or webhooks.
 
-The runtime route manifest is the bridge between route files and the CSR, SSR, or SSG entrypoints. Most apps can keep it in memory; apps that need an explicit build artifact can persist `.van-stack/routes.generated.ts` and pass it into `startClientApp({ routes, ... })` for browser route chunking. When chunking should be template-wide instead of ad hoc, the compiler also accepts `chunkedRoutes` so app templates can mark route branches chunked or eager at build time. Apps that do not want filesystem routing can still skip this and provide routes manually.
+The runtime route manifest is the bridge between route files and the CSR, SSR, or SSG entrypoints. Most server and build entrypoints can keep it in memory, while Vite browser CSR apps can consume the official virtual route module. Apps that need an explicit build artifact can persist `.van-stack/routes.generated.ts` and pass it into `startClientApp({ routes, ... })` for custom browser chunking flows. When chunking should be template-wide instead of ad hoc, the compiler also accepts `chunkedRoutes` so app templates can mark route branches chunked or eager at build time. Apps that do not want filesystem routing can still skip this and provide routes manually.

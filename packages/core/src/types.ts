@@ -207,7 +207,7 @@ export type BootstrapPayload = {
 
 export type CreateHydratedRouterOptions = {
   mode: "hydrated";
-  routes: RouteDefinition[];
+  routes: readonly RouteDefinition[];
   history: HistoryLike;
   bootstrap: BootstrapPayload;
   transport?: Transport;
@@ -215,14 +215,14 @@ export type CreateHydratedRouterOptions = {
 
 export type CreateShellRouterOptions = {
   mode: "shell";
-  routes: RouteDefinition[];
+  routes: readonly RouteDefinition[];
   history: HistoryLike;
   transport?: Transport;
 };
 
 export type CreateCustomRouterOptions = {
   mode: "custom";
-  routes: RouteDefinition[];
+  routes: readonly RouteDefinition[];
   history: HistoryLike;
   resolve?: Resolve;
 };

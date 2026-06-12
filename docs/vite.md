@@ -1,42 +1,53 @@
 # Optional Vite Integration
 
-`van-stack/vite` is optional. It exists to improve filesystem-route DX, route-aware HMR, development-time integration, and third-party Van compatibility in Vite-owned runtimes.
+`van-stack/vite` is optional. It exists for browser CSR apps that want Vite to run filesystem route discovery during dev/build, expose a browser-safe route module, and resolve third-party Van packages through the active `van-stack/render` environment.
 
-Route discovery itself belongs to the compiler layer, not to Vite. The compiler can discover `src/routes` and either load routes in memory or generate `.van-stack/routes.generated.ts` without any bundler-specific behavior.
+Route discovery still belongs to `van-stack/compiler`. The Vite plugin calls that compiler layer at dev/build time; browser code should not import `van-stack/compiler` directly.
 
-Vite only adds:
+## Browser CSR Routes
 
-- dev-time route discovery refresh
-- route-aware HMR
-- build-time integration around the runtime route manifest
-- resolver aliases for imported packages that hard-import `vanjs-core` and `vanjs-ext`
-
-Use the plugin in Vite apps:
+Configure Vite with the filesystem route root:
 
 ```ts
 import { defineConfig } from "vite";
 import { vanStackVite } from "van-stack/vite";
 
 export default defineConfig({
-  plugins: [vanStackVite()],
+  plugins: [vanStackVite({ routes: { root: "src/routes" } })],
 });
 ```
 
-Reuse the exact same alias map in Vitest or a custom Vite config:
+Then import the official virtual route module in the browser entry:
 
 ```ts
-import { defineConfig } from "vitest/config";
-import { getVanStackCompatAliases } from "van-stack/vite";
+/// <reference types="van-stack/vite/client" />
+import routes from "virtual:van-stack/routes";
+import { startClientApp } from "van-stack/csr";
 
-export default defineConfig({
-  resolve: {
-    alias: getVanStackCompatAliases(),
-  },
+const app = startClientApp({
+  mode: "custom",
+  routes,
+  history: window.history,
 });
+
+await app.ready;
 ```
 
-This compatibility path only works if the aliases are active before the third-party package is evaluated.
+The virtual module is generated as browser-safe JavaScript. It points route modules back to the real `src/routes/*` files, imports `van-stack/csr` before route modules so `van-stack/render` is bound, and omits server-only route files such as `loader.ts`, `action.ts`, `entries.ts`, and `route.ts`.
 
-The core routing model and route discovery path stay usable without Vite.
+## Compatibility
 
-If your server or SSG entrypoints run under Bun, pair the Vite setup with the Bun runtime guidance in [Bun Runtime](./bun.md).
+First-party route modules should import Van through `van-stack/render`. Imported packages that hard-import `vanjs-core` or `vanjs-ext` can still work in Vite browser apps through `vanStackVite()`.
+
+The plugin uses a guarded resolver instead of global aliases:
+
+- app and third-party imports of `vanjs-core` and `vanjs-ext` resolve to VanStack compatibility modules
+- VanStack internals and Van's own runtime packages resolve to the real `actual-vanjs-core` and `actual-vanjs-ext`
+
+`getVanStackCompatAliases()` remains available for legacy Vitest or custom resolver setups that specifically need an alias array, but it is no longer the recommended Vite browser-app setup.
+
+## Node And Build Usage
+
+Use `loadRoutes({ root: "src/routes" })` from `van-stack/compiler` in Node, SSR, SSG, and custom build tooling. If a custom pipeline needs an emitted artifact, `writeRouteManifest({ root: "src/routes" })` can still write `.van-stack/routes.generated.ts`; that path is optional and separate from the default Vite browser CSR route module.
+
+If server or SSG entrypoints run under Bun, pair Vite setup with the Bun runtime guidance in [Bun Runtime](./bun.md).
