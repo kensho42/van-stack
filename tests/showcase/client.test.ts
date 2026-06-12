@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { mountShowcasePostInteractions } from "../../demo/showcase/src/client/post-interactions";
 import { createGalleryPostData } from "../../demo/showcase/src/runtime/data";
-import { bindRenderEnv } from "../../packages/core/src/render";
 
 type ClickHandler = (event: Record<string, unknown>) => Promise<void>;
 
@@ -47,31 +46,6 @@ function createInteractionRoot() {
   };
 }
 
-function bindComponentRenderEnv() {
-  bindRenderEnv({
-    van: {
-      tags: new Proxy(
-        {},
-        {
-          get(_target, key) {
-            return (...args: unknown[]) => ({ key, args });
-          },
-        },
-      ) as Record<string, (...args: unknown[]) => unknown>,
-      state(value: unknown) {
-        return { val: value };
-      },
-      derive(fn: () => unknown) {
-        return fn();
-      },
-      add() {},
-      hydrate(dom: unknown, bind: (dom: unknown) => unknown) {
-        return bind(dom);
-      },
-    },
-  });
-}
-
 describe("showcase client helpers", () => {
   test("uses page modules as the default hydrated route handoff and leaves route-level hydrate optional", async () => {
     const { hydratedClientRoutes } = await import(
@@ -88,8 +62,6 @@ describe("showcase client helpers", () => {
   });
 
   test("hydrates like and bookmark controls as separate isomorphic components over one shared interaction binding", async () => {
-    bindComponentRenderEnv();
-
     const { hydrateLikeCounter } = await import(
       "../../demo/showcase/src/components/like-counter"
     );
@@ -165,8 +137,6 @@ describe("showcase client helpers", () => {
   });
 
   test("hydrates separate interaction components from preloaded server state before sending mutations", async () => {
-    bindComponentRenderEnv();
-
     const { hydrateLikeCounter } = await import(
       "../../demo/showcase/src/components/like-counter"
     );
@@ -327,7 +297,6 @@ describe("showcase client helpers", () => {
   });
 
   test("intercepts only current-app links unless a link opts out", async () => {
-    bindComponentRenderEnv();
     const { customClientRoutes, wireClientNavigation } = await import(
       "../../demo/showcase/src/client/routes"
     );

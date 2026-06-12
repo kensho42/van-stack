@@ -62,6 +62,9 @@ describe("docs and demos", () => {
     );
     expect(readme).not.toContain("compatVanImports");
     expect(readme).toContain("van-stack/vite/client");
+    expect(readme).toContain('import van from "vanjs-core"');
+    expect(readme).toContain('import * as vanX from "vanjs-ext"');
+    expect(readme).not.toContain("van-stack/render");
     expect(readme).toContain("compat/bun-tsconfig.json");
     expect(readme).toContain("tsconfig.bun.json");
     expect(readme).toContain("bunfig.toml");
@@ -152,7 +155,11 @@ describe("docs and demos", () => {
     expect(bunDoc).toContain("exportStaticSite");
     expect(bunDoc).toContain("any web server");
     expect(viteDoc).not.toContain("compatVanImports");
+    expect(viteDoc).not.toContain("van-stack/render");
     expect(sharedComponents).not.toContain("compatVanImports");
+    expect(sharedComponents).toContain('import van from "vanjs-core"');
+    expect(sharedComponents).toContain('import * as vanX from "vanjs-ext"');
+    expect(sharedComponents).not.toContain("van-stack/render");
     expect(gettingStarted).toContain("exportStaticSite");
     expect(gettingStarted).toContain("route.ts");
     expect(gettingStarted).toContain("startClientApp");
@@ -198,6 +205,7 @@ describe("docs and demos", () => {
     expect(compatReadme).toContain("vanjs-core");
     expect(compatReadme).toContain("vanjs-ext");
     expect(compatReadme).not.toContain("van-stack/vite");
+    expect(compatReadme).not.toContain("van-stack/render");
     expect(compatReadme).not.toContain("compatVanImports");
     expect(compatReadme).toContain("compat/bun-tsconfig.json");
     expect(compatReadme).toContain("tsconfig.bun.json");

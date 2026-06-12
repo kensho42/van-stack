@@ -7,7 +7,6 @@
     "baseUrl": ".",
     "paths": {
       "van-stack": ["packages/core/src/index.ts"],
-      "van-stack/render": ["packages/core/src/render.ts"],
       "van-stack/compiler": ["packages/compiler/src/index.ts"],
       "van-stack/csr": ["packages/csr/src/index.ts"],
       "van-stack/ssr": ["packages/ssr/src/index.ts"],

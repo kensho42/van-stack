@@ -1,6 +1,6 @@
 export const presentation = "stack";
 
-import { van } from "van-stack/render";
+import van from "vanjs-core";
 
 import { renderShowcaseFrame } from "../../components/chrome";
 

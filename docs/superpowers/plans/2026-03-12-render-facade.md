@@ -1,5 +1,7 @@
 # Render Facade Implementation Plan
 
+> Superseded: `van-stack/render` was removed as a public authoring API. Current route components import `vanjs-core` directly, import `vanjs-ext` directly when needed, and rely on SSR/SSG compat resolution under the hood.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a framework-level Van render facade and rewrite demos to use it instead of raw HTML strings or direct Van runtime imports.

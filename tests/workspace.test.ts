@@ -7,6 +7,7 @@ const requiredFiles = [
   "scripts/build-package.mjs",
   "tsconfig.build.json",
   "packages/core/src/index.ts",
+  "packages/core/src/compat/van-env.ts",
   "packages/core/src/compat/vanjs-core.ts",
   "packages/core/src/compat/vanjs-ext.ts",
   "packages/core/src/compat/bun-preload.ts",
@@ -41,6 +42,7 @@ describe("workspace layout", () => {
     expect(rootPackage.exports?.["./compiler"]).toBe(
       "./dist/packages/compiler/src/index.js",
     );
+    expect(rootPackage.exports?.["./render"]).toBeUndefined();
     expect(rootPackage.exports?.["./compat/vanjs-core"]).toBe(
       "./dist/packages/core/src/compat/vanjs-core.js",
     );

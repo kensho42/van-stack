@@ -1,6 +1,6 @@
 # van-stack
 
-`van-stack` is a router-first framework for VanJS with one shared route model across CSR, SSR, and SSG. The default path is filesystem routing from `src/routes`, shared route components through `van-stack/render`, and the same route graph flowing into the runtime you need.
+`van-stack` is a router-first framework for VanJS with one shared route model across CSR, SSR, and SSG. The default path is filesystem routing from `src/routes`, route components written against official Van packages, and the same route graph flowing into the runtime you need.
 
 ## Install
 
@@ -12,7 +12,7 @@ bun add van-stack
 
 1. Create route modules under `src/routes`.
 2. Load them with `loadRoutes({ root: "src/routes" })` in Node/build/server code, or `virtual:van-stack/routes` in Vite browser CSR.
-3. Write shared route components against `van-stack/render`.
+3. Write route components with official Van imports such as `vanjs-core` and optional `vanjs-ext`.
 4. Pass those routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
 
 If you want one place to evaluate the full framework before wiring your own app, start with `demo/showcase` and run:
@@ -48,10 +48,11 @@ import { loadRoutes } from "van-stack/compiler";
 const routes = await loadRoutes({ root: "src/routes" });
 ```
 
-Write route components against the framework-owned render facade:
+Write route components against the official Van package so the same `page.ts` can run in CSR, SSR, and SSG:
 
 ```ts
-import { van } from "van-stack/render";
+// src/routes/posts/[slug]/page.ts
+import van from "vanjs-core";
 
 const { article, h1, p } = van.tags;
 
@@ -228,13 +229,13 @@ await exportStaticSite({
 });
 ```
 
-That is the core flow: route files in `src/routes`, shared UI via `van-stack/render`, route loading through the compiler or Vite virtual module, then CSR, SSR, or SSG on top of the same route graph.
+That is the core flow: route files in `src/routes`, shared UI via official Van imports, route loading through the compiler or Vite virtual module, then CSR, SSR, or SSG on top of the same route graph.
 
 ## Why van-stack?
 
 - filesystem routing with reserved route-module filenames
 - one route model across CSR, SSR, and SSG
-- a framework-owned `van-stack/render` facade for shared Van components
+- official `vanjs-core` and optional `vanjs-ext` imports for route components
 - three CSR runtime modes: `hydrated`, `shell`, and `custom`
 - explicit hydration policies: `document-only`, `islands`, and `app`
 - adaptive navigation with `replace` and `stack`
@@ -244,23 +245,23 @@ That is the core flow: route files in `src/routes`, shared UI via `van-stack/ren
 
 - `van-stack`: core route model, matching, types, defaults
 - `van-stack/compiler`: filesystem route discovery, in-memory route loading, optional manifest writing
-- `van-stack/render`: shared Van facade for route modules and demos
 - `van-stack/csr`: client router for `hydrated`, `shell`, and `custom`
 - `van-stack/ssr`: request-to-HTML rendering with bootstrap payloads
 - `van-stack/ssg`: static generation from the same route graph
-- `van-stack/vite`: optional DX adapter
-- `van-stack/compat/vanjs-core`: compatibility facade for code that imports `vanjs-core`
-- `van-stack/compat/vanjs-ext`: compatibility facade for code that imports `vanjs-ext`
+- `van-stack/vite`: optional browser CSR route adapter for `virtual:van-stack/routes`
+- `van-stack/compat/vanjs-core`: SSR/SSG compatibility module for packages that import `vanjs-core`
+- `van-stack/compat/vanjs-ext`: SSR/SSG compatibility module for packages that import `vanjs-ext`
+- `van-stack/compat/bun-tsconfig.json`: Bun SSR/SSG resolver override for third-party Van packages
 - `van-stack/compat/bun-preload`: explicit Bun preload guard for unsupported runtime-plugin usage
-- `van-stack/compat/node-register`: Node resolver hook that maps `vanjs-core` and `vanjs-ext` through the bound render env
+- `van-stack/compat/node-register`: Node SSR/SSG resolver hook that maps `vanjs-core` and `vanjs-ext` to server/static-safe compat modules
 
 ## How It Fits Together
 
 1. Author route modules under `src/routes`.
 2. Use `van-stack/compiler` to load those routes in Node/build/server code with `loadRoutes({ root: "src/routes" })`, or use `vanStackVite({ routes: { root: "src/routes" } })` plus `virtual:van-stack/routes` in Vite browser CSR.
-3. Write shared route components against `van-stack/render`.
+3. Write route components against `vanjs-core`, and import `vanjs-ext` directly when VanX helpers are needed.
 4. Pass the loaded routes into `van-stack/csr`, `van-stack/ssr`, or `van-stack/ssg`.
-5. Add `van-stack/vite` only if you want route-aware DX on top of the compiler layer.
+5. Add `van-stack/vite` only if you want route-aware browser CSR DX on top of the compiler layer.
 
 Filesystem routing is the default path, but it is not mandatory. Manual route arrays still work when an app intentionally wants to bypass the compiler.
 
@@ -376,15 +377,26 @@ Presentation is separate from route matching and data loading. The same route tr
 
 ## Compatibility And Tooling Notes
 
-Route modules should import Van through `van-stack/render`, not from concrete client or server packages:
+Route modules should import Van through the official Van packages:
 
 ```ts
-import { van } from "van-stack/render";
+// src/routes/index/page.ts
+import van from "vanjs-core";
 ```
 
-First-party route code should still use `van-stack/render`. In browser-only CSR code, import optional VanX helpers directly from `vanjs-ext` when needed.
+VanX helpers use the official extension package directly:
 
-Compatibility shims exist for SSR and SSG entrypoints that import packages which hard-import `vanjs-core` or `vanjs-ext` directly. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
+```ts
+import * as vanX from "vanjs-ext";
+```
+
+Compatibility shims are SSR/SSG-only. They exist for server and static entrypoints that import first-party route modules or third-party packages which import `vanjs-core` or `vanjs-ext` directly, where the browser Van packages do not match the server/static runtime environment.
+
+Browser CSR does not use VanStack compatibility aliases. It imports the real browser `vanjs-core`, and packages that need VanX should import `vanjs-ext` directly.
+
+If shared code must branch on browser-only behavior, check for `window`, not `document`. SSR/SSG may provide a minimal server `document` so official Van tags can render safely.
+
+For the default Node `loadRoutes({ root })` path, VanStack installs the Node resolver hook before route module factories are evaluated. For direct route imports or custom generated-manifest entrypoints, start the process with `van-stack/compat/node-register`.
 
 For Bun SSR and SSG entrypoints, run Bun with the shipped compat override:
 
@@ -415,13 +427,13 @@ For a repeatable app setup, add a dedicated Bun tsconfig and call it from packag
 
 `bunfig.toml` does not currently expose a `tsconfig` override setting, so the supported Bun DX path is a checked-in `tsconfig.bun.json` plus package script aliases. `van-stack/compat/bun-preload` is intentionally unsupported. Bun runtime plugins do not intercept bare package imports during `bun run`, so Bun needs the `tsconfig` override path instead.
 
-Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means server and static entrypoints must install the hook before module evaluation reaches any imported library that reads Van eagerly.
+Compatibility only works when the resolver hook runs before those third-party modules are evaluated. In practice that means SSR and SSG entrypoints must install the hook before module evaluation reaches any imported library that reads Van eagerly.
 
 ## Demos And Docs
 
 - `demo/showcase`: main evaluator demo covering gallery, guided walkthroughs, `ssr`, `ssg`, `hydrated`, `islands`, `shell`, `custom`, and chunked flows
 - `demo/chunked-csr`: chunked browser CSR demo using `.van-stack/routes.generated.ts`
-- `demo/third-party-compat`: compatibility demo for packages that import `vanjs-core` or `vanjs-ext`
+- `demo/third-party-compat`: SSR/SSG compatibility demo for packages that import `vanjs-core` or `vanjs-ext`
 - `docs/getting-started.md`: focused setup and recommended defaults
 - `docs/demos.md`: demo index
 - `docs/bun.md`: Bun-specific compatibility and workflow guidance

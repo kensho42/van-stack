@@ -1,6 +1,6 @@
 export const presentation = "stack";
 
-import { van } from "van-stack/render";
+import van from "vanjs-core";
 
 const { h1, main, p, section } = van.tags;
 

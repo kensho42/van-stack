@@ -1,5 +1,7 @@
 # App DOM Hydration Design
 
+> Superseded note: route authoring no longer uses `van-stack/render`. Hydration modules import the official Van packages directly; SSR/SSG compatibility is installed under the hood.
+
 ## Summary
 
 Add true DOM hydration for SSR routes that use `hydrationPolicy: "app"`, but do it through an explicit route-level `hydrate.ts` module. SSR should render stable DOM roots and bootstrap route data, while the client should call route-specific hydration logic that uses `van.hydrate(...)` on the existing SSR DOM before the CSR router takes over later navigations.

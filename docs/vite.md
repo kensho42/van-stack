@@ -33,7 +33,7 @@ const app = startClientApp({
 await app.ready;
 ```
 
-The virtual module is generated as browser-safe JavaScript. It points route modules back to the real `src/routes/*` files, imports `van-stack/csr` before route modules so `van-stack/render` is bound, and omits server-only route files such as `loader.ts`, `action.ts`, `entries.ts`, and `route.ts`.
+The virtual module is generated as browser-safe JavaScript. It points route modules back to the real `src/routes/*` files, keeps official `vanjs-core` and optional `vanjs-ext` imports on the browser packages, and omits server-only route files such as `loader.ts`, `action.ts`, `entries.ts`, and `route.ts`.
 
 ## Compatibility
 

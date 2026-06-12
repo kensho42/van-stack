@@ -1,4 +1,4 @@
-import { van } from "van-stack/render";
+import van from "vanjs-core";
 
 import { renderGalleryPage } from "../route-helpers/gallery";
 import type { GalleryPageData } from "../runtime/data";

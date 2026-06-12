@@ -1,4 +1,4 @@
-import { van } from "van-stack/render";
+import van from "vanjs-core";
 import { renderShowcaseFrame } from "../components/chrome";
 import {
   renderArticleLayout,
@@ -199,7 +199,7 @@ export function renderGalleryPageBody(data: GalleryPageData) {
 }
 
 export function renderGalleryChunkedPage(data: GalleryPageData) {
-  if (typeof document === "undefined") {
+  if (typeof window === "undefined") {
     return renderGalleryPage(data);
   }
 

@@ -1,4 +1,4 @@
-import { van } from "van-stack/render";
+import van from "vanjs-core";
 
 export default function hydrate(input: {
   root: Element;

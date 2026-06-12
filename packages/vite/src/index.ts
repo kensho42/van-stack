@@ -76,7 +76,7 @@ function getLayoutPaths(filePaths: string[], routesRoot: string) {
 }
 
 function createVirtualRouteRenderer(routesRoot: string, filePaths: string[]) {
-  const imports = ['import "van-stack/csr";'];
+  const imports: string[] = [];
   const bindingsByFile = new Map<string, string>();
   const layoutPaths = getLayoutPaths(filePaths, routesRoot);
 

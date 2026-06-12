@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
 
-import { bindRenderEnv } from "../../packages/core/src/render";
 import { startClientApp } from "../../packages/csr/src/index";
 
 type HeadNode = {
@@ -94,29 +93,6 @@ function createViewNode(
 
   node.replaceChildren(...children);
   return node;
-}
-
-function createTag(tagName: string) {
-  return (...args: unknown[]) => {
-    const [first, ...rest] = args;
-    const hasAttributes =
-      first &&
-      typeof first === "object" &&
-      !Array.isArray(first) &&
-      !("tagName" in (first as Record<string, unknown>));
-    const attributes = hasAttributes
-      ? Object.fromEntries(
-          Object.entries(first as Record<string, unknown>).map(
-            ([name, value]) => [name, String(value)],
-          ),
-        )
-      : {};
-    const children = hasAttributes
-      ? (rest as ViewChild[])
-      : (args as ViewChild[]);
-
-    return createViewNode(tagName, attributes, children);
-  };
 }
 
 function createRootNode(): RootNode {
@@ -269,22 +245,6 @@ function createClientDocument() {
 
 describe("startClientApp", () => {
   test("renders a shell route from lazy manifest-style route modules", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.replaceChildren(child);
-        },
-        hydrate() {},
-      },
-    });
-
     const env = createClientDocument();
     const load = vi.fn(async (match: { params: Record<string, string> }) => ({
       post: { slug: match.params.slug, title: "GitHub Down" },
@@ -374,22 +334,6 @@ describe("startClientApp", () => {
   });
 
   test("keeps SSR DOM for the initial hydrated route and renders later navigations from page.ts", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.replaceChildren(child);
-        },
-        hydrate: vi.fn(),
-      },
-    });
-
     const env = createClientDocument();
     env.root.innerHTML = "<article><h1>Server HTML</h1></article>";
     const hydrateRoute = vi.fn();
@@ -468,22 +412,6 @@ describe("startClientApp", () => {
   });
 
   test("remounts the initial hydrated route through hydrateApp when no hydrate.ts is present", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.replaceChildren(child);
-        },
-        hydrate: vi.fn(),
-      },
-    });
-
     const env = createClientDocument();
     env.root.innerHTML = "<article><h1>Server HTML</h1></article>";
     env.setBootstrapScript({
@@ -540,23 +468,6 @@ describe("startClientApp", () => {
   });
 
   test("renders eager custom routes through van.add and app-owned resolve", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.children = [child];
-          root.innerHTML = "";
-        },
-        hydrate() {},
-      },
-    });
-
     const env = createClientDocument();
     const app = startClientApp({
       mode: "custom",
@@ -616,22 +527,6 @@ describe("startClientApp", () => {
   });
 
   test("loads chunked shell routes through lazy page and meta modules", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.replaceChildren(child);
-        },
-        hydrate() {},
-      },
-    });
-
     const env = createClientDocument();
     const load = vi.fn(async (match: { params: Record<string, string> }) => ({
       post: { slug: match.params.slug, title: "Lazy Shell" },
@@ -697,23 +592,6 @@ describe("startClientApp", () => {
   });
 
   test("loads chunked custom routes while keeping app-owned resolve", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.children = [child];
-          root.innerHTML = "";
-        },
-        hydrate() {},
-      },
-    });
-
     const env = createClientDocument();
     const resolve = vi.fn(async (match) => ({
       note: { slug: match.params.slug, title: "Lazy Custom" },
@@ -768,26 +646,6 @@ describe("startClientApp", () => {
   });
 
   test("loads chunked slot routes through lazy slot page modules", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {
-          aside: createTag("aside"),
-          div: createTag("div"),
-          main: createTag("main"),
-        },
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.replaceChildren(child);
-        },
-        hydrate() {},
-      },
-    });
-
     const env = createClientDocument();
     const eagerSidebarPage = vi.fn(() =>
       createViewNode("aside", {}, ["Wrong"]),
@@ -881,22 +739,6 @@ describe("startClientApp", () => {
   });
 
   test("rejects shell startup when a chunked route page import fails", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.replaceChildren(child);
-        },
-        hydrate() {},
-      },
-    });
-
     const env = createClientDocument();
     const app = startClientApp({
       mode: "shell",
@@ -932,26 +774,6 @@ describe("startClientApp", () => {
   });
 
   test("rerenders only changed slot roots for slot-aware shell routes", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {
-          aside: createTag("aside"),
-          div: createTag("div"),
-          main: createTag("main"),
-        },
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.replaceChildren(child);
-        },
-        hydrate() {},
-      },
-    });
-
     const env = createClientDocument();
     const sidebarPage = vi.fn(() => createViewNode("aside", {}, ["Sidebar"]));
     const workspacePage = vi.fn(({ data }: { data: unknown }) => {
@@ -1063,22 +885,6 @@ describe("startClientApp", () => {
   });
 
   test("rejects shell startup when the matched route page import fails", async () => {
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(root: RootNode, child: unknown) {
-          root.replaceChildren(child);
-        },
-        hydrate() {},
-      },
-    });
-
     const env = createClientDocument();
     const app = startClientApp({
       mode: "shell",

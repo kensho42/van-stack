@@ -1,5 +1,7 @@
 # README Adoption-First Implementation Plan
 
+> Superseded note: shared route code no longer flows through `van-stack/render`; public examples now import `vanjs-core` and optional `vanjs-ext` directly.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Rewrite `README.md` so it leads with a first-run developer path while still covering the package and runtime architecture needed by evaluators.

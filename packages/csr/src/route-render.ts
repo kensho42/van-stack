@@ -8,12 +8,18 @@ import {
   type RuntimeRouteDefinition,
   type RuntimeSlotDefinition,
 } from "../../core/src/index";
-import { van } from "../../core/src/render";
 
 export type AppRootLike = {
   innerHTML?: string;
+  append?: CallableFunction;
   querySelector?: (selector: string) => unknown;
   replaceChildren?: (...children: unknown[]) => void;
+};
+
+type SyntheticNode = AppRootLike & {
+  attributes: Map<string, string>;
+  children: unknown[];
+  tagName: string;
 };
 
 type ChunkedBranchLike = {
@@ -208,27 +214,107 @@ function renderOutputToHtml(output: { render: () => string }) {
   return output.render();
 }
 
-function createSlotWrapper(slot: string, output: unknown) {
-  const wrapper = van.tags.div as ((...args: unknown[]) => unknown) | undefined;
-
-  if (typeof wrapper === "function") {
-    return wrapper({ "data-van-stack-slot-root": slot }, output);
+function renderChildToHtml(child: unknown): string {
+  if (typeof child === "string") {
+    return child;
   }
 
-  const body =
-    output &&
-    typeof output === "object" &&
-    "render" in output &&
-    typeof output.render === "function"
-      ? renderOutputToHtml(output as { render: () => string })
-      : String(output ?? "");
+  if (
+    child &&
+    typeof child === "object" &&
+    "render" in (child as Record<string, unknown>) &&
+    typeof (child as { render: () => string }).render === "function"
+  ) {
+    return renderOutputToHtml(child as { render: () => string });
+  }
 
-  return {
-    render: () =>
-      `<div data-van-stack-slot-root="${escapeAttribute(slot)}">${body}</div>`,
-    toString: () =>
-      `<div data-van-stack-slot-root="${escapeAttribute(slot)}">${body}</div>`,
+  if (
+    child &&
+    typeof child === "object" &&
+    "tagName" in child &&
+    "innerHTML" in child
+  ) {
+    const node = child as SyntheticNode;
+    const attributes = [...node.attributes.entries()]
+      .map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`)
+      .join("");
+
+    return `<${node.tagName}${attributes}>${node.innerHTML ?? ""}</${node.tagName}>`;
+  }
+
+  return String(child ?? "");
+}
+
+function matchesSlotSelector(node: SyntheticNode, selector: string) {
+  const attributeMatch = /^\[([^=\]]+)="([^"]+)"\]$/.exec(selector);
+  if (!attributeMatch) {
+    return false;
+  }
+
+  return node.attributes.get(attributeMatch[1]) === attributeMatch[2];
+}
+
+function createSyntheticSlotWrapper(slot: string, output: unknown) {
+  const node: SyntheticNode = {
+    tagName: "div",
+    attributes: new Map([["data-van-stack-slot-root", slot]]),
+    children: [],
+    innerHTML: "",
+    append(...children: unknown[]) {
+      node.replaceChildren?.(...node.children, ...children);
+    },
+    querySelector(selector: string) {
+      for (const child of node.children) {
+        if (!child || typeof child !== "object" || !("tagName" in child)) {
+          continue;
+        }
+
+        const syntheticChild = child as SyntheticNode;
+        if (matchesSlotSelector(syntheticChild, selector)) {
+          return syntheticChild;
+        }
+
+        const nested = syntheticChild.querySelector?.(selector);
+        if (nested) {
+          return nested;
+        }
+      }
+
+      return null;
+    },
+    replaceChildren(...children: unknown[]) {
+      node.children = children;
+      node.innerHTML = children
+        .map((child) => renderChildToHtml(child))
+        .join("");
+    },
   };
+
+  node.replaceChildren?.(output);
+  return node;
+}
+
+function createSlotWrapper(slot: string, output: unknown) {
+  if (
+    typeof document !== "undefined" &&
+    typeof document.createElement === "function"
+  ) {
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-van-stack-slot-root", slot);
+    mountRouteOutput(wrapper as AppRootLike, output);
+    return wrapper;
+  }
+
+  const wrapper = createSyntheticSlotWrapper(slot, output) as SyntheticNode & {
+    render: () => string;
+    toString: () => string;
+  };
+  const renderWrapper = () =>
+    `<div data-van-stack-slot-root="${escapeAttribute(slot)}">${wrapper.innerHTML ?? ""}</div>`;
+
+  wrapper.render = renderWrapper;
+  wrapper.toString = renderWrapper;
+  return wrapper;
 }
 
 function isMountTarget(value: unknown): value is AppRootLike {
@@ -274,8 +360,14 @@ export function mountRouteOutput(root: AppRootLike, output: unknown) {
     return;
   }
 
-  root.replaceChildren?.();
-  van.add(root as never, output as never);
+  if (typeof root.replaceChildren === "function") {
+    root.replaceChildren(output);
+    return;
+  }
+
+  if (typeof root.append === "function") {
+    root.append(output);
+  }
 }
 
 async function renderDefaultBody(

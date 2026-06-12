@@ -16,6 +16,21 @@ import type {
 import { discoverRoutes } from "./discover-routes";
 import { compileRoutesFromPaths } from "./fs-routes";
 
+async function registerNodeCompatForRouteLoading() {
+  if (
+    typeof process === "undefined" ||
+    !process.versions?.node ||
+    process.versions.bun
+  ) {
+    return;
+  }
+
+  const { registerVanStackNodeCompat } = await import(
+    "van-stack/compat/node-register"
+  );
+  registerVanStackNodeCompat();
+}
+
 const routeFileOrder: Exclude<RouteFileKind, "layout">[] = [
   "page",
   "hydrate",
@@ -433,6 +448,8 @@ export async function buildRouteManifest(
 export async function loadRoutes(
   options: LoadRoutesOptions,
 ): Promise<LoadedRoute[]> {
+  await registerNodeCompatForRouteLoading();
+
   const routesRoot = resolve(options.root);
   const filePaths =
     options.filePaths ?? (await discoverRoutes({ root: routesRoot }));

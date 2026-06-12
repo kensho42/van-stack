@@ -1,4 +1,4 @@
-import { van } from "van-stack/render";
+import van from "vanjs-core";
 
 const { article, button, h1, p, span } = van.tags;
 

@@ -10,7 +10,10 @@ const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const declarationEntries = ["tsconfig.build.json"];
 const buildEntries = [
   ["packages/core/src/index.ts", "dist/packages/core/src/index.js"],
-  ["packages/core/src/render.ts", "dist/packages/core/src/render.js"],
+  [
+    "packages/core/src/compat/van-env.ts",
+    "dist/packages/core/src/compat/van-env.js",
+  ],
   [
     "packages/core/src/compat/vanjs-core.ts",
     "dist/packages/core/src/compat/vanjs-core.js",
@@ -52,7 +55,7 @@ async function main() {
         "mini-van-plate",
         "vanjs-core",
         "vite",
-        "van-stack/render",
+        "van-stack/compat/node-register",
         "van-stack/ssr",
       ],
       format: "esm",

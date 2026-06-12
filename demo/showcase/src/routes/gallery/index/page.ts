@@ -1,4 +1,4 @@
-import { van } from "van-stack/render";
+import van from "vanjs-core";
 import { renderShowcaseFrame } from "../../../components/chrome";
 import { renderEditorialHero } from "../../../components/editorial";
 import { showcaseModes } from "../../../content/modes";

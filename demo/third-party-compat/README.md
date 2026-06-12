@@ -1,12 +1,11 @@
 # Third-Party Compatibility Demo
 
-Demonstrates imported library code that hard-imports `vanjs-core` and `vanjs-ext` directly, while still rendering through VanStack in SSR and SSG.
+Demonstrates imported app and library code that imports `vanjs-core` and `vanjs-ext` directly, while still rendering through VanStack in SSR and SSG.
 
-The route files in this demo import `third-party-lib`, not `van-stack/render`. The workspace package itself uses direct Van imports so the compatibility layer is exercised at the package boundary instead of the route boundary.
+The route files in this demo import `third-party-lib`. The workspace package itself uses direct Van imports so the compatibility layer is exercised at the package boundary.
 
 Route surface:
 
-- `/csr`
 - `/ssr`
 - `/ssg`
 

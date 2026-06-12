@@ -85,12 +85,12 @@ function createTempApp() {
 function getSourceAliases(): Alias[] {
   return [
     {
-      find: "van-stack/render",
-      replacement: join(repoRoot, "packages/core/src/render.ts"),
-    },
-    {
       find: "van-stack/csr",
       replacement: join(repoRoot, "packages/csr/src/index.ts"),
+    },
+    {
+      find: "vanjs-core",
+      replacement: require.resolve("vanjs-core"),
     },
     {
       find: "van-stack",
@@ -394,7 +394,7 @@ describe("van-stack/vite virtual routes", () => {
     app.write(
       "src/routes/page.ts",
       [
-        'import { van } from "van-stack/render";',
+        'import van from "vanjs-core";',
         "",
         "const { main } = van.tags;",
         "",

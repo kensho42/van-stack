@@ -20,4 +20,4 @@ The older demo folders remain focused references once you want to inspect one ru
 - `demo/adaptive-nav`: focused reference for replace-vs-stack presentation with filesystem route discovery
 - `demo/third-party-compat`: focused reference for a workspace library that imports `vanjs-core` and `vanjs-ext` directly, then renders through `van-stack/compat/node-register` in Node SSR and SSG, and `compat/bun-tsconfig.json` in Bun SSR and SSG
 
-Most first-party demo route modules import `van` from `van-stack/render`. The compatibility demo is the exception on purpose: its SSR and SSG route files import `third-party-lib`, and that workspace package imports `vanjs-core` and `vanjs-ext` directly so the server/static resolver-owned compatibility layer is exercised end to end.
+First-party demo route modules import `vanjs-core` directly. The compatibility demo adds `vanjs-ext` through `third-party-lib` so the server/static resolver-owned compatibility layer is exercised end to end for both official Van packages.

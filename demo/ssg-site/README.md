@@ -1,6 +1,6 @@
 # SSG Demo
 
-Demonstrates static generation from route entries discovered under `src/routes`, loaded through the compiler at runtime, and rendered through `van-stack/render`.
+Demonstrates static generation from route entries discovered under `src/routes`, loaded through the compiler at runtime, and rendered from route modules that import `vanjs-core` directly.
 
 Use `buildStaticRoutes({ routes })` when you want in-memory HTML or raw route artifacts for previews and cache warm-up. Use `exportStaticSite({ routes, outDir, assets })` when you want a real static output tree with:
 

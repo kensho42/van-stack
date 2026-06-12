@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
 
-import { bindRenderEnv, van } from "../../packages/core/src/render";
 import { hydrateApp, hydrateIslands } from "../../packages/csr/src/index";
 
 const routes = [{ id: "posts/[slug]", path: "/posts/:slug" }];
@@ -88,20 +87,7 @@ describe("csr hydrate app", () => {
     const env = createHydrationEnv();
     const hydrateSpy = vi.fn((dom, bind) => bind(dom));
     const routeHydrate = vi.fn((input: Record<string, unknown>) => {
-      van.hydrate(input.root, (dom: unknown) => dom);
-    });
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(..._args: unknown[]) {},
-        hydrate: hydrateSpy,
-      },
+      hydrateSpy(input.root, (dom: unknown) => dom);
     });
     const bootstrap = {
       routeId: "posts/[slug]",
@@ -359,20 +345,6 @@ describe("csr hydrate app", () => {
         return sidebarSlotRoot;
       }
       return null;
-    });
-
-    bindRenderEnv({
-      van: {
-        tags: {},
-        state(value: unknown) {
-          return { val: value };
-        },
-        derive(fn: () => unknown) {
-          return fn();
-        },
-        add(..._args: unknown[]) {},
-        hydrate(..._args: unknown[]) {},
-      },
     });
 
     env.setBootstrapScript({

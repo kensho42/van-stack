@@ -1,6 +1,5 @@
+import van from "vanjs-core";
 import { describe, expect, test, vi } from "vitest";
-
-import { van } from "../../packages/core/src/render";
 import { renderRequest } from "../../packages/ssr/src/index";
 
 describe("ssr renderer", () => {
@@ -131,7 +130,7 @@ describe("ssr renderer", () => {
     expect(await response.text()).toBe("User-agent: *\nAllow: /\n");
   });
 
-  test("renders Van facade page output instead of stringifying it", async () => {
+  test("renders server Van page output instead of stringifying it", async () => {
     const response = await renderRequest({
       request: new Request("https://example.com/van"),
       routes: [

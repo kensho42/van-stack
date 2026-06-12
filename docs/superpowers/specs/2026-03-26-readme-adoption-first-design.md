@@ -1,5 +1,7 @@
 # README Adoption-First Design
 
+> Superseded note: shared route code no longer flows through `van-stack/render`; public examples now import `vanjs-core` and optional `vanjs-ext` directly.
+
 ## Summary
 
 Rewrite the root `README.md` so it works first as a developer-friendly entrypoint for first-run adoption, then as a compact evaluator guide for package boundaries and runtime architecture.

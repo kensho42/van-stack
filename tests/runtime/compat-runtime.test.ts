@@ -98,7 +98,23 @@ describe("runtime compatibility hooks", () => {
     expect(result.ssg).toContain('data-third-party-reactive=""');
   });
 
-  test("node register resolves third-party van imports for loadRoutes, SSR, and SSG", async () => {
+  test("node loadRoutes installs compat resolution for direct Van imports in SSR and SSG", async () => {
+    const { stdout } = await execFileAsync(
+      "node",
+      [runtimeCheckPath.pathname],
+      {
+        cwd: repoRoot,
+      },
+    );
+    const result = parseResult(stdout);
+
+    expect(result.routeIds).toEqual(["ssg", "ssr"]);
+    expect(result.ssr).toContain('data-third-party-card=""');
+    expect(result.ssr).toContain("Third-party SSR compatibility");
+    expect(result.ssg).toContain('data-third-party-reactive=""');
+  });
+
+  test("node register still resolves direct Van imports before explicit route imports", async () => {
     const { stdout } = await execFileAsync(
       "node",
       ["--import", "van-stack/compat/node-register", runtimeCheckPath.pathname],

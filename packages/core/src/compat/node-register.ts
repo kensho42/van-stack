@@ -3,6 +3,8 @@ import { registerHooks } from "node:module";
 import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+let nodeCompatRegistration: ReturnType<typeof registerHooks> | null = null;
+
 function getCompatUrl(relativePath: string) {
   const basePath = fileURLToPath(new URL(relativePath, import.meta.url));
 
@@ -47,7 +49,11 @@ function resolveTypeScriptSpecifier(
 }
 
 export function registerVanStackNodeCompat() {
-  return registerHooks({
+  if (nodeCompatRegistration) {
+    return nodeCompatRegistration;
+  }
+
+  nodeCompatRegistration = registerHooks({
     resolve(specifier, context, nextResolve) {
       if (specifier === "vanjs-core") {
         return {
@@ -77,6 +83,7 @@ export function registerVanStackNodeCompat() {
       return nextResolve(specifier, context);
     },
   });
+  return nodeCompatRegistration;
 }
 
 registerVanStackNodeCompat();

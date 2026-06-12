@@ -11,7 +11,7 @@ import {
   type RuntimeRouteDefinition,
   type RuntimeSlotDefinition,
 } from "../../core/src/index";
-import { bindServerRenderEnv } from "./render-env";
+import { withServerRenderEnv } from "./render-env";
 
 type RenderRequestInput = {
   request: Request;
@@ -291,109 +291,110 @@ async function renderRouteBody(options: {
 }
 
 export async function renderRequest(input: RenderRequestInput) {
-  bindServerRenderEnv();
-  const requestPath = getRequestPath(input.request);
+  return withServerRenderEnv(async () => {
+    const requestPath = getRequestPath(input.request);
 
-  for (const route of input.routes) {
-    const match = matchPath(route.path, requestPath.pathname);
-    if (!match) continue;
+    for (const route of input.routes) {
+      const match = matchPath(route.path, requestPath.pathname);
+      if (!match) continue;
 
-    const routeHandler = await resolveRouteModule<RouteHandlerModule>(
-      route.route,
-      route.files?.route,
-    );
-    if (routeHandler) {
-      return routeHandler({
-        request: input.request,
-        params: match.params,
-      });
-    }
+      const routeHandler = await resolveRouteModule<RouteHandlerModule>(
+        route.route,
+        route.files?.route,
+      );
+      if (routeHandler) {
+        return routeHandler({
+          request: input.request,
+          params: match.params,
+        });
+      }
 
-    const loader = await resolveRouteModule<RouteLoaderModule>(
-      route.loader,
-      route.files?.loader,
-    );
-    const metaHandler = await resolveRouteModule<RouteMetaModule>(
-      route.meta,
-      route.files?.meta,
-    );
-    const page = await resolveRouteModule<RoutePageModule>(
-      route.page,
-      route.files?.page,
-    );
+      const loader = await resolveRouteModule<RouteLoaderModule>(
+        route.loader,
+        route.files?.loader,
+      );
+      const metaHandler = await resolveRouteModule<RouteMetaModule>(
+        route.meta,
+        route.files?.meta,
+      );
+      const page = await resolveRouteModule<RoutePageModule>(
+        route.page,
+        route.files?.page,
+      );
 
-    if (!page) {
-      throw new Error(`Route "${route.id}" is missing a page module.`);
-    }
+      if (!page) {
+        throw new Error(`Route "${route.id}" is missing a page module.`);
+      }
 
-    const hydrationPolicy = route.hydrationPolicy ?? defaultHydrationPolicy;
-    const data = loader
-      ? await loader({ params: match.params, request: input.request })
-      : null;
-    const activeSlots = await resolveActiveSlots(
-      route,
-      input.request,
-      requestPath.path,
-    );
-    const slotData = Object.fromEntries(
-      Object.entries(activeSlots).map(([slot, state]) => [slot, state.data]),
-    );
-    const slotOutputs = Object.fromEntries(
-      await Promise.all(
-        Object.entries(activeSlots).map(async ([slot, state]) => [
-          slot,
-          await renderSlotOutput(slot, state, requestPath.path),
-        ]),
-      ),
-    );
-    const meta = metaHandler
-      ? await metaHandler({ params: match.params, data })
-      : undefined;
-    const body = wrapPageBody(
-      await renderRouteBody({
+      const hydrationPolicy = route.hydrationPolicy ?? defaultHydrationPolicy;
+      const data = loader
+        ? await loader({ params: match.params, request: input.request })
+        : null;
+      const activeSlots = await resolveActiveSlots(
         route,
-        page,
-        data,
-        params: match.params,
-        path: requestPath.path,
-        slotData,
-        slotOutputs,
-      }),
-      hydrationPolicy,
-    );
-    const bootstrap =
-      hydrationPolicy !== "document-only"
-        ? `<script type="application/json" data-van-stack-bootstrap>${JSON.stringify(
-            {
-              routeId: route.id,
-              path: requestPath.path,
-              pathname: requestPath.pathname,
-              params: match.params,
-              hydrationPolicy,
-              data,
-              slotData,
-            },
-          )}</script>`
-        : "";
+        input.request,
+        requestPath.path,
+      );
+      const slotData = Object.fromEntries(
+        Object.entries(activeSlots).map(([slot, state]) => [slot, state.data]),
+      );
+      const slotOutputs = Object.fromEntries(
+        await Promise.all(
+          Object.entries(activeSlots).map(async ([slot, state]) => [
+            slot,
+            await renderSlotOutput(slot, state, requestPath.path),
+          ]),
+        ),
+      );
+      const meta = metaHandler
+        ? await metaHandler({ params: match.params, data })
+        : undefined;
+      const body = wrapPageBody(
+        await renderRouteBody({
+          route,
+          page,
+          data,
+          params: match.params,
+          path: requestPath.path,
+          slotData,
+          slotOutputs,
+        }),
+        hydrationPolicy,
+      );
+      const bootstrap =
+        hydrationPolicy !== "document-only"
+          ? `<script type="application/json" data-van-stack-bootstrap>${JSON.stringify(
+              {
+                routeId: route.id,
+                path: requestPath.path,
+                pathname: requestPath.pathname,
+                params: match.params,
+                hydrationPolicy,
+                data,
+                slotData,
+              },
+            )}</script>`
+          : "";
+
+      return new Response(
+        `<!doctype html><html><head>${buildHead(meta)}</head><body>${body}${bootstrap}</body></html>`,
+        {
+          status: 200,
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+          },
+        },
+      );
+    }
 
     return new Response(
-      `<!doctype html><html><head>${buildHead(meta)}</head><body>${body}${bootstrap}</body></html>`,
+      "<!doctype html><html><head></head><body><h1>Not Found</h1></body></html>",
       {
-        status: 200,
+        status: 404,
         headers: {
           "content-type": "text/html; charset=utf-8",
         },
       },
     );
-  }
-
-  return new Response(
-    "<!doctype html><html><head></head><body><h1>Not Found</h1></body></html>",
-    {
-      status: 404,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-      },
-    },
-  );
+  });
 }

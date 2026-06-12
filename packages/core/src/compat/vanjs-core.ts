@@ -1,3 +1,3 @@
-import { van } from "../render";
+import { compatVan } from "./van-env";
 
-export default van;
+export default compatVan;

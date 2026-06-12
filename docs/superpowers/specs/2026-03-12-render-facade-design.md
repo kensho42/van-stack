@@ -1,5 +1,7 @@
 # Render Facade Design
 
+> Superseded: `van-stack/render` was removed as a public authoring API. Current route components import `vanjs-core` directly, import `vanjs-ext` directly when needed, and rely on SSR/SSG compat resolution under the hood.
+
 ## Summary
 
 `van-stack` should provide a framework-level Van render abstraction instead of forcing apps or demos to import `vanjs-core` or `mini-van-plate` directly.

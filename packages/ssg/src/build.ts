@@ -7,7 +7,7 @@ import type {
   RuntimeRouteDefinition,
 } from "../../core/src/index";
 import { renderRequest } from "../../ssr/src/render";
-import { bindStaticRenderEnv } from "./render-env";
+import { bindStaticRenderEnv, withStaticRenderEnv } from "./render-env";
 
 export type StaticPageArtifact = {
   kind: "page";
@@ -206,73 +206,75 @@ function assertNoOutputCollisions(outputPaths: string[]) {
 export async function buildStaticRoutes(
   input: BuildStaticRoutesInput,
 ): Promise<StaticArtifact[]> {
-  bindStaticRenderEnv();
+  return withStaticRenderEnv(async () => {
+    bindStaticRenderEnv();
 
-  const output: StaticArtifact[] = [];
+    const output: StaticArtifact[] = [];
 
-  for (const route of input.routes) {
-    const entriesFactory = await resolveRouteModule(
-      route.entries,
-      route.files?.entries,
-    );
-    const entries = entriesFactory
-      ? await entriesFactory()
-      : route.path.includes(":")
-        ? null
-        : [{}];
+    for (const route of input.routes) {
+      const entriesFactory = await resolveRouteModule(
+        route.entries,
+        route.files?.entries,
+      );
+      const entries = entriesFactory
+        ? await entriesFactory()
+        : route.path.includes(":")
+          ? null
+          : [{}];
 
-    if (!entries) {
-      throw new Error(`Route "${route.id}" is missing an entries module.`);
-    }
+      if (!entries) {
+        throw new Error(`Route "${route.id}" is missing an entries module.`);
+      }
 
-    for (const entry of entries) {
-      const path = buildConcretePath(route.path, entry);
-      const request = new Request(`https://van-stack.local${path}`);
-      const isRawRoute = Boolean(route.route || route.files?.route);
+      for (const entry of entries) {
+        const path = buildConcretePath(route.path, entry);
+        const request = new Request(`https://van-stack.local${path}`);
+        const isRawRoute = Boolean(route.route || route.files?.route);
 
-      if (isRawRoute) {
-        const routeHandler = await resolveRouteModule<RouteHandlerModule>(
-          route.route,
-          route.files?.route,
-        );
+        if (isRawRoute) {
+          const routeHandler = await resolveRouteModule<RouteHandlerModule>(
+            route.route,
+            route.files?.route,
+          );
 
-        if (!routeHandler) {
-          throw new Error(`Route "${route.id}" is missing a route module.`);
+          if (!routeHandler) {
+            throw new Error(`Route "${route.id}" is missing a route module.`);
+          }
+
+          const response = await routeHandler({
+            request,
+            params: entry,
+          });
+
+          output.push({
+            kind: "route",
+            path,
+            outputPath: getArtifactOutputPath("route", path),
+            body: new Uint8Array(await response.arrayBuffer()),
+            status: response.status,
+            headers: headersToRecord(response.headers),
+          });
+          continue;
         }
 
-        const response = await routeHandler({
+        const response = await renderRequest({
           request,
-          params: entry,
+          routes: [route],
         });
 
         output.push({
-          kind: "route",
+          kind: "page",
           path,
-          outputPath: getArtifactOutputPath("route", path),
-          body: new Uint8Array(await response.arrayBuffer()),
+          outputPath: getArtifactOutputPath("page", path),
+          html: await response.text(),
           status: response.status,
           headers: headersToRecord(response.headers),
         });
-        continue;
       }
-
-      const response = await renderRequest({
-        request,
-        routes: [route],
-      });
-
-      output.push({
-        kind: "page",
-        path,
-        outputPath: getArtifactOutputPath("page", path),
-        html: await response.text(),
-        status: response.status,
-        headers: headersToRecord(response.headers),
-      });
     }
-  }
 
-  return output;
+    return output;
+  });
 }
 
 export async function exportStaticSite(

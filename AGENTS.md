@@ -4,12 +4,12 @@
 
 `van-stack` is a router-first framework for VanJS. The repo currently covers:
 
-- `van-stack`: core route matching, runtime types, hydration defaults, and shared render facade exports
+- `van-stack`: core route matching, runtime types, and hydration defaults
 - `van-stack/compiler`: filesystem route discovery, normalization, in-memory `loadRoutes({ root })`, and optional `writeRouteManifest({ root })`
 - `van-stack/csr`: CSR router with `hydrated`, `shell`, and `custom` modes
 - `van-stack/ssr`: SSR HTML rendering and bootstrap handoff
 - `van-stack/ssg`: static generation from the same route model
-- `van-stack/render`: framework-owned Van facade used by shared route components and demos
+- `van-stack/compat/*`: SSR/SSG-only compatibility shims for route modules that import `vanjs-core` or `vanjs-ext`
 - `van-stack/vite`: optional integration layer, not the source of route discovery
 
 ## Architecture Rules
@@ -18,12 +18,13 @@
 - Filesystem routing belongs to the compiler layer, not to Vite.
 - Prefer `loadRoutes({ root: "src/routes" })` as the default filesystem-routing path.
 - Treat `writeRouteManifest({ root })` and `.van-stack/routes.generated.ts` as optional emitted-artifact support, not the default app path.
-- Shared route components and demos should import `van` from `van-stack/render`, not from `vanjs-core` or `mini-van-plate` directly.
+- Shared route components and demos should import `vanjs-core` directly, and import `vanjs-ext` directly only when they need VanX.
+- SSR/SSG compatibility should happen under the hood through `van-stack/compat/*`; do not expose a public render authoring layer.
 - Preserve the current route-module conventions: `page.ts`, `layout.ts`, `loader.ts`, `action.ts`, `entries.ts`, `meta.ts`, `error.ts`.
 
 ## Repository Layout
 
-- `packages/core/src`: route matching, shared types, render facade
+- `packages/core/src`: route matching, shared types, and SSR/SSG compat modules
 - `packages/compiler/src`: route discovery, normalization, manifest loading/writing
 - `packages/csr/src`: client router and CSR runtime helpers
 - `packages/ssr/src`: SSR rendering and bootstrap generation

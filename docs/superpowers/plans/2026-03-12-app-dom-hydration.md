@@ -1,5 +1,7 @@
 # App DOM Hydration Implementation Plan
 
+> Superseded note: route authoring no longer uses `van-stack/render`. Hydration modules import the official Van packages directly; SSR/SSG compatibility is installed under the hood.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add real DOM hydration for `hydrationPolicy: "app"` routes by introducing route-level `hydrate.ts` modules that use `van.hydrate(...)` on existing SSR DOM before CSR router takeover.

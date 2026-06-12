@@ -8,7 +8,7 @@ Demonstrates all three CSR runtime modes:
 - `shell`: boot from a tiny HTML shell and use VanStack transport-backed route loading
 - `custom`: boot from a tiny HTML shell and let the app shell provide data resolution, or keep data fetching inside components
 
-Each route module imports `van` from `van-stack/render`, not `vanjs-core` directly.
+Each route module imports `van` from `vanjs-core` directly. Browser CSR resolves that to the real browser package.
 
 In Node, SSR, SSG, or build tooling, filesystem routes are typically loaded with `await loadRoutes({ root: "src/routes" })`. In a Vite browser CSR app, configure `vanStackVite({ routes: { root: "src/routes" } })` and import `virtual:van-stack/routes` instead. Writing `.van-stack/routes.generated.ts` stays available for custom tooling, but it is not the default Vite browser path.
 

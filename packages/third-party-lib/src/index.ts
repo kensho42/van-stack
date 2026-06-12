@@ -18,7 +18,7 @@ export function renderThirdPartyCompatPage(runtime: ThirdPartyRuntime) {
     },
     h1(`Third-party ${runtime.toUpperCase()} compatibility`),
     p(
-      "This page comes from a workspace package that imports Van directly instead of using van-stack/render.",
+      "This page comes from a workspace package that imports official Van packages directly.",
     ),
     p(
       { "data-third-party-reactive": "" },

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest";
 
+import { bindCompatVan } from "../../packages/core/src/compat/van-env";
 import { bindCompatVanX } from "../../packages/core/src/compat/vanx-env";
-import { bindRenderEnv } from "../../packages/core/src/render";
 import { bindServerRenderEnv } from "../../packages/ssr/src/index";
 
 describe("compatibility shims", () => {
   test("exports vanjs-core and vanjs-ext compatibility modules through the root package", async () => {
-    bindRenderEnv(null);
+    bindCompatVan(null);
     bindCompatVanX(null);
 
     const vanCompatModule = await import(
@@ -21,7 +21,7 @@ describe("compatibility shims", () => {
   });
 
   test("forwards the bound server render environment through the compatibility modules", async () => {
-    bindRenderEnv(null);
+    bindCompatVan(null);
     bindCompatVanX(null);
     bindServerRenderEnv();
 
@@ -38,8 +38,8 @@ describe("compatibility shims", () => {
     expect(vanExtCompatModule.calc(() => "ok")).toBe("ok");
   });
 
-  test("keeps the existing unbound render-env failure through the compatibility modules", async () => {
-    bindRenderEnv(null);
+  test("keeps an explicit unbound compat-env failure through the compatibility modules", async () => {
+    bindCompatVan(null);
     bindCompatVanX(null);
 
     const vanCompatModule = await import(
@@ -50,7 +50,7 @@ describe("compatibility shims", () => {
     );
 
     expect(() => vanCompatModule.default.state(0)).toThrowError(
-      "van-stack/render has not been bound to a Van runtime yet.",
+      "van-stack/compat/vanjs-core has not been bound to a Van runtime yet.",
     );
     expect(() => vanExtCompatModule.stateFields({ count: 0 })).toThrowError(
       "van-stack/compat/vanjs-ext has not been bound to a VanX runtime yet.",
