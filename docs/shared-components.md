@@ -28,7 +28,7 @@ The facade also exposes `van.hydrate(...)` for route-level `hydrate.ts` modules.
 
 Imported third-party packages are a separate boundary. If a package hard-imports `vanjs-core` or `vanjs-ext`, keep your own app code on `van-stack/render` and enable compatibility at the resolver layer instead:
 
-- `van-stack/vite` or `getVanStackCompatAliases()` for Vite and Vitest
+- `vanStackVite()` for Vite browser apps, with `getVanStackCompatAliases()` reserved for legacy Vitest or custom resolver setups
 - `van-stack/compat/node-register` for direct Node SSR and SSG entrypoints
 - `bun run --tsconfig-override ./node_modules/van-stack/compat/bun-tsconfig.json <entry>` for direct Bun SSR and SSG entrypoints
 

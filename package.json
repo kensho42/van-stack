@@ -17,7 +17,8 @@
     "./csr": "./dist/packages/csr/src/index.js",
     "./ssr": "./dist/packages/ssr/src/index.js",
     "./ssg": "./dist/packages/ssg/src/index.js",
-    "./vite": "./dist/packages/vite/src/index.js"
+    "./vite": "./dist/packages/vite/src/index.js",
+    "./vite/client": "./dist/packages/vite/src/client.js"
   },
   "files": [
     "dist",

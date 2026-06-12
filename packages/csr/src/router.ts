@@ -37,7 +37,7 @@ type CreateHydratedRouterOptions = {
   document?: HeadDocumentLike;
   history: HistoryLike;
   mode: "hydrated";
-  routes: ClientRouteDefinition[];
+  routes: readonly ClientRouteDefinition[];
   transport?: Transport;
 };
 
@@ -45,7 +45,7 @@ type CreateShellRouterOptions = {
   document?: HeadDocumentLike;
   history: HistoryLike;
   mode: "shell";
-  routes: ClientRouteDefinition[];
+  routes: readonly ClientRouteDefinition[];
   transport?: Transport;
 };
 
@@ -54,7 +54,7 @@ type CreateCustomRouterOptions = {
   history: HistoryLike;
   mode: "custom";
   resolve?: Resolve;
-  routes: ClientRouteDefinition[];
+  routes: readonly ClientRouteDefinition[];
 };
 
 type CreateRouterOptions =
@@ -66,7 +66,7 @@ export type ApplyRouteHeadOptions = {
   data: unknown;
   document?: HeadDocumentLike;
   path: string;
-  routes: ClientRouteDefinition[];
+  routes: readonly ClientRouteDefinition[];
 };
 
 function normalizeResolvedData(value: unknown) {
@@ -155,7 +155,10 @@ function createNavigation(
   };
 }
 
-function findMatchedRoute(routes: ClientRouteDefinition[], path: string) {
+function findMatchedRoute(
+  routes: readonly ClientRouteDefinition[],
+  path: string,
+) {
   const { pathname, query } = parsePath(path);
 
   for (const route of routes) {

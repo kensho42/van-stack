@@ -7,7 +7,7 @@
 1. Define routes under `src/routes`.
 2. Use reserved filenames such as `page.ts`, `route.ts`, `layout.ts`, `loader.ts`, and `meta.ts`.
 3. Add pathless `@slot` directories such as `@sidebar` under a parent `layout.ts` when a route branch needs multiple persistent regions.
-4. Load runtime routes from that tree, usually with `loadRoutes({ root: "src/routes" })`.
+4. Load runtime routes from that tree with `loadRoutes({ root: "src/routes" })` in Node/build/server code, or with `virtual:van-stack/routes` in Vite browser CSR.
 5. Choose whether the app runs in CSR, SSR, or SSG mode.
 6. If the app has a client router, choose a CSR runtime mode:
    - `hydrated` for SSR handoff in the browser
@@ -18,8 +18,9 @@
 For filesystem apps, the happy path is:
 
 1. author route modules in `src/routes`
-2. call `await loadRoutes({ root: "src/routes" })`
-3. pass those routes into CSR, SSR, or SSG entrypoints
+2. call `await loadRoutes({ root: "src/routes" })` from Node, SSR, SSG, or build tooling
+3. use `vanStackVite({ routes: { root: "src/routes" } })` plus `virtual:van-stack/routes` for Vite browser CSR
+4. pass those routes into CSR, SSR, or SSG entrypoints
 
 For a control-plane style branch with a persistent sidebar, the route tree can look like this:
 
@@ -35,7 +36,33 @@ src/routes/app/
 
 The owning `layout.ts` receives the default branch as `children`, the sidebar branch as `slots.sidebar`, and any named slot loader results as `slotData.sidebar`.
 
-For a chunked browser CSR app, add one extra step:
+For a Vite browser CSR app, configure the plugin and import the virtual route module:
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import { vanStackVite } from "van-stack/vite";
+
+export default defineConfig({
+  plugins: [vanStackVite({ routes: { root: "src/routes" } })],
+});
+```
+
+```ts
+/// <reference types="van-stack/vite/client" />
+import routes from "virtual:van-stack/routes";
+import { startClientApp } from "van-stack/csr";
+
+const app = startClientApp({
+  mode: "custom",
+  routes,
+  history: window.history,
+});
+
+await app.ready;
+```
+
+For an emitted browser CSR artifact, add one extra step:
 
 1. call `await writeRouteManifest({ root: "src/routes", chunkedRoutes: true })`
 2. import `.van-stack/routes.generated.ts` in the browser entry
@@ -51,13 +78,14 @@ If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src
 - use `shell` when the app boots from bundled assets but still wants `loader.ts`
 - use `custom` when the app already has its own GraphQL, REST, RPC, native data layer, or component-level query logic
 - use `@sidebar`-style slot directories when one URL should drive a persistent shell plus a changing workspace inside the same router
-- use a generated route manifest when you want the browser to split route modules per navigation
+- use the Vite virtual route module for normal browser CSR
+- use a generated route manifest when you want an explicit route artifact or emitted chunk metadata
 - use manual route arrays only when you intentionally want to bypass filesystem routing
 
 Hydration policy is not the same as CSR runtime mode. A route can use `app` hydration for SSR handoff, while the same codebase can also boot in `shell` mode for Tauri.
 
 For the normal SSR browser handoff path, use `hydrateApp({ routes })` from `van-stack/csr`. It reads the SSR bootstrap payload, creates the hydrated router, and wires browser navigation so the app continues from the server-rendered route instead of starting from scratch.
 
-If the client should also lazy-load route code per navigation, switch the browser entry to `startClientApp({ routes })` and feed it `.van-stack/routes.generated.ts` instead of eager in-memory routes.
+If the client should use Vite browser CSR without a generated file, switch the browser entry to `startClientApp({ routes })` and feed it `virtual:van-stack/routes`. Use `.van-stack/routes.generated.ts` only when a custom pipeline needs an emitted route artifact.
 
 See the demos for concrete starting points.

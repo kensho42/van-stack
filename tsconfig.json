@@ -13,6 +13,7 @@
       "van-stack/ssr": ["packages/ssr/src/index.ts"],
       "van-stack/ssg": ["packages/ssg/src/index.ts"],
       "van-stack/vite": ["packages/vite/src/index.ts"],
+      "van-stack/vite/client": ["packages/vite/src/client.ts"],
       "van-stack/compat/vanjs-core": ["packages/core/src/compat/vanjs-core.ts"],
       "van-stack/compat/vanjs-ext": ["packages/core/src/compat/vanjs-ext.ts"],
       "van-stack/compat/bun-preload": [

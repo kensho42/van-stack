@@ -50,6 +50,8 @@ describe("npm package publishing", () => {
     expect(filePaths).toContain("dist/packages/ssr/src/index.js");
     expect(filePaths).toContain("dist/packages/ssg/src/index.js");
     expect(filePaths).toContain("dist/packages/vite/src/index.js");
+    expect(filePaths).toContain("dist/packages/vite/src/client.js");
+    expect(filePaths).toContain("dist/packages/vite/src/client.d.ts");
     expect(filePaths.some((path) => path.startsWith("packages/"))).toBe(false);
     expect(filePaths.some((path) => path.startsWith("tests/"))).toBe(false);
     expect(filePaths.some((path) => path.startsWith("demo/"))).toBe(false);

@@ -66,7 +66,7 @@ export type HydrateAppOptions = {
   document?: DocumentLike;
   history?: HistoryLike;
   rootSelector?: string;
-  routes: HydratableRoute[];
+  routes: readonly HydratableRoute[];
   transport?: Transport;
   window?: WindowLike;
 };
@@ -81,7 +81,7 @@ export type HydratedApp = {
 export type HydrateIslandsOptions = {
   bootstrapSelector?: string;
   document?: DocumentLike;
-  routes: HydratableRoute[];
+  routes: readonly HydratableRoute[];
 };
 
 export type HydratedIslands = {
@@ -166,7 +166,7 @@ function getAppRoot(document: DocumentLike, selector = defaultAppRootSelector) {
 }
 
 function getMatchedRoute(
-  routes: HydratableRoute[],
+  routes: readonly HydratableRoute[],
   bootstrap: BootstrapPayload,
 ) {
   if (bootstrap.routeId) {
@@ -196,7 +196,7 @@ function getMatchedRoute(
   throw new Error(`No route matched bootstrap path: ${bootstrap.pathname}`);
 }
 
-function hasMatchingRoute(routes: HydratableRoute[], path: string) {
+function hasMatchingRoute(routes: readonly HydratableRoute[], path: string) {
   const pathname = new URL(path, "https://van-stack.local").pathname;
 
   return routes.some((route) =>
@@ -229,7 +229,7 @@ function shouldInterceptNavigation(
   event: ClickEventLike,
   anchor: AnchorLike,
   window: WindowLike,
-  routes: HydratableRoute[],
+  routes: readonly HydratableRoute[],
 ) {
   if (event.defaultPrevented) return false;
   if ((event.button ?? 0) !== 0) return false;

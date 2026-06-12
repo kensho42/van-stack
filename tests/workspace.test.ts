@@ -15,6 +15,7 @@ const requiredFiles = [
   "packages/csr/src/index.ts",
   "packages/ssr/src/index.ts",
   "packages/ssg/src/index.ts",
+  "packages/vite/src/client.ts",
   "packages/third-party-lib/src/index.ts",
   "packages/vite/src/index.ts",
 ];
@@ -51,6 +52,9 @@ describe("workspace layout", () => {
     );
     expect(rootPackage.exports?.["./compat/node-register"]).toBe(
       "./dist/packages/core/src/compat/node-register.js",
+    );
+    expect(rootPackage.exports?.["./vite/client"]).toBe(
+      "./dist/packages/vite/src/client.js",
     );
     expect(existsSync("packages/compiler/package.json")).toBe(false);
   });
