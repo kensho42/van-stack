@@ -7,7 +7,7 @@ type ThirdPartyRuntime = "csr" | "ssr" | "ssg";
 
 function getResolverLabel(runtime: ThirdPartyRuntime) {
   if (runtime === "csr") {
-    return "van-stack/vite or shared Vitest aliases";
+    return "vanStackVite({ compatVanImports: true }) or shared Vitest aliases";
   }
 
   return "van-stack/compat/node-register";

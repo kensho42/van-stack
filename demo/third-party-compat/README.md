@@ -12,7 +12,7 @@ Route surface:
 
 Resolver support in the current repo state:
 
-- CSR in Vite browser apps: `vanStackVite()` from `van-stack/vite`
+- CSR in Vite browser apps: `vanStackVite({ compatVanImports: true })` from `van-stack/vite`
 - legacy test runners or custom resolvers: the shared alias map from `getVanStackCompatAliases()`
 - SSR and SSG under Node: `van-stack/compat/node-register`
 - SSR and SSG under Bun: `bun run --tsconfig-override ./compat/bun-tsconfig.json <entry>`

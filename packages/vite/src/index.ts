@@ -19,6 +19,7 @@ export type VanStackViteOptions = {
   routes?: {
     root: string;
   };
+  compatVanImports?: boolean;
 };
 
 const virtualRoutesId = "virtual:van-stack/routes";
@@ -354,7 +355,7 @@ export function vanStackVite(options: VanStackViteOptions = {}): Plugin {
         return resolvedVirtualRoutesId;
       }
 
-      if (!isVanSpecifier(source)) {
+      if (!options.compatVanImports || !isVanSpecifier(source)) {
         return null;
       }
 

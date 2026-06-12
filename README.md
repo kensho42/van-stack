@@ -385,10 +385,20 @@ import { van, vanX } from "van-stack/render";
 First-party route code should still use `van-stack/render`. Compatibility shims exist for imported packages that hard-import `vanjs-core` or `vanjs-ext` directly:
 
 ```ts
+import { defineConfig } from "vite";
 import { vanStackVite } from "van-stack/vite";
+
+export default defineConfig({
+  plugins: [
+    vanStackVite({
+      routes: { root: "src/routes" },
+      compatVanImports: true,
+    }),
+  ],
+});
 ```
 
-Use `vanStackVite()` for Vite apps so imported third-party packages resolve through the bound `van-stack/render` environment without affecting VanStack's own runtime dependencies. `getVanStackCompatAliases()` remains available for legacy Vitest or custom resolver setups that need the older direct alias map. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
+Use `compatVanImports: true` only when a Vite app imports packages that hard-import Van directly and need to resolve through the bound `van-stack/render` environment. The Vite plugin keeps that resolver guarded so VanStack's own runtime dependencies still resolve to the real Van packages. `getVanStackCompatAliases()` remains available for legacy Vitest or custom resolver setups that need the older direct alias map. For direct Node SSR and SSG entrypoints, start the process with `van-stack/compat/node-register`.
 
 For Bun SSR and SSG entrypoints, run Bun with the shipped compat override:
 

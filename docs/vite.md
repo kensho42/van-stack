@@ -1,6 +1,6 @@
 # Optional Vite Integration
 
-`van-stack/vite` is optional. It exists for browser CSR apps that want Vite to run filesystem route discovery during dev/build, expose a browser-safe route module, and resolve third-party Van packages through the active `van-stack/render` environment.
+`van-stack/vite` is optional. It exists for browser CSR apps that want Vite to run filesystem route discovery during dev/build, expose a browser-safe route module, and, when opted in, resolve third-party Van packages through the active `van-stack/render` environment.
 
 Route discovery still belongs to `van-stack/compiler`. The Vite plugin calls that compiler layer at dev/build time; browser code should not import `van-stack/compiler` directly.
 
@@ -37,14 +37,28 @@ The virtual module is generated as browser-safe JavaScript. It points route modu
 
 ## Compatibility
 
-First-party route modules should import Van through `van-stack/render`. Imported packages that hard-import `vanjs-core` or `vanjs-ext` can still work in Vite browser apps through `vanStackVite()`.
+First-party route modules should import Van through `van-stack/render`. Imported packages that hard-import `vanjs-core` or `vanjs-ext` can still work in Vite browser apps when the app opts in:
 
-The plugin uses a guarded resolver instead of global aliases:
+```ts
+import { defineConfig } from "vite";
+import { vanStackVite } from "van-stack/vite";
+
+export default defineConfig({
+  plugins: [
+    vanStackVite({
+      routes: { root: "src/routes" },
+      compatVanImports: true,
+    }),
+  ],
+});
+```
+
+With `compatVanImports: true`, the plugin uses a guarded resolver instead of global aliases:
 
 - app and third-party imports of `vanjs-core` and `vanjs-ext` resolve to VanStack compatibility modules
 - VanStack internals and Van's own runtime packages resolve to the real `actual-vanjs-core` and `actual-vanjs-ext`
 
-`getVanStackCompatAliases()` remains available for legacy Vitest or custom resolver setups that specifically need an alias array, but it is no longer the recommended Vite browser-app setup.
+`getVanStackCompatAliases()` remains available for legacy Vitest or custom resolver setups that specifically need an alias array, but it is not the recommended Vite browser-app setup.
 
 ## Node And Build Usage
 

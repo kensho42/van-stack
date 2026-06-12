@@ -426,7 +426,12 @@ describe("van-stack/vite virtual routes", () => {
       root: app.appRoot,
       configFile: false,
       logLevel: "silent",
-      plugins: [vanStackVite({ routes: { root: "src/routes" } })],
+      plugins: [
+        vanStackVite({
+          routes: { root: "src/routes" },
+          compatVanImports: true,
+        }),
+      ],
       resolve: {
         alias: getSourceAliases(),
       },
@@ -466,13 +471,51 @@ describe("van-stack/vite virtual routes", () => {
     expect(root.textContent).toContain("Third-party 2: Compat Fixture");
   });
 
-  test("does not use broad aliases for VanStack runtime dependencies", async () => {
+  test("does not resolve third-party Van imports through compat by default", async () => {
     const app = createTempApp();
     const server = await createServer({
       root: app.appRoot,
       configFile: false,
       logLevel: "silent",
       plugins: [vanStackVite()],
+    });
+
+    try {
+      const broadAliases = server.config.resolve.alias.filter(
+        (alias) =>
+          typeof alias.find === "string" &&
+          (alias.find === "vanjs-core" || alias.find === "vanjs-ext"),
+      );
+      expect(broadAliases).toEqual([]);
+
+      const actualVanXImporter = require.resolve("actual-vanjs-ext");
+      const actualVanCore = await server.pluginContainer.resolveId(
+        "vanjs-core",
+        actualVanXImporter,
+      );
+      expect(actualVanCore?.id).not.toContain(
+        "packages/core/src/compat/vanjs-core",
+      );
+
+      const thirdPartyVanCore = await server.pluginContainer.resolveId(
+        "vanjs-core",
+        join(repoRoot, "packages/third-party-lib/src/index.ts"),
+      );
+      expect(thirdPartyVanCore?.id).not.toContain(
+        "packages/core/src/compat/vanjs-core",
+      );
+    } finally {
+      await server.close();
+    }
+  });
+
+  test("resolves third-party Van imports through compat when opted in", async () => {
+    const app = createTempApp();
+    const server = await createServer({
+      root: app.appRoot,
+      configFile: false,
+      logLevel: "silent",
+      plugins: [vanStackVite({ compatVanImports: true })],
     });
 
     try {

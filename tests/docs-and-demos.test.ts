@@ -61,6 +61,7 @@ describe("docs and demos", () => {
     expect(readme).toContain(
       'vanStackVite({ routes: { root: "src/routes" } })',
     );
+    expect(readme).toContain("compatVanImports: true");
     expect(readme).toContain("van-stack/vite/client");
     expect(readme).toContain("compat/bun-tsconfig.json");
     expect(readme).toContain("tsconfig.bun.json");
@@ -104,7 +105,9 @@ describe("docs and demos", () => {
   test("keeps adaptive navigation documented as a separate focused demo", () => {
     const demos = readFileSync("docs/demos.md", "utf8");
     const bunDoc = readFileSync("docs/bun.md", "utf8");
+    const viteDoc = readFileSync("docs/vite.md", "utf8");
     const gettingStarted = readFileSync("docs/getting-started.md", "utf8");
+    const sharedComponents = readFileSync("docs/shared-components.md", "utf8");
     const ssgReadme = readFileSync("demo/ssg-site/README.md", "utf8");
     const chunkedCsrReadme = readFileSync("demo/chunked-csr/README.md", "utf8");
     const adaptiveNavReadme = readFileSync(
@@ -153,6 +156,8 @@ describe("docs and demos", () => {
     expect(bunDoc).toContain("van-stack/vite");
     expect(bunDoc).toContain("exportStaticSite");
     expect(bunDoc).toContain("any web server");
+    expect(viteDoc).toContain("compatVanImports: true");
+    expect(sharedComponents).toContain("compatVanImports: true");
     expect(gettingStarted).toContain("exportStaticSite");
     expect(gettingStarted).toContain("route.ts");
     expect(gettingStarted).toContain("startClientApp");
@@ -198,6 +203,7 @@ describe("docs and demos", () => {
     expect(compatReadme).toContain("vanjs-core");
     expect(compatReadme).toContain("vanjs-ext");
     expect(compatReadme).toContain("van-stack/vite");
+    expect(compatReadme).toContain("compatVanImports: true");
     expect(compatReadme).toContain("compat/bun-tsconfig.json");
     expect(compatReadme).toContain("tsconfig.bun.json");
     expect(compatReadme).toContain("bunfig.toml");
