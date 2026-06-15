@@ -6,14 +6,15 @@
 
 1. Define routes under `src/routes`.
 2. Use reserved filenames such as `page.ts`, `route.ts`, `layout.ts`, `loader.ts`, and `meta.ts`.
-3. Add pathless `@slot` directories such as `@sidebar` under a parent `layout.ts` when a route branch needs multiple persistent regions.
-4. Load runtime routes from that tree with `loadRoutes({ root: "src/routes" })` in Node/build/server code, or with `virtual:van-stack/routes` in Vite browser CSR.
-5. Choose whether the app runs in CSR, SSR, or SSG mode.
-6. If the app has a client router, choose a CSR runtime mode:
+3. Use pathless route groups such as `(public)` and `(private)` when route concerns need separate layouts without separate URL prefixes.
+4. Add pathless `@slot` directories such as `@sidebar` under a parent `layout.ts` when a route branch needs multiple persistent regions.
+5. Load runtime routes from that tree with `loadRoutes({ root: "src/routes" })` in Node/build/server code, or with `virtual:van-stack/routes` in Vite browser CSR.
+6. Choose whether the app runs in CSR, SSR, or SSG mode.
+7. If the app has a client router, choose a CSR runtime mode:
    - `hydrated` for SSR handoff in the browser
    - `shell` for Tauri or PWA boot from a minimal HTML shell
    - `custom` for routing-only CSR apps with host-owned or component-level data fetching
-7. Pick a hydration policy per SSR route branch when the app serves HTML.
+8. Pick a hydration policy per SSR route branch when the app serves HTML.
 
 For filesystem apps, the happy path is:
 
@@ -35,6 +36,22 @@ src/routes/app/
 ```
 
 The owning `layout.ts` receives the default branch as `children`, the sidebar branch as `slots.sidebar`, and any named slot loader results as `slotData.sidebar`.
+
+For a public/private split without URL prefixes, route groups can own separate layouts:
+
+```text
+src/routes/
+  (public)/
+    layout.ts
+    login/
+      page.ts
+  (private)/
+    layout.ts
+    dashboard/
+      page.ts
+```
+
+`(public)/login/page.ts` matches `/login`, `(private)/dashboard/page.ts` matches `/dashboard`, and the group `layout.ts` files wrap their descendants. Groups are only filesystem and layout boundaries; authorization still belongs in app-owned loaders, middleware, or server code. VanStack rejects duplicate public patterns such as `(public)/login` and `(private)/login`.
 
 For a Vite browser CSR app, configure the plugin and import the virtual route module:
 
@@ -77,6 +94,7 @@ If you need a file artifact for custom tooling, `writeRouteManifest({ root: "src
 - use `hydrated` when the browser receives HTML from `van-stack/ssr`
 - use `shell` when the app boots from bundled assets but still wants `loader.ts`
 - use `custom` when the app already has its own GraphQL, REST, RPC, native data layer, or component-level query logic
+- use `(public)` and `(private)` route groups when different concerns need separate layouts without changing URLs
 - use `@sidebar`-style slot directories when one URL should drive a persistent shell plus a changing workspace inside the same router
 - use the Vite virtual route module for normal browser CSR
 - use a generated route manifest when you want an explicit route artifact or emitted chunk metadata

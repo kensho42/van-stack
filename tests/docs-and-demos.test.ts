@@ -172,6 +172,12 @@ describe("docs and demos", () => {
       "@slot",
     );
     expect(readFileSync("docs/route-conventions.md", "utf8")).toContain(
+      "(public)",
+    );
+    expect(readFileSync("docs/route-conventions.md", "utf8")).toContain(
+      "Duplicate public route patterns",
+    );
+    expect(readFileSync("docs/route-conventions.md", "utf8")).toContain(
       "slotData",
     );
     expect(readFileSync("docs/hydration-modes.md", "utf8")).toContain(
@@ -187,6 +193,7 @@ describe("docs and demos", () => {
       "client-only low-level enhance hook",
     );
     expect(readFileSync("README.md", "utf8")).toContain("@sidebar");
+    expect(readFileSync("README.md", "utf8")).toContain("(public)");
     expect(chunkedCsrReadme).toContain(".van-stack/routes.generated.ts");
     expect(chunkedCsrReadme).toContain("/shell-workbench/overview");
     expect(chunkedCsrReadme).toContain("@sidebar");

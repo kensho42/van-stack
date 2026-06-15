@@ -27,6 +27,14 @@ The normal filesystem-routing path looks like this:
 
 ```text
 src/routes/
+  (public)/
+    layout.ts
+    login/
+      page.ts
+  (private)/
+    layout.ts
+    dashboard/
+      page.ts
   app/
     layout.ts
     @sidebar/
@@ -37,6 +45,8 @@ src/routes/
         loader.ts
         meta.ts
 ```
+
+Parenthesized directories such as `(public)` and `(private)` are pathless route groups. Their names stay in route IDs, their `layout.ts` files wrap descendants, and they do not appear in public URLs. For example, `src/routes/(public)/login/page.ts` matches `/login`. Route groups separate route concerns; they do not add authorization by themselves. VanStack rejects duplicate public route patterns, so `(public)/login` and `(private)/login` cannot both claim `/login`.
 
 `@slot` directories are pathless route branches that attach to the nearest owning `layout.ts`. The default branch is still exposed as `children`; named branches are exposed as `slots[name]`, and their resolved data is exposed as `slotData[name]`.
 

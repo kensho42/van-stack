@@ -107,6 +107,73 @@ describe("filesystem route compiler", () => {
     ]);
   });
 
+  test("applies pathless route group layouts to descendant routes", () => {
+    const routes = compileRoutesFromPaths([
+      "/src/routes/(public)/layout.ts",
+      "/src/routes/(public)/login/page.ts",
+      "/src/routes/(private)/layout.ts",
+      "/src/routes/(private)/dashboard/page.ts",
+      "/src/routes/app/layout.ts",
+      "/src/routes/app/(admin)/layout.ts",
+      "/src/routes/app/(admin)/reports/page.ts",
+    ]);
+
+    expect(routes).toEqual([
+      {
+        id: "app/(admin)/reports",
+        path: "/app/reports",
+        directorySegments: ["app", "(admin)", "reports"],
+        files: {
+          page: "/src/routes/app/(admin)/reports/page.ts",
+        },
+        layoutChain: ["app", "app/(admin)"],
+        params: [],
+      },
+      {
+        id: "(private)/dashboard",
+        path: "/dashboard",
+        directorySegments: ["(private)", "dashboard"],
+        files: {
+          page: "/src/routes/(private)/dashboard/page.ts",
+        },
+        layoutChain: ["(private)"],
+        params: [],
+      },
+      {
+        id: "(public)/login",
+        path: "/login",
+        directorySegments: ["(public)", "login"],
+        files: {
+          page: "/src/routes/(public)/login/page.ts",
+        },
+        layoutChain: ["(public)"],
+        params: [],
+      },
+    ]);
+  });
+
+  test("rejects route groups that create duplicate public paths", () => {
+    expect(() =>
+      compileRoutesFromPaths([
+        "/src/routes/(public)/login/page.ts",
+        "/src/routes/(private)/login/page.ts",
+      ]),
+    ).toThrow(
+      'Duplicate route path "/login" for route ids "(public)/login" and "(private)/login".',
+    );
+  });
+
+  test("rejects dynamic route groups that create duplicate public patterns", () => {
+    expect(() =>
+      compileRoutesFromPaths([
+        "/src/routes/(a)/posts/[slug]/page.ts",
+        "/src/routes/(b)/posts/[id]/page.ts",
+      ]),
+    ).toThrow(
+      'Duplicate route path pattern "/posts/:slug" conflicts with "/posts/:id" for route ids "(a)/posts/[slug]" and "(b)/posts/[id]".',
+    );
+  });
+
   test("discovers reserved route files under src/routes", async () => {
     const app = createTempApp();
 
@@ -185,6 +252,33 @@ describe("filesystem route compiler", () => {
     );
     expect(manifest.code).toContain(
       'layoutChain: [() => import("../src/routes/posts/layout.js")]',
+    );
+  });
+
+  test("loads grouped layouts in memory and emits them in generated manifests", async () => {
+    const app = createTempApp();
+
+    app.write(
+      "src/routes/(public)/layout.ts",
+      "export default function layout() { return 'public layout'; }\n",
+    );
+    app.write(
+      "src/routes/(public)/login/page.ts",
+      "export default function page() { return 'login'; }\n",
+    );
+
+    const routes = await loadRoutes({ root: app.routesRoot });
+    const manifest = await buildRouteManifest({ root: app.routesRoot });
+
+    expect(routes).toHaveLength(1);
+    expect(routes[0]).toMatchObject({
+      id: "(public)/login",
+      path: "/login",
+    });
+    expect(routes[0]?.layoutChain).toHaveLength(1);
+    expect(manifest.code).toContain('id: "(public)/login"');
+    expect(manifest.code).toContain(
+      'layoutChain: [() => import("../src/routes/(public)/layout.js")]',
     );
   });
 
@@ -400,6 +494,106 @@ describe("filesystem route compiler", () => {
         },
       },
     ]);
+  });
+
+  test("groups slots under pathless route group owners", () => {
+    const routes = compileRoutesFromPaths([
+      "/src/routes/(app)/layout.ts",
+      "/src/routes/(app)/page.ts",
+      "/src/routes/(app)/@sidebar/page.ts",
+      "/src/routes/(app)/@sidebar/settings/page.ts",
+      "/src/routes/(app)/settings/page.ts",
+    ]);
+
+    expect(routes).toEqual([
+      {
+        id: "(app)",
+        path: "/",
+        directorySegments: ["(app)"],
+        files: {
+          page: "/src/routes/(app)/page.ts",
+        },
+        layoutChain: ["(app)"],
+        params: [],
+        slotOwnerLayout: "(app)",
+        slots: {
+          sidebar: [
+            {
+              id: "(app)::sidebar",
+              slot: "sidebar",
+              path: "/",
+              directorySegments: ["(app)", "@sidebar"],
+              files: {
+                page: "/src/routes/(app)/@sidebar/page.ts",
+              },
+              layoutChain: [],
+              params: [],
+            },
+            {
+              id: "(app)::sidebar/settings",
+              slot: "sidebar",
+              path: "/settings",
+              directorySegments: ["(app)", "@sidebar", "settings"],
+              files: {
+                page: "/src/routes/(app)/@sidebar/settings/page.ts",
+              },
+              layoutChain: [],
+              params: [],
+            },
+          ],
+        },
+      },
+      {
+        id: "(app)/settings",
+        path: "/settings",
+        directorySegments: ["(app)", "settings"],
+        files: {
+          page: "/src/routes/(app)/settings/page.ts",
+        },
+        layoutChain: ["(app)"],
+        params: [],
+        slotOwnerLayout: "(app)",
+        slots: {
+          sidebar: [
+            {
+              id: "(app)::sidebar",
+              slot: "sidebar",
+              path: "/",
+              directorySegments: ["(app)", "@sidebar"],
+              files: {
+                page: "/src/routes/(app)/@sidebar/page.ts",
+              },
+              layoutChain: [],
+              params: [],
+            },
+            {
+              id: "(app)::sidebar/settings",
+              slot: "sidebar",
+              path: "/settings",
+              directorySegments: ["(app)", "@sidebar", "settings"],
+              files: {
+                page: "/src/routes/(app)/@sidebar/settings/page.ts",
+              },
+              layoutChain: [],
+              params: [],
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
+  test("rejects duplicate public paths inside the same named slot", () => {
+    expect(() =>
+      compileRoutesFromPaths([
+        "/src/routes/app/layout.ts",
+        "/src/routes/app/page.ts",
+        "/src/routes/app/@sidebar/(a)/settings/page.ts",
+        "/src/routes/app/@sidebar/(b)/settings/page.ts",
+      ]),
+    ).toThrow(
+      'Duplicate route path "/app/settings" for slot "sidebar" under route "app" with route ids "app::sidebar/(a)/settings" and "app::sidebar/(b)/settings".',
+    );
   });
 
   test("rejects @slot branches without an owning layout", () => {

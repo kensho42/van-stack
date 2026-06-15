@@ -79,7 +79,7 @@ function toLayoutChain(segments: string[], startIndex = 0): string[] {
 
   for (const segment of segments.slice(startIndex)) {
     current.push(segment);
-    if (!isRouteGroup(segment) && segment !== "index") {
+    if (segment !== "index") {
       result.push(current.join("/"));
     }
   }
@@ -117,6 +117,52 @@ function resolveLayoutChain(
 
 function sortByPath<T extends { path: string }>(routes: T[]) {
   return [...routes].sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function toRoutePathPattern(path: string): string {
+  const segments = path
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => (segment.startsWith(":") ? ":" : segment));
+
+  return segments.length === 0 ? "/" : `/${segments.join("/")}`;
+}
+
+function createDuplicatePathError(
+  first: { id: string; path: string },
+  second: { id: string; path: string },
+  context?: { ownerId: string; slot: string },
+) {
+  const prefix =
+    first.path === second.path
+      ? `Duplicate route path "${second.path}"`
+      : `Duplicate route path pattern "${first.path}" conflicts with "${second.path}"`;
+
+  if (context) {
+    return new Error(
+      `${prefix} for slot "${context.slot}" under route "${context.ownerId}" with route ids "${first.id}" and "${second.id}".`,
+    );
+  }
+
+  return new Error(`${prefix} for route ids "${first.id}" and "${second.id}".`);
+}
+
+function assertUniqueRoutePathPatterns<T extends { id: string; path: string }>(
+  routes: T[],
+  context?: { ownerId: string; slot: string },
+) {
+  const seen = new Map<string, T>();
+
+  for (const route of routes) {
+    const pattern = toRoutePathPattern(route.path);
+    const first = seen.get(pattern);
+
+    if (first) {
+      throw createDuplicatePathError(first, route, context);
+    }
+
+    seen.set(pattern, route);
+  }
 }
 
 function createSlotRouteId(
@@ -254,6 +300,13 @@ export function compileRoutesFromPaths(
 
     existing.files[fileName] = filePath;
     routes.set(id, existing);
+  }
+
+  assertUniqueRoutePathPatterns([...routes.values()]);
+  for (const [ownerId, ownerSlots] of slotRoutesByOwner.entries()) {
+    for (const [slot, slotRoutes] of ownerSlots.entries()) {
+      assertUniqueRoutePathPatterns(slotRoutes, { ownerId, slot });
+    }
   }
 
   const normalizedRoutes = sortByPath([...routes.values()]);

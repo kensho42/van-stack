@@ -16,6 +16,24 @@ Reserved route filenames:
 
 Bracket params like `[slug]` compile to canonical paths like `:slug`.
 
+Parenthesized directories are pathless route groups. They organize route files and can own `layout.ts`, but they do not add URL segments:
+
+```text
+src/routes/
+  (public)/
+    layout.ts
+    login/
+      page.ts
+  (private)/
+    layout.ts
+    dashboard/
+      page.ts
+```
+
+In that shape, `src/routes/(public)/login/page.ts` matches `/login`, `src/routes/(private)/dashboard/page.ts` matches `/dashboard`, and each branch is wrapped by its group `layout.ts`. Group names stay in route IDs such as `(public)/login`, which keeps manifests, chunk exclusions, and bootstrap route IDs unambiguous. Route groups may be nested.
+
+Duplicate public route patterns are rejected at compile time. For example, `(public)/login/page.ts` and `(private)/login/page.ts` both compile to `/login`, and `(a)/posts/[slug]/page.ts` conflicts with `(b)/posts/[id]/page.ts` because both match the same public pattern.
+
 Pathless `@slot` directories compile as named parallel branches under the nearest owning `layout.ts`:
 
 ```text

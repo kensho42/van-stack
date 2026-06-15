@@ -392,7 +392,19 @@ describe("van-stack/vite virtual routes", () => {
       ].join("\n"),
     );
     app.write(
-      "src/routes/page.ts",
+      "src/routes/(public)/layout.ts",
+      [
+        'import van from "vanjs-core";',
+        "",
+        "const { section } = van.tags;",
+        "",
+        "export default function layout(input) {",
+        '  return section("Grouped public layout ", input.children);',
+        "}",
+      ].join("\n"),
+    );
+    app.write(
+      "src/routes/(public)/page.ts",
       [
         'import van from "vanjs-core";',
         "",
@@ -405,19 +417,19 @@ describe("van-stack/vite virtual routes", () => {
       ].join("\n"),
     );
     app.write(
-      "src/routes/loader.ts",
+      "src/routes/(public)/loader.ts",
       'import { resolve } from "node:path";\nexport default () => resolve(".");\n',
     );
     app.write(
-      "src/routes/route.ts",
+      "src/routes/(public)/route.ts",
       'import { resolve } from "node:path";\nexport default () => new Response(resolve("."));\n',
     );
     app.write(
-      "src/routes/action.ts",
+      "src/routes/(public)/action.ts",
       'import { resolve } from "node:path";\nexport default () => resolve(".");\n',
     );
     app.write(
-      "src/routes/entries.ts",
+      "src/routes/(public)/entries.ts",
       'import { resolve } from "node:path";\nexport default () => [{ path: resolve(".") }];\n',
     );
 
@@ -465,6 +477,7 @@ describe("van-stack/vite virtual routes", () => {
       restoreGlobals();
     }
 
+    expect(root.textContent).toContain("Grouped public layout");
     expect(root.textContent).toContain("Vite CSR root route");
     expect(root.textContent).toContain("Count 2");
   });
