@@ -20,7 +20,7 @@ describe("npm package publishing", () => {
     try {
       const { stdout } = await execFileAsync(
         "npm",
-        ["pack", "--dry-run", "--json"],
+        ["pack", "--dry-run", "--json", "--ignore-scripts"],
         {
           env: {
             ...process.env,
@@ -67,6 +67,7 @@ describe("npm package publishing", () => {
       );
       expect(filePaths).toContain("dist/packages/compiler/src/index.js");
       expect(filePaths).toContain("dist/packages/csr/src/index.js");
+      expect(filePaths).toContain("dist/packages/csr/src/router.js");
       expect(filePaths).toContain("dist/packages/ssr/src/index.js");
       expect(filePaths).toContain("dist/packages/ssg/src/index.js");
       expect(filePaths).toContain("dist/packages/vite/src/index.js");

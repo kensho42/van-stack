@@ -55,10 +55,24 @@ describe("workspace layout", () => {
     expect(rootPackage.exports?.["./compat/node-register"]).toBe(
       "./dist/packages/core/src/compat/node-register.js",
     );
+    expect(rootPackage.exports?.["./csr/router"]).toBe(
+      "./dist/packages/csr/src/router.js",
+    );
     expect(rootPackage.exports?.["./vite/client"]).toBe(
       "./dist/packages/vite/src/client.js",
     );
     expect(existsSync("packages/compiler/package.json")).toBe(false);
+  });
+
+  test("marks package files as tree-shakeable except explicit compat side effects", () => {
+    const rootPackage = JSON.parse(readFileSync("package.json", "utf8")) as {
+      sideEffects?: false | string[];
+    };
+
+    expect(rootPackage.sideEffects).toEqual([
+      "./dist/packages/core/src/compat/bun-preload.js",
+      "./dist/packages/core/src/compat/node-register.js",
+    ]);
   });
 
   test("documents project guidance for coding agents", () => {

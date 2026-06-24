@@ -91,6 +91,8 @@ scroll: {
 
 Pass `scroll` to `startClientApp(...)` or `hydrateApp(...)` to override that policy.
 
+Use `van-stack/csr` for managed CSR app startup. Use `van-stack/csr/router` only when your app owns navigation wiring and rendering and needs the lower-level router APIs directly.
+
 For an emitted browser CSR artifact, add one extra step:
 
 1. call `await writeRouteManifest({ root: "src/routes", chunkedRoutes: true })`

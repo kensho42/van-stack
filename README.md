@@ -160,7 +160,7 @@ Choose the runtime handoff you want:
 
 ```ts
 // CSR shell boot
-import { createRouter } from "van-stack/csr";
+import { createRouter } from "van-stack/csr/router";
 
 const router = createRouter({
   mode: "shell",
@@ -176,6 +176,7 @@ const router = createRouter({
 ```
 
 `createRouter(...)` stays runtime-agnostic. Apps that wire links and `popstate` manually also own their scroll behavior.
+Use `van-stack/csr` for managed CSR app startup. Use `van-stack/csr/router` only when your app owns navigation wiring and rendering and needs the lower-level router APIs directly.
 
 ```ts
 // SSR request rendering
@@ -338,7 +339,7 @@ The generated manifest is the opt-in artifact and chunking path. Node, SSR, SSG,
 Resolver-driven `custom` mode:
 
 ```ts
-import { createRouter } from "van-stack/csr";
+import { createRouter } from "van-stack/csr/router";
 
 const routes = [{ id: "posts/[slug]", path: "/posts/:slug" }];
 

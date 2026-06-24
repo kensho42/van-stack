@@ -33,6 +33,8 @@ CSR runtime mode applies whenever `van-stack/csr` boots a client router:
 
 `startClientApp(...)` and `hydrateApp(...)` also own browser scroll for managed client navigation. The default is `scroll: { onNavigate: "top", onPopState: "preserve", behavior: "auto" }`, which scrolls new client navigations to the top and leaves browser back/forward scroll preservation alone. Pass a partial `scroll` object to override only the values an app needs to change.
 
+Use `van-stack/csr` for managed CSR app startup. Use `van-stack/csr/router` only when your app owns navigation wiring and rendering and needs the lower-level router APIs directly.
+
 These choices are related but separate:
 
 - hydration policy decides how SSR output becomes interactive

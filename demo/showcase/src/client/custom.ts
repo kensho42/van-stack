@@ -1,4 +1,4 @@
-import { applyRouteHead, createRouter } from "van-stack/csr";
+import { applyRouteHead, createRouter } from "van-stack/csr/router";
 
 import type { GalleryPageData } from "../runtime/data";
 import { fetchCustomPageData } from "./custom-data";

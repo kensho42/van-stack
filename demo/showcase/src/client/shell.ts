@@ -1,4 +1,4 @@
-import { createRouter } from "van-stack/csr";
+import { createRouter } from "van-stack/csr/router";
 
 import type { GalleryPageData } from "../runtime/data";
 import { mountShowcasePostInteractions } from "./post-interactions";

@@ -32,6 +32,7 @@ const buildEntries = [
   ],
   ["packages/compiler/src/index.ts", "dist/packages/compiler/src/index.js"],
   ["packages/csr/src/index.ts", "dist/packages/csr/src/index.js"],
+  ["packages/csr/src/router.ts", "dist/packages/csr/src/router.js"],
   ["packages/ssr/src/index.ts", "dist/packages/ssr/src/index.js"],
   ["packages/ssg/src/index.ts", "dist/packages/ssg/src/index.js"],
   ["packages/vite/src/index.ts", "dist/packages/vite/src/index.js"],
