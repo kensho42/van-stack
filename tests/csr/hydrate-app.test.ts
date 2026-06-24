@@ -83,6 +83,155 @@ function createHydrationEnv() {
 }
 
 describe("csr hydrate app", () => {
+  test("scrolls hydrated link navigation to top by default and preserves popstate", async () => {
+    const env = createHydrationEnv();
+    const scrollTo = vi.fn();
+    (env.window as { scrollTo?: typeof scrollTo }).scrollTo = scrollTo;
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/server-html",
+      pathname: "/posts/server-html",
+      params: { slug: "server-html" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "server-html" } },
+    });
+    const load = vi.fn(async (match: { params: Record<string, string> }) => ({
+      post: { slug: match.params.slug },
+    }));
+
+    const app = hydrateApp({
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: env.history,
+      transport: { load },
+      document: env.document as never,
+      window: env.window as never,
+    });
+    await app.ready;
+
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    await env.getClickHandler()?.({
+      button: 0,
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: vi.fn(),
+      target: {
+        closest() {
+          return {
+            href: "https://example.com/posts/next",
+            target: "",
+            download: "",
+          };
+        },
+      },
+    });
+
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+
+    env.window.location.pathname = "/posts/back";
+    await env.getPopstateHandler()?.();
+
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+  });
+
+  test("honors hydrated scroll overrides for forward and popstate navigation", async () => {
+    const env = createHydrationEnv();
+    const scrollTo = vi.fn();
+    (env.window as { scrollTo?: typeof scrollTo }).scrollTo = scrollTo;
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/server-html",
+      pathname: "/posts/server-html",
+      params: { slug: "server-html" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "server-html" } },
+    });
+
+    const app = hydrateApp({
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: env.history,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      scroll: {
+        onNavigate: "preserve",
+        onPopState: "top",
+        behavior: "smooth",
+      },
+      window: env.window as never,
+    });
+    await app.ready;
+
+    await app.router.navigate("/posts/next");
+
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    env.window.location.pathname = "/posts/back";
+    await env.getPopstateHandler()?.();
+
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
+  });
+
+  test("treats missing hydrated scrollTo as a no-op", async () => {
+    const env = createHydrationEnv();
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/server-html",
+      pathname: "/posts/server-html",
+      params: { slug: "server-html" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "server-html" } },
+    });
+
+    const app = hydrateApp({
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: env.history,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      window: env.window as never,
+    });
+    await app.ready;
+
+    await expect(app.router.navigate("/posts/next")).resolves.toEqual(
+      expect.objectContaining({
+        path: "/posts/next",
+      }),
+    );
+  });
+
   test("hydrates from SSR bootstrap and intercepts same-origin navigation", async () => {
     const env = createHydrationEnv();
     const hydrateSpy = vi.fn((dom, bind) => bind(dom));

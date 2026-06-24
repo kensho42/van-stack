@@ -4,7 +4,11 @@ import type {
   RouteDataContext,
   RuntimeRouteDefinition,
 } from "../../packages/core/src/index";
-import type { StartClientAppOptions } from "../../packages/csr/src/index";
+import type {
+  HydrateAppOptions,
+  NavigationScrollOptions,
+  StartClientAppOptions,
+} from "../../packages/csr/src/index";
 
 test("startClientApp accepts eager and lazy route records", () => {
   const eagerOptions: StartClientAppOptions = {
@@ -83,6 +87,54 @@ test("startClientApp accepts readonly generated route arrays", () => {
   >();
   expectTypeOf(options.routes).toMatchTypeOf<
     readonly RuntimeRouteDefinition[]
+  >();
+});
+
+test("startClientApp accepts navigation scroll options", () => {
+  const scroll: NavigationScrollOptions = {
+    onNavigate: "top",
+    onPopState: "preserve",
+    behavior: "instant",
+  };
+  const options: StartClientAppOptions = {
+    mode: "shell",
+    history: {
+      pushState() {},
+    },
+    routes: [
+      {
+        id: "home",
+        path: "/",
+        page() {
+          return "home";
+        },
+      },
+    ],
+    scroll,
+  };
+
+  expectTypeOf(options.scroll).toMatchTypeOf<
+    NavigationScrollOptions | undefined
+  >();
+});
+
+test("hydrateApp accepts navigation scroll options", () => {
+  const options: HydrateAppOptions = {
+    routes: [
+      {
+        id: "home",
+        path: "/",
+      },
+    ],
+    scroll: {
+      onNavigate: "preserve",
+      onPopState: "top",
+      behavior: "smooth",
+    },
+  };
+
+  expectTypeOf(options.scroll).toMatchTypeOf<
+    NavigationScrollOptions | undefined
   >();
 });
 

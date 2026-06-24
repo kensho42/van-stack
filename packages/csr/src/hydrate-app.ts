@@ -3,9 +3,17 @@ import type {
   HistoryLike,
   RouteHydrateModule,
   Router,
+  RouterEntry,
   Transport,
 } from "../../core/src/index";
 import { matchPath as matchCanonicalPath } from "../../core/src/index";
+import {
+  applyNavigationScroll,
+  type NavigationScrollOptions,
+  type NavigationScrollTransition,
+  type NavigationScrollWindowLike,
+  resolveNavigationScrollOptions,
+} from "./navigation-scroll";
 import { type AppRootLike, applyInitialRouteStrategy } from "./route-render";
 import {
   applyRouteHead,
@@ -59,7 +67,7 @@ type WindowLike = {
   };
   addEventListener: (type: "popstate", handler: () => unknown) => void;
   removeEventListener: (type: "popstate", handler: () => unknown) => void;
-};
+} & NavigationScrollWindowLike;
 
 export type HydrateAppOptions = {
   bootstrapSelector?: string;
@@ -67,6 +75,7 @@ export type HydrateAppOptions = {
   history?: HistoryLike;
   rootSelector?: string;
   routes: readonly HydratableRoute[];
+  scroll?: NavigationScrollOptions;
   transport?: Transport;
   window?: WindowLike;
 };
@@ -107,6 +116,15 @@ export type { AppRootLike } from "./route-render";
 export type HydratableRoute = ClientRouteDefinition & {
   hydrate?: RouteHydrateModule;
   files?: ClientRouteDefinition["files"];
+};
+
+type NavigationCompleteSource = NavigationScrollTransition | "load";
+
+type HydrateAppInternalOptions = HydrateAppOptions & {
+  onNavigationComplete?: (
+    entry: RouterEntry,
+    source: NavigationCompleteSource,
+  ) => Promise<void> | void;
 };
 
 function getDocument(document: DocumentLike | undefined) {
@@ -261,9 +279,11 @@ function shouldInterceptNavigation(
 }
 
 export function hydrateApp(options: HydrateAppOptions): HydratedApp {
+  const internalOptions = options as HydrateAppInternalOptions;
   const document = getDocument(options.document);
   const window = getWindow(options.window);
   const history = getHistory(options.history);
+  const navigationScroll = resolveNavigationScrollOptions(options.scroll);
   const bootstrap = readBootstrapPayload(
     document,
     options.bootstrapSelector ?? defaultBootstrapSelector,
@@ -275,7 +295,7 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     );
   }
 
-  const router = createRouter({
+  const baseRouter = createRouter({
     mode: "hydrated",
     routes: options.routes,
     history,
@@ -283,6 +303,43 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     transport: options.transport,
     document: document as never,
   });
+
+  async function completeNavigation(
+    entry: RouterEntry,
+    source: NavigationCompleteSource,
+  ) {
+    await internalOptions.onNavigationComplete?.(entry, source);
+  }
+
+  async function completeScrolledNavigation(
+    entry: RouterEntry,
+    source: NavigationScrollTransition,
+  ) {
+    await completeNavigation(entry, source);
+    applyNavigationScroll(window, navigationScroll, source);
+  }
+
+  const router = {
+    getCurrent() {
+      return baseRouter.getCurrent();
+    },
+    getInternalDataPath(path: string) {
+      return baseRouter.getInternalDataPath(path);
+    },
+    async load(path: string) {
+      const entry = await baseRouter.load(path);
+      await completeNavigation(entry, "load");
+      return entry;
+    },
+    async navigate(path: string) {
+      const entry = await baseRouter.navigate(path);
+      await completeScrolledNavigation(entry, "navigate");
+      return entry;
+    },
+    subscribe(listener) {
+      return baseRouter.subscribe(listener);
+    },
+  } satisfies Router;
   const root = getAppRoot(document, options.rootSelector);
   const matchedRoute = getMatchedRoute(options.routes, bootstrap);
   const bootstrapPath = parseRoutePath(bootstrap.path ?? bootstrap.pathname);
@@ -324,7 +381,8 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
   };
 
   const popstateHandler = async () => {
-    await router.load(getCurrentPath(window));
+    const entry = await baseRouter.load(getCurrentPath(window));
+    await completeScrolledNavigation(entry, "popstate");
   };
 
   document.addEventListener("click", clickHandler);

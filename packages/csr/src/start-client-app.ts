@@ -9,6 +9,12 @@ import {
 } from "../../core/src/index";
 import { hydrateApp } from "./hydrate-app";
 import {
+  applyNavigationScroll,
+  type NavigationScrollOptions,
+  type NavigationScrollWindowLike,
+  resolveNavigationScrollOptions,
+} from "./navigation-scroll";
+import {
   type AppRootLike,
   createRenderQueue,
   enhanceRenderedEntry,
@@ -57,13 +63,14 @@ type WindowLike = {
   };
   addEventListener: (type: "popstate", handler: () => unknown) => void;
   removeEventListener: (type: "popstate", handler: () => unknown) => void;
-};
+} & NavigationScrollWindowLike;
 
 type BaseStartClientAppOptions = {
   document?: ClientDocumentLike;
   history?: HistoryLike;
   rootSelector?: string;
   routes: readonly RuntimeRouteDefinition[];
+  scroll?: NavigationScrollOptions;
   window?: WindowLike;
 };
 
@@ -193,7 +200,11 @@ function shouldInterceptNavigation(
 function createRouterProxy(
   router: Router,
   renderEntry: (entry: RouterEntry) => Promise<unknown>,
+  window: WindowLike,
+  scroll: NavigationScrollOptions | undefined,
 ) {
+  const navigationScroll = resolveNavigationScrollOptions(scroll);
+
   return {
     getCurrent() {
       return router.getCurrent();
@@ -209,6 +220,7 @@ function createRouterProxy(
     async navigate(path: string) {
       const entry = await router.navigate(path);
       await renderEntry(entry);
+      applyNavigationScroll(window, navigationScroll, "navigate");
       return entry;
     },
     subscribe(listener) {
@@ -238,80 +250,35 @@ export function startClientApp(
   );
 
   if (options.mode === "hydrated") {
-    const hydrated = hydrateApp({
+    let booting = true;
+    const hydratedOptions = {
       bootstrapSelector: options.bootstrapSelector,
       document: document as never,
       history,
       rootSelector: options.rootSelector,
       routes: options.routes,
+      scroll: options.scroll,
       transport: options.transport,
       window: window as never,
+      async onNavigationComplete(entry: RouterEntry) {
+        if (!booting) {
+          await renderEntry(entry);
+        }
+      },
+    };
+    const hydrated = hydrateApp({
+      ...hydratedOptions,
     });
     renderEntry.prime(hydrated.router.getCurrent());
-
-    let booting = true;
-    const suppressedPaths = new Set<string>();
-    const unsubscribe = hydrated.router.subscribe((entry) => {
-      if (booting) {
-        return;
-      }
-      if (suppressedPaths.delete(normalizePath(entry.path))) {
-        return;
-      }
-
-      void renderEntry(entry);
-    });
 
     const ready = hydrated.ready.then(() => {
       booting = false;
     });
-    const router = {
-      getCurrent() {
-        return hydrated.router.getCurrent();
-      },
-      getInternalDataPath(path: string) {
-        return hydrated.router.getInternalDataPath(path);
-      },
-      async load(path: string) {
-        const normalizedPath = normalizePath(path);
-        suppressedPaths.add(normalizedPath);
-
-        try {
-          const entry = await hydrated.router.load(path);
-          if (!booting) {
-            await renderEntry(entry);
-          }
-          return entry;
-        } catch (error) {
-          suppressedPaths.delete(normalizedPath);
-          throw error;
-        }
-      },
-      async navigate(path: string) {
-        const normalizedPath = normalizePath(path);
-        suppressedPaths.add(normalizedPath);
-
-        try {
-          const entry = await hydrated.router.navigate(path);
-          if (!booting) {
-            await renderEntry(entry);
-          }
-          return entry;
-        } catch (error) {
-          suppressedPaths.delete(normalizedPath);
-          throw error;
-        }
-      },
-      subscribe(listener) {
-        return hydrated.router.subscribe(listener);
-      },
-    } satisfies Router;
 
     return {
       ready,
-      router,
+      router: hydrated.router,
       dispose() {
-        unsubscribe();
         hydrated.dispose();
       },
     };
@@ -325,7 +292,13 @@ export function startClientApp(
     routes: options.routes,
     transport: options.mode === "custom" ? undefined : options.transport,
   });
-  const router = createRouterProxy(baseRouter, renderEntry);
+  const router = createRouterProxy(
+    baseRouter,
+    renderEntry,
+    window,
+    options.scroll,
+  );
+  const navigationScroll = resolveNavigationScrollOptions(options.scroll);
 
   const clickHandler = async (event: ClickEventLike) => {
     const anchor = getAnchor(event);
@@ -344,6 +317,7 @@ export function startClientApp(
 
   const popstateHandler = async () => {
     await router.load(getCurrentPath(window));
+    applyNavigationScroll(window, navigationScroll, "popstate");
   };
 
   document.addEventListener("click", clickHandler);

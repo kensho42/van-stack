@@ -33,6 +33,8 @@ const app = startClientApp({
 await app.ready;
 ```
 
+Managed CSR navigation scrolls to the top after successful forward navigations and preserves browser back/forward scroll by default. Override with `scroll` when needed, for example `scroll: { onNavigate: "preserve" }`.
+
 The virtual module is generated as browser-safe JavaScript. It points route modules back to the real `src/routes/*` files, keeps official `vanjs-core` and optional `vanjs-ext` imports on the browser packages, and omits server-only route files such as `loader.ts`, `action.ts`, `entries.ts`, and `route.ts`.
 
 ## Compatibility

@@ -146,6 +146,16 @@ const app = startClientApp({
 await app.ready;
 ```
 
+`startClientApp(...)` and `hydrateApp(...)` manage browser scroll on client navigations by default:
+
+```ts
+scroll: {
+  onNavigate: "top",
+  onPopState: "preserve",
+  behavior: "auto",
+}
+```
+
 Choose the runtime handoff you want:
 
 ```ts
@@ -164,6 +174,8 @@ const router = createRouter({
   },
 });
 ```
+
+`createRouter(...)` stays runtime-agnostic. Apps that wire links and `popstate` manually also own their scroll behavior.
 
 ```ts
 // SSR request rendering
@@ -303,6 +315,11 @@ const app = startClientApp({
   mode: "shell",
   routes,
   history: window.history,
+  scroll: {
+    onNavigate: "top",
+    onPopState: "preserve",
+    behavior: "auto",
+  },
 });
 
 await app.ready;
@@ -394,6 +411,8 @@ const app = startClientApp({
 
 await app.ready;
 ```
+
+The managed CSR entrypoints scroll new client navigations to the top and preserve browser back/forward scroll by default. Override `scroll` when an app shell needs a different policy, for example `scroll: { onNavigate: "preserve" }` for a persistent workspace.
 
 `startClientApp({ mode: "hydrated" })` uses `hydrateApp(...)` as the initial SSR handoff orchestrator. `hydrateApp(...)` reads the bootstrap payload, finds the app root, and then applies the default `app` strategy:
 

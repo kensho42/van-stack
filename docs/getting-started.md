@@ -79,6 +79,18 @@ const app = startClientApp({
 await app.ready;
 ```
 
+Managed browser CSR scrolls to the top after successful client navigations and preserves scroll on browser back/forward by default:
+
+```ts
+scroll: {
+  onNavigate: "top",
+  onPopState: "preserve",
+  behavior: "auto",
+}
+```
+
+Pass `scroll` to `startClientApp(...)` or `hydrateApp(...)` to override that policy.
+
 For an emitted browser CSR artifact, add one extra step:
 
 1. call `await writeRouteManifest({ root: "src/routes", chunkedRoutes: true })`

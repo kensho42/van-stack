@@ -244,6 +244,264 @@ function createClientDocument() {
 }
 
 describe("startClientApp", () => {
+  test("scrolls to top after successful shell navigations by default", async () => {
+    const env = createClientDocument();
+    const events: string[] = [];
+    const scrollTo = vi.fn(() => {
+      events.push("scroll");
+    });
+    const page = vi.fn(({ path }: { path: string }) => {
+      events.push(`render:${path}`);
+      return `<article>${path}</article>`;
+    });
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          files: {
+            async page() {
+              return { default: page };
+            },
+          },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/initial",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        scrollTo,
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    await app.router.navigate("/posts/next");
+
+    expect(events).toEqual([
+      "render:/posts/initial",
+      "render:/posts/next",
+      "scroll",
+    ]);
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+    expect(env.root.innerHTML).toContain("<article>/posts/next</article>");
+  });
+
+  test("preserves scroll on popstate by default", async () => {
+    const env = createClientDocument();
+    let popstateHandler: (() => unknown) | undefined;
+    const scrollTo = vi.fn();
+    const testWindow = {
+      location: {
+        origin: "https://example.com",
+        pathname: "/posts/initial",
+        search: "",
+      },
+      addEventListener: vi.fn((type: string, handler: () => unknown) => {
+        if (type === "popstate") {
+          popstateHandler = handler;
+        }
+      }),
+      removeEventListener: vi.fn(),
+      scrollTo,
+    };
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: testWindow as never,
+    });
+
+    await app.ready;
+    testWindow.location.pathname = "/posts/back";
+
+    await popstateHandler?.();
+
+    expect(env.root.innerHTML).toContain("<article>/posts/back</article>");
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  test("honors shell scroll overrides for forward and popstate navigation", async () => {
+    const env = createClientDocument();
+    let popstateHandler: (() => unknown) | undefined;
+    const scrollTo = vi.fn();
+    const window = {
+      location: {
+        origin: "https://example.com",
+        pathname: "/posts/initial",
+        search: "",
+      },
+      addEventListener: vi.fn((type: string, handler: () => unknown) => {
+        if (type === "popstate") {
+          popstateHandler = handler;
+        }
+      }),
+      removeEventListener: vi.fn(),
+      scrollTo,
+    };
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      scroll: {
+        onNavigate: "preserve",
+        onPopState: "top",
+        behavior: "smooth",
+      },
+      window: window as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/next");
+
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    window.location.pathname = "/posts/back";
+    await popstateHandler?.();
+
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
+  });
+
+  test("treats missing scrollTo as a no-op", async () => {
+    const env = createClientDocument();
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/initial",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    await expect(app.router.navigate("/posts/next")).resolves.toEqual(
+      expect.objectContaining({
+        path: "/posts/next",
+      }),
+    );
+  });
+
+  test("scrolls hydrated navigations after the managed app rerenders", async () => {
+    const env = createClientDocument();
+    const events: string[] = [];
+    const scrollTo = vi.fn(() => {
+      events.push("scroll");
+    });
+    const page = vi.fn(({ path }: { path: string }) => {
+      events.push(`render:${path}`);
+      return `<article>${path}</article>`;
+    });
+    env.setBootstrapScript({
+      routeId: "posts/[slug]",
+      path: "/posts/server-html",
+      pathname: "/posts/server-html",
+      params: { slug: "server-html" },
+      hydrationPolicy: "app",
+      data: { post: { slug: "server-html" } },
+    });
+
+    const app = startClientApp({
+      mode: "hydrated",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          files: {
+            async page() {
+              return { default: page };
+            },
+          },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/server-html",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        scrollTo,
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    await app.router.navigate("/posts/next");
+
+    expect(events).toEqual([
+      "render:/posts/server-html",
+      "render:/posts/next",
+      "scroll",
+    ]);
+    expect(env.root.innerHTML).toContain("<article>/posts/next</article>");
+  });
+
   test("renders a shell route from lazy manifest-style route modules", async () => {
     const env = createClientDocument();
     const load = vi.fn(async (match: { params: Record<string, string> }) => ({

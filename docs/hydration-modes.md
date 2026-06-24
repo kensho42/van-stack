@@ -31,6 +31,8 @@ CSR runtime mode applies whenever `van-stack/csr` boots a client router:
 
 `startClientApp({ routes, ... })` is the high-level CSR entrypoint for all three modes. It accepts eager routes, Vite browser routes from `virtual:van-stack/routes`, or lazy manifest routes from `.van-stack/routes.generated.ts`, so the same API can boot a single-bundle CSR app or a route-chunked one.
 
+`startClientApp(...)` and `hydrateApp(...)` also own browser scroll for managed client navigation. The default is `scroll: { onNavigate: "top", onPopState: "preserve", behavior: "auto" }`, which scrolls new client navigations to the top and leaves browser back/forward scroll preservation alone. Pass a partial `scroll` object to override only the values an app needs to change.
+
 These choices are related but separate:
 
 - hydration policy decides how SSR output becomes interactive
