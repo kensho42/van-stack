@@ -17,7 +17,7 @@ The older demo folders remain focused references once you want to inspect one ru
 - `demo/chunked-csr`: focused reference for route-level browser chunking through `.van-stack/routes.generated.ts`, `chunkedRoutes`, `startClientApp({ routes, ... })`, split Bun browser assets, default remount handoff for the hydrated detail route, served secondary chunks, and a `/shell-workbench/overview` slot-route control plane with a pathless `@sidebar`
 - `demo/ssr-blog`: focused reference for a `hydrated` SSR blog route with slug loader, route-level `hydrate.ts` as the low-level enhance hook, bootstrap payload rendering, compiler-loaded filesystem routes, and automatic `app` handoff through `hydrateApp({ routes })`
 - `demo/ssg-site`: focused reference for static generation from route entries discovered under `src/routes`, then exported as static files for generic web servers; run `bun ./demo/ssg-site/build.ts` to write `demo/ssg-site/dist/`
-- `demo/adaptive-nav`: focused reference for replace-vs-stack presentation with filesystem route discovery
+- `demo/adaptive-nav`: focused reference for replace-vs-stack presentation with filesystem route discovery and `navigation.ts` transition, swipe-back, and retention policy
 - `demo/third-party-compat`: focused reference for a workspace library that imports `vanjs-core` and `vanjs-ext` directly, then renders through `van-stack/compat/node-register` in Node SSR and SSG, and `compat/bun-tsconfig.json` in Bun SSR and SSG
 
 First-party demo route modules import `vanjs-core` directly. The compatibility demo adds `vanjs-ext` through `third-party-lib` so the server/static resolver-owned compatibility layer is exercised end to end for both official Van packages.

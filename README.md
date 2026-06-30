@@ -440,6 +440,42 @@ Hydration policy is about how SSR output becomes interactive. CSR mode is about 
 
 Presentation is separate from route matching and data loading. The same route tree can present as `replace` on desktop and `stack` on mobile or Tauri shells.
 
+Stack presentation is opt-in so replace-only apps do not import the stack engine:
+
+```ts
+import { startClientApp } from "van-stack/csr";
+import { stackPresentation } from "van-stack/csr/stack";
+
+const app = startClientApp({
+  mode: "shell",
+  routes,
+  history: window.history,
+  presentation: stackPresentation({
+    platform: "auto",
+    retention: "previous",
+    swipeBack: { enabled: "auto" },
+    transition: "platform",
+  }),
+});
+```
+
+Route-level `navigation.ts` files can provide default stack behavior:
+
+```ts
+// src/routes/posts/[slug]/navigation.ts
+export default {
+  enter: "push",
+  retention: "previous",
+  swipeBack: true,
+  transition: "ios-slide",
+  up: "/posts",
+};
+```
+
+Stack presentation keeps the full in-session route stack internally, while `retention` controls how many views stay mounted in the DOM. The default is `previous`, which keeps the current view plus the immediate previous view so Framework7-style transitions and edge swipe-back can reveal the page underneath. Use `retention: "current"` to prune inactive DOM aggressively, or `retention: "all"` when an app wants every pushed view to remain mounted.
+
+Direct visits such as `/posts/1` render the active route as a single leaf view. The stack is built from in-app navigation history, not inferred from route ancestry. In this release stack presentation is available for `shell` and `custom` CSR apps; hydrated stack handoff is intentionally left for a follow-up.
+
 ## Compatibility And Tooling Notes
 
 Route modules should import Van through the official Van packages:

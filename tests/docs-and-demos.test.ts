@@ -56,6 +56,10 @@ describe("docs and demos", () => {
     expect(readme).toContain("demo/third-party-compat");
     expect(readme).toContain("bun run start");
     expect(readme).toContain("van-stack/vite");
+    expect(readme).toContain("van-stack/csr/stack");
+    expect(readme).toContain("navigation.ts");
+    expect(readme).toContain("swipeBack");
+    expect(readme).toContain("retention");
     expect(readme).toContain("virtual:van-stack/routes");
     expect(readme).toContain(
       'vanStackVite({ routes: { root: "src/routes" } })',
@@ -205,6 +209,9 @@ describe("docs and demos", () => {
     expect(ssgReadme).toContain("bun ./demo/ssg-site/build.ts");
     expect(ssgReadme).toContain("dist/");
     expect(adaptiveNavReadme).toContain("adaptive");
+    expect(adaptiveNavReadme).toContain("navigation.ts");
+    expect(adaptiveNavReadme).toContain("swipe-back");
+    expect(adaptiveNavReadme).toContain("retention");
     expect(readFileSync("demo/ssr-blog/README.md", "utf8")).toContain(
       "low-level enhance hook",
     );

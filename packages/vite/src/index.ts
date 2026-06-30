@@ -26,6 +26,7 @@ const csrRouteFileOrder = [
   "page",
   "hydrate",
   "meta",
+  "navigation",
   "error",
 ] as const satisfies readonly RouteFileKind[];
 

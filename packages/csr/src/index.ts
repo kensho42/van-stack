@@ -4,6 +4,11 @@ export type {
   NavigationScrollOptions,
   NavigationScrollTarget,
 } from "./navigation-scroll";
+export type {
+  ClientNavigationAction,
+  ClientNavigationIntent,
+  ClientPresentation,
+} from "./presentation";
 export * from "./router";
 export * from "./start-client-app";
 

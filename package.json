@@ -19,6 +19,7 @@
     "./compat/node-register": "./dist/packages/core/src/compat/node-register.js",
     "./csr": "./dist/packages/csr/src/index.js",
     "./csr/router": "./dist/packages/csr/src/router.js",
+    "./csr/stack": "./dist/packages/csr/src/stack.js",
     "./ssr": "./dist/packages/ssr/src/index.js",
     "./ssg": "./dist/packages/ssg/src/index.js",
     "./vite": "./dist/packages/vite/src/index.js",

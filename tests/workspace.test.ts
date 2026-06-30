@@ -14,6 +14,7 @@ const requiredFiles = [
   "packages/core/src/compat/node-register.ts",
   "packages/compiler/src/index.ts",
   "packages/csr/src/index.ts",
+  "packages/csr/src/stack.ts",
   "packages/ssr/src/index.ts",
   "packages/ssg/src/index.ts",
   "packages/vite/src/client.ts",
@@ -57,6 +58,9 @@ describe("workspace layout", () => {
     );
     expect(rootPackage.exports?.["./csr/router"]).toBe(
       "./dist/packages/csr/src/router.js",
+    );
+    expect(rootPackage.exports?.["./csr/stack"]).toBe(
+      "./dist/packages/csr/src/stack.js",
     );
     expect(rootPackage.exports?.["./vite/client"]).toBe(
       "./dist/packages/vite/src/client.js",

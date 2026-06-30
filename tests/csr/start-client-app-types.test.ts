@@ -2,6 +2,7 @@ import { expectTypeOf, test } from "vitest";
 
 import type {
   RouteDataContext,
+  RouteNavigation,
   RuntimeRouteDefinition,
 } from "../../packages/core/src/index";
 import type {
@@ -9,6 +10,7 @@ import type {
   NavigationScrollOptions,
   StartClientAppOptions,
 } from "../../packages/csr/src/index";
+import { stackPresentation } from "../../packages/csr/src/stack";
 
 test("startClientApp accepts eager and lazy route records", () => {
   const eagerOptions: StartClientAppOptions = {
@@ -116,6 +118,90 @@ test("startClientApp accepts navigation scroll options", () => {
   expectTypeOf(options.scroll).toMatchTypeOf<
     NavigationScrollOptions | undefined
   >();
+});
+
+test("startClientApp accepts stack presentation for shell and custom modes only", () => {
+  const shellOptions: StartClientAppOptions = {
+    mode: "shell",
+    history: {
+      pushState() {},
+    },
+    routes: [
+      {
+        id: "home",
+        path: "/",
+        page() {
+          return "home";
+        },
+      },
+    ],
+    presentation: stackPresentation(),
+  };
+  const customOptions: StartClientAppOptions = {
+    mode: "custom",
+    history: {
+      pushState() {},
+    },
+    routes: shellOptions.routes,
+    presentation: stackPresentation({
+      duration: 240,
+      platform: "auto",
+      retention: "previous",
+      swipeBack: {
+        activeArea: 30,
+        commitRatio: 0.5,
+        enabled: "auto",
+        fastSwipeDistance: 10,
+        fastSwipeMs: 300,
+        opacity: true,
+        shadow: true,
+        threshold: 0,
+      },
+      transition: "platform",
+    }),
+  };
+
+  expectTypeOf(shellOptions.presentation).toMatchTypeOf<object | undefined>();
+  expectTypeOf(customOptions.presentation).toMatchTypeOf<object | undefined>();
+
+  const hydratedOptions = {
+    mode: "hydrated",
+    history: {
+      pushState() {},
+    },
+    routes: shellOptions.routes,
+    bootstrap: {
+      pathname: "/",
+      hydrationPolicy: "app",
+      data: undefined,
+    },
+    presentation: stackPresentation(),
+  };
+
+  expectTypeOf(hydratedOptions).not.toMatchTypeOf<StartClientAppOptions>();
+});
+
+test("routes accept navigation policy modules", () => {
+  const navigation: RouteNavigation = {
+    animate: true,
+    enter: "push",
+    retention: "previous",
+    swipeBack: true,
+    transition: "ios-slide",
+    up: "/posts",
+  };
+  const route = {
+    id: "posts/[slug]",
+    path: "/posts/:slug",
+    navigation,
+    files: {
+      async navigation() {
+        return { default: navigation };
+      },
+    },
+  } satisfies RuntimeRouteDefinition;
+
+  expectTypeOf(route).toMatchTypeOf<RuntimeRouteDefinition>();
 });
 
 test("hydrateApp accepts navigation scroll options", () => {

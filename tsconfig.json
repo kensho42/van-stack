@@ -9,6 +9,7 @@
       "van-stack": ["packages/core/src/index.ts"],
       "van-stack/compiler": ["packages/compiler/src/index.ts"],
       "van-stack/csr": ["packages/csr/src/index.ts"],
+      "van-stack/csr/stack": ["packages/csr/src/stack.ts"],
       "van-stack/ssr": ["packages/ssr/src/index.ts"],
       "van-stack/ssg": ["packages/ssg/src/index.ts"],
       "van-stack/vite": ["packages/vite/src/index.ts"],

@@ -12,6 +12,7 @@ Reserved route filenames:
 - `action.ts`
 - `entries.ts`
 - `meta.ts`
+- `navigation.ts`
 - `error.ts`
 
 Bracket params like `[slug]` compile to canonical paths like `:slug`.
@@ -63,11 +64,25 @@ Named slot branches support these route files:
 - `loader.ts`
 - `error.ts`
 
-Named slots do not own `meta.ts`, `route.ts`, `entries.ts`, or `action.ts`. Those stay on the default branch.
+Named slots do not own `meta.ts`, `navigation.ts`, `route.ts`, `entries.ts`, or `action.ts`. Those stay on the default branch.
 
 Helpers such as `_components` are ignored unless they use a reserved filename.
 
 `meta.ts` is the route-level place for page metadata such as title, description, and canonical URL.
+
+`navigation.ts` is client presentation metadata for stack navigation. Its default export may set `enter` to `push`, `replace`, or `reset`, provide an `up` fallback path, choose a transition, toggle swipe-back, and choose DOM retention:
+
+```ts
+export default {
+  enter: "push",
+  retention: "previous",
+  swipeBack: true,
+  transition: "ios-slide",
+  up: "/posts",
+};
+```
+
+Built-in stack transitions are `platform`, `ios-slide`, `android-fade-through`, `cover`, `fade`, and `none`. Unknown transition names are preserved as custom CSS hooks. Retention may be `current`, `previous`, or `all`; the default is `previous`.
 
 `page.ts` receives `{ data, params, query, path, pathname }`. `data` is the resolved route data when the active runtime provides it. `params` comes from bracket segments such as `[slug]`. `query` is a `URLSearchParams` for the current URL. `path` includes the query string, while `pathname` excludes it.
 

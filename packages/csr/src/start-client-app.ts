@@ -14,6 +14,11 @@ import {
   type NavigationScrollWindowLike,
   resolveNavigationScrollOptions,
 } from "./navigation-scroll";
+import type {
+  ClientNavigationAction,
+  ClientNavigationIntent,
+  ClientPresentation,
+} from "./presentation";
 import {
   type AppRootLike,
   createRenderQueue,
@@ -77,16 +82,19 @@ type BaseStartClientAppOptions = {
 type StartHydratedClientAppOptions = BaseStartClientAppOptions & {
   bootstrapSelector?: string;
   mode: "hydrated";
+  presentation?: never;
   transport?: Transport;
 };
 
 type StartShellClientAppOptions = BaseStartClientAppOptions & {
   mode: "shell";
+  presentation?: ClientPresentation;
   transport?: Transport;
 };
 
 type StartCustomClientAppOptions = BaseStartClientAppOptions & {
   mode: "custom";
+  presentation?: ClientPresentation;
   resolve?: Resolve;
 };
 
@@ -229,6 +237,73 @@ function createRouterProxy(
   } satisfies Router;
 }
 
+function createPresentedRouter(
+  router: Router,
+  presentation: ClientPresentation,
+  context: {
+    history: HistoryLike;
+    root: AppRootLike;
+    routes: readonly RuntimeRouteDefinition[];
+    window: WindowLike;
+  },
+  scroll: NavigationScrollOptions | undefined,
+) {
+  const navigationScroll = resolveNavigationScrollOptions(scroll);
+  let renderedEntry: RouterEntry | null = null;
+
+  const loadWithPresentation = async (
+    path: string,
+    intent: ClientNavigationIntent,
+    action?: ClientNavigationAction,
+  ) => {
+    const entry = await router.load(path);
+    const from = renderedEntry;
+    await presentation.render({
+      action,
+      entry,
+      from,
+      history: context.history,
+      intent,
+      navigate: navigateWithPresentation,
+      root: context.root,
+      routes: context.routes,
+      window: context.window,
+    });
+    renderedEntry = entry;
+    return entry;
+  };
+
+  const navigateWithPresentation = async (
+    path: string,
+    action?: ClientNavigationAction,
+  ) => {
+    const entry = await loadWithPresentation(path, "navigate", action);
+    applyNavigationScroll(context.window, navigationScroll, "navigate");
+    return entry;
+  };
+
+  return {
+    loadWithPresentation,
+    router: {
+      getCurrent() {
+        return router.getCurrent();
+      },
+      getInternalDataPath(path: string) {
+        return router.getInternalDataPath(path);
+      },
+      load(path: string) {
+        return loadWithPresentation(path, "load");
+      },
+      navigate(path: string) {
+        return navigateWithPresentation(path);
+      },
+      subscribe(listener) {
+        return router.subscribe(listener);
+      },
+    } satisfies Router,
+  };
+}
+
 export function startClientApp(
   options: StartClientAppOptions,
 ): StartedClientApp {
@@ -250,6 +325,12 @@ export function startClientApp(
   );
 
   if (options.mode === "hydrated") {
+    if ("presentation" in options && options.presentation) {
+      throw new Error(
+        "Stack presentation is not supported for hydrated mode in this release.",
+      );
+    }
+
     let booting = true;
     const hydratedOptions = {
       bootstrapSelector: options.bootstrapSelector,
@@ -292,12 +373,22 @@ export function startClientApp(
     routes: options.routes,
     transport: options.mode === "custom" ? undefined : options.transport,
   });
-  const router = createRouterProxy(
-    baseRouter,
-    renderEntry,
-    window,
-    options.scroll,
-  );
+  const presented =
+    options.presentation &&
+    createPresentedRouter(
+      baseRouter,
+      options.presentation,
+      {
+        history,
+        root,
+        routes: options.routes,
+        window,
+      },
+      options.scroll,
+    );
+  const router =
+    presented?.router ??
+    createRouterProxy(baseRouter, renderEntry, window, options.scroll);
   const navigationScroll = resolveNavigationScrollOptions(options.scroll);
 
   const clickHandler = async (event: ClickEventLike) => {
@@ -316,7 +407,11 @@ export function startClientApp(
   };
 
   const popstateHandler = async () => {
-    await router.load(getCurrentPath(window));
+    if (presented) {
+      await presented.loadWithPresentation(getCurrentPath(window), "popstate");
+    } else {
+      await router.load(getCurrentPath(window));
+    }
     applyNavigationScroll(window, navigationScroll, "popstate");
   };
 
@@ -324,11 +419,18 @@ export function startClientApp(
   window.addEventListener("popstate", popstateHandler);
 
   return {
-    ready: router.load(normalizePath(getCurrentPath(window))).then(() => {}),
+    ready: (presented
+      ? presented.loadWithPresentation(
+          normalizePath(getCurrentPath(window)),
+          "load",
+        )
+      : router.load(normalizePath(getCurrentPath(window)))
+    ).then(() => {}),
     router,
     dispose() {
       document.removeEventListener("click", clickHandler);
       window.removeEventListener("popstate", popstateHandler);
+      options.presentation?.dispose?.();
     },
   };
 }

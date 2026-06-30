@@ -39,6 +39,7 @@ const routeFileOrder: Exclude<RouteFileKind, "layout">[] = [
   "action",
   "entries",
   "meta",
+  "navigation",
   "error",
 ];
 

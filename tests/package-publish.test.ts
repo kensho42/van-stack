@@ -68,6 +68,7 @@ describe("npm package publishing", () => {
       expect(filePaths).toContain("dist/packages/compiler/src/index.js");
       expect(filePaths).toContain("dist/packages/csr/src/index.js");
       expect(filePaths).toContain("dist/packages/csr/src/router.js");
+      expect(filePaths).toContain("dist/packages/csr/src/stack.js");
       expect(filePaths).toContain("dist/packages/ssr/src/index.js");
       expect(filePaths).toContain("dist/packages/ssg/src/index.js");
       expect(filePaths).toContain("dist/packages/vite/src/index.js");
@@ -91,5 +92,9 @@ describe("npm package publishing", () => {
     expect(csrBundle).not.toContain("actual-vanjs-ext");
     expect(csrBundle).not.toContain("van-stack/render");
     expect(csrBundle).not.toContain("bindRenderEnv");
+    expect(csrBundle).not.toContain("__VAN_STACK_NATIVE_NAV_SENTINEL__");
+
+    const stackBundle = readFileSync("dist/packages/csr/src/stack.js", "utf8");
+    expect(stackBundle).toContain("__VAN_STACK_NATIVE_NAV_SENTINEL__");
   });
 });

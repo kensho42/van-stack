@@ -417,6 +417,10 @@ describe("van-stack/vite virtual routes", () => {
       ].join("\n"),
     );
     app.write(
+      "src/routes/(public)/navigation.ts",
+      "export default { enter: 'push', up: '/' };\n",
+    );
+    app.write(
       "src/routes/(public)/loader.ts",
       'import { resolve } from "node:path";\nexport default () => resolve(".");\n',
     );
@@ -462,6 +466,7 @@ describe("van-stack/vite virtual routes", () => {
     expect(bundleCode).not.toContain("van-stack/compiler");
     expect(bundleCode).not.toContain("node:path");
     expect(bundleCode).not.toContain("as const");
+    expect(bundleCode).toContain('enter: "push"');
 
     const html = readFileSync(join(app.appRoot, "dist", "index.html"), "utf8");
     const entryMatch = /src="\/([^"]+\.js)"/.exec(html);

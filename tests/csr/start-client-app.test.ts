@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { startClientApp } from "../../packages/csr/src/index";
+import { stackPresentation } from "../../packages/csr/src/stack";
 
 type HeadNode = {
   attributes: Map<string, string>;
@@ -12,10 +13,27 @@ type HeadNode = {
 };
 
 type RootNode = {
+  addEventListener: (
+    type: string,
+    listener: (event: Record<string, unknown>) => unknown,
+  ) => void;
+  attributes: Map<string, string>;
+  classList: {
+    add: (...names: string[]) => void;
+    remove: (...names: string[]) => void;
+  };
   children: unknown[];
+  dispatchEvent: (type: string, event: Record<string, unknown>) => void;
+  getBoundingClientRect: () => { left: number; width: number };
   innerHTML: string;
   querySelector?: (selector: string) => unknown;
+  removeAttribute: (name: string) => void;
+  removeEventListener: (
+    type: string,
+    listener: (event: Record<string, unknown>) => unknown,
+  ) => void;
   replaceChildren: (...children: unknown[]) => void;
+  setAttribute: (name: string, value: string) => void;
 };
 
 type ViewChild = ViewNode | string;
@@ -96,9 +114,51 @@ function createViewNode(
 }
 
 function createRootNode(): RootNode {
+  const listeners = new Map<
+    string,
+    Set<(event: Record<string, unknown>) => unknown>
+  >();
   const root: RootNode = {
+    attributes: new Map<string, string>(),
     children: [],
+    classList: {
+      add(...names: string[]) {
+        const classes = new Set(
+          (root.attributes.get("class") ?? "").split(/\s+/).filter(Boolean),
+        );
+        for (const name of names) classes.add(name);
+        root.attributes.set("class", [...classes].join(" "));
+      },
+      remove(...names: string[]) {
+        const classes = new Set(
+          (root.attributes.get("class") ?? "").split(/\s+/).filter(Boolean),
+        );
+        for (const name of names) classes.delete(name);
+        if (classes.size) {
+          root.attributes.set("class", [...classes].join(" "));
+        } else {
+          root.attributes.delete("class");
+        }
+      },
+    },
     innerHTML: "",
+    addEventListener(type, listener) {
+      const registered = listeners.get(type) ?? new Set();
+      registered.add(listener);
+      listeners.set(type, registered);
+    },
+    dispatchEvent(type, event) {
+      for (const listener of listeners.get(type) ?? []) {
+        listener({
+          target: root,
+          preventDefault() {},
+          ...event,
+        });
+      }
+    },
+    getBoundingClientRect() {
+      return { left: 0, width: 400 };
+    },
     querySelector(selector: string) {
       for (const child of root.children) {
         if (
@@ -122,9 +182,18 @@ function createRootNode(): RootNode {
 
       return null;
     },
+    removeAttribute(name) {
+      root.attributes.delete(name);
+    },
+    removeEventListener(type, listener) {
+      listeners.get(type)?.delete(listener);
+    },
     replaceChildren(...children: unknown[]) {
       this.children = [...children];
       this.innerHTML = children.map((child) => renderViewChild(child)).join("");
+    },
+    setAttribute(name, value) {
+      root.attributes.set(name, value);
     },
   };
 
@@ -438,6 +507,551 @@ describe("startClientApp", () => {
         path: "/posts/next",
       }),
     );
+  });
+
+  test("stack presentation treats direct entry as a single leaf view", async () => {
+    const env = createClientDocument();
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({ styles: false }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/1",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(1);
+    expect(env.root.innerHTML).toContain(
+      'data-van-stack-stack-position="current"',
+    );
+    expect(env.root.innerHTML).not.toContain("<article>/posts</article>");
+  });
+
+  test("stack presentation pushes route changes when navigation policy requests push", async () => {
+    const env = createClientDocument();
+    const pushState = vi.fn();
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { pushState },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({ styles: false }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+
+    expect(pushState).toHaveBeenCalledWith(
+      { path: "/posts/1" },
+      "",
+      "/posts/1",
+    );
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(2);
+    expect(env.root.innerHTML).toContain(
+      'data-van-stack-stack-position="previous"',
+    );
+    expect(env.root.innerHTML).toContain("<article>/posts</article>");
+    expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
+  });
+
+  test("stack presentation replaces the active view when navigation policy requests replace", async () => {
+    const env = createClientDocument();
+    const replaceState = vi.fn();
+
+    const app = startClientApp({
+      mode: "custom",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "replace", up: "/posts" },
+        },
+      ],
+      history: { pushState: vi.fn(), replaceState } as never,
+      presentation: stackPresentation({ styles: false }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/1",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/2");
+
+    expect(replaceState).toHaveBeenCalledWith(
+      { path: "/posts/2" },
+      "",
+      "/posts/2",
+    );
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(1);
+    expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
+    expect(env.root.innerHTML).toContain("<article>/posts/2</article>");
+  });
+
+  test("stack presentation preserves previous views when replacing the active view", async () => {
+    const env = createClientDocument();
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          files: {
+            async navigation() {
+              return { default: { enter: "replace", up: "/posts" } };
+            },
+          },
+        },
+      ],
+      history: { pushState: vi.fn(), replaceState: vi.fn() } as never,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({
+        styles: false,
+        action({ from, intent, routeNavigation }) {
+          if (intent === "popstate") return "pop";
+          if (intent === "load") return "replace";
+          if (routeNavigation?.up === "/posts" && from?.pathname === "/posts") {
+            return "push";
+          }
+          return routeNavigation?.enter ?? "replace";
+        },
+      }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+    await app.router.navigate("/posts/2");
+
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(2);
+    expect(env.root.innerHTML).toContain("<article>/posts</article>");
+    expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
+    expect(env.root.innerHTML).toContain("<article>/posts/2</article>");
+  });
+
+  test("stack presentation maps popstate to an existing previous view", async () => {
+    const env = createClientDocument();
+    let popstateHandler: (() => unknown) | undefined;
+    const testWindow = {
+      location: {
+        origin: "https://example.com",
+        pathname: "/posts",
+        search: "",
+      },
+      addEventListener: vi.fn((type: string, handler: () => unknown) => {
+        if (type === "popstate") {
+          popstateHandler = handler;
+        }
+      }),
+      removeEventListener: vi.fn(),
+    };
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({ styles: false }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: testWindow as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+    testWindow.location.pathname = "/posts";
+
+    await popstateHandler?.();
+
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(1);
+    expect(env.root.innerHTML).toContain("<article>/posts</article>");
+    expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
+  });
+
+  test("stack presentation keeps Framework7-style page positions with previous retention", async () => {
+    const env = createClientDocument();
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({
+        animate: false,
+        retention: "previous",
+        styles: false,
+      }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+    await app.router.navigate("/posts/2");
+
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(2);
+    expect(env.root.innerHTML).not.toContain("<article>/posts</article>");
+    expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
+    expect(env.root.innerHTML).toContain("<article>/posts/2</article>");
+    expect(env.root.innerHTML).toContain("van-stack-page-previous");
+    expect(env.root.innerHTML).toContain("van-stack-page-current");
+  });
+
+  test("stack presentation can pop from pruned internal history", async () => {
+    const env = createClientDocument();
+    let popstateHandler: (() => unknown) | undefined;
+    const testWindow = {
+      location: {
+        origin: "https://example.com",
+        pathname: "/posts",
+        search: "",
+      },
+      addEventListener: vi.fn((type: string, handler: () => unknown) => {
+        if (type === "popstate") {
+          popstateHandler = handler;
+        }
+      }),
+      removeEventListener: vi.fn(),
+    };
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({
+        animate: false,
+        retention: "current",
+        styles: false,
+      }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: testWindow as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+    await app.router.navigate("/posts/2");
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(1);
+    expect(env.root.innerHTML).toContain("<article>/posts/2</article>");
+
+    testWindow.location.pathname = "/posts/1";
+    await popstateHandler?.();
+
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(1);
+    expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
+    expect(env.root.innerHTML).not.toContain("<article>/posts/2</article>");
+  });
+
+  test("stack presentation commits edge swipe-back and suppresses matching popstate replay", async () => {
+    const env = createClientDocument();
+    const back = vi.fn();
+    const renderPostIndex = vi.fn(({ path }: { path: string }) => {
+      return `<article>${path}</article>`;
+    });
+    let popstateHandler: (() => unknown) | undefined;
+    const testWindow = {
+      location: {
+        origin: "https://example.com",
+        pathname: "/posts",
+        search: "",
+      },
+      addEventListener: vi.fn((type: string, handler: () => unknown) => {
+        if (type === "popstate") {
+          popstateHandler = handler;
+        }
+      }),
+      removeEventListener: vi.fn(),
+    };
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page: renderPostIndex,
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { back, pushState: vi.fn() } as never,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({
+        animate: false,
+        swipeBack: { enabled: true },
+        styles: false,
+      }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: testWindow as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+
+    env.root.dispatchEvent("pointerdown", {
+      pageX: 10,
+      pageY: 20,
+      target: env.root,
+    });
+    env.root.dispatchEvent("pointermove", {
+      pageX: 260,
+      pageY: 24,
+      target: env.root,
+    });
+    env.root.dispatchEvent("pointerup", {
+      pageX: 260,
+      pageY: 24,
+      target: env.root,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(env.root.innerHTML).toContain("<article>/posts</article>");
+    expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
+
+    testWindow.location.pathname = "/posts";
+    await popstateHandler?.();
+
+    expect(renderPostIndex).toHaveBeenCalledTimes(1);
+    expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(1);
+    expect(env.root.innerHTML).toContain("<article>/posts</article>");
+  });
+
+  test("stack presentation resets short swipe-back gestures and honors opt-out targets", async () => {
+    const env = createClientDocument();
+    const back = vi.fn();
+    const blockedTarget = {
+      closest(selector: string) {
+        return selector === "[data-van-stack-no-swipe-back]" ? {} : null;
+      },
+      matches() {
+        return false;
+      },
+    };
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { back, pushState: vi.fn() } as never,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({
+        animate: false,
+        swipeBack: { enabled: true },
+        styles: false,
+      }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+
+    env.root.dispatchEvent("pointerdown", {
+      pageX: 10,
+      pageY: 20,
+      target: env.root,
+    });
+    env.root.dispatchEvent("pointermove", {
+      pageX: 40,
+      pageY: 21,
+      target: env.root,
+    });
+    env.root.dispatchEvent("pointerup", {
+      pageX: 40,
+      pageY: 21,
+      target: env.root,
+    });
+
+    env.root.dispatchEvent("pointerdown", {
+      pageX: 10,
+      pageY: 20,
+      target: blockedTarget,
+    });
+    env.root.dispatchEvent("pointermove", {
+      pageX: 260,
+      pageY: 24,
+      target: blockedTarget,
+    });
+    env.root.dispatchEvent("pointerup", {
+      pageX: 260,
+      pageY: 24,
+      target: blockedTarget,
+    });
+
+    expect(back).not.toHaveBeenCalled();
+    expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
   });
 
   test("scrolls hydrated navigations after the managed app rerenders", async () => {

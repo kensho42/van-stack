@@ -52,6 +52,7 @@ describe("filesystem route compiler", () => {
       "/src/routes/posts/[slug]/loader.ts",
       "/src/routes/posts/[slug]/route.ts",
       "/src/routes/posts/[slug]/meta.ts",
+      "/src/routes/posts/[slug]/navigation.ts",
       "/src/routes/posts/[slug]/error.ts",
     ]);
 
@@ -66,6 +67,7 @@ describe("filesystem route compiler", () => {
           loader: "/src/routes/posts/[slug]/loader.ts",
           route: "/src/routes/posts/[slug]/route.ts",
           meta: "/src/routes/posts/[slug]/meta.ts",
+          navigation: "/src/routes/posts/[slug]/navigation.ts",
           error: "/src/routes/posts/[slug]/error.ts",
         },
         layoutChain: ["posts"],
@@ -229,6 +231,7 @@ describe("filesystem route compiler", () => {
     app.write("src/routes/posts/[slug]/loader.ts");
     app.write("src/routes/posts/[slug]/route.ts");
     app.write("src/routes/posts/[slug]/meta.ts");
+    app.write("src/routes/posts/[slug]/navigation.ts");
 
     const manifest = await buildRouteManifest({ root: app.routesRoot });
 
@@ -249,6 +252,9 @@ describe("filesystem route compiler", () => {
     );
     expect(manifest.code).toContain(
       'meta: () => import("../src/routes/posts/[slug]/meta.js")',
+    );
+    expect(manifest.code).toContain(
+      'navigation: () => import("../src/routes/posts/[slug]/navigation.js")',
     );
     expect(manifest.code).toContain(
       'layoutChain: [() => import("../src/routes/posts/layout.js")]',
@@ -389,6 +395,10 @@ describe("filesystem route compiler", () => {
       "src/routes/posts/[slug]/loader.ts",
       "export default async function loader() { return { ok: true }; }\n",
     );
+    app.write(
+      "src/routes/posts/[slug]/navigation.ts",
+      "export default { enter: 'push', up: '/posts' };\n",
+    );
 
     const routes = await loadRoutes({ root: app.routesRoot });
 
@@ -400,6 +410,7 @@ describe("filesystem route compiler", () => {
     expect(typeof routes[0]?.files?.page).toBe("function");
     expect(typeof routes[0]?.files?.hydrate).toBe("function");
     expect(typeof routes[0]?.files?.loader).toBe("function");
+    expect(typeof routes[0]?.files?.navigation).toBe("function");
     expect(routes[0]?.layoutChain).toHaveLength(1);
     expect(
       existsSync(join(app.appRoot, ".van-stack", "routes.generated.ts")),

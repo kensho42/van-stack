@@ -13,6 +13,7 @@ export type RouteFileKind =
   | "action"
   | "entries"
   | "meta"
+  | "navigation"
   | "error";
 
 export type SlotRouteFileKind =
@@ -68,6 +69,30 @@ export type RouteMetaModule = (
   input: RouteDataContext,
 ) => Awaitable<RouteMeta | undefined>;
 
+export type RouteNavigationAction = "push" | "replace" | "reset";
+
+export type RouteNavigationTransition =
+  | "platform"
+  | "ios-slide"
+  | "android-fade-through"
+  | "cover"
+  | "fade"
+  | "none"
+  | (string & {});
+
+export type RouteNavigationRetention = "current" | "previous" | "all";
+
+export type RouteNavigation = {
+  animate?: boolean;
+  enter?: RouteNavigationAction;
+  retention?: RouteNavigationRetention;
+  swipeBack?: boolean;
+  transition?: RouteNavigationTransition;
+  up?: string;
+};
+
+export type RouteNavigationModule = RouteNavigation;
+
 export type RoutePageModule = (input: RouteDataContext) => Awaitable<unknown>;
 
 export type RouteHydrateModule = (
@@ -117,6 +142,7 @@ export type RuntimeRouteFiles = {
   hydrate?: RouteModuleLoader<RouteHydrateModule>;
   loader?: RouteModuleLoader<RouteLoaderModule>;
   meta?: RouteModuleLoader<RouteMetaModule>;
+  navigation?: RouteModuleLoader<RouteNavigationModule>;
   page?: RouteModuleLoader<RoutePageModule>;
   route?: RouteModuleLoader<RouteHandlerModule>;
 };
@@ -132,6 +158,7 @@ export type RuntimeRouteDefinition = {
   hydrate?: RouteHydrateModule;
   loader?: RouteLoaderModule;
   meta?: RouteMetaModule;
+  navigation?: RouteNavigation;
   page?: RoutePageModule;
   route?: RouteHandlerModule;
   files?: RuntimeRouteFiles;
@@ -171,6 +198,8 @@ export type RouteDefinition = {
 
 export type HistoryLike = {
   pushState: (state: unknown, unused: string, url?: string) => void;
+  replaceState?: (state: unknown, unused: string, url?: string) => void;
+  back?: () => void;
 };
 
 export type RouteMatch = {

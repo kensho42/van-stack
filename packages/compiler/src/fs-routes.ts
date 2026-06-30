@@ -17,6 +17,7 @@ export const reservedRouteFileKinds: RouteFileKind[] = [
   "action",
   "entries",
   "meta",
+  "navigation",
   "error",
 ];
 
