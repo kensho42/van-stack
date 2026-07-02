@@ -605,6 +605,76 @@ describe("startClientApp", () => {
     expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
   });
 
+  test("stack presentation applies target positions while push transition is active", async () => {
+    vi.useFakeTimers();
+    try {
+      const env = createClientDocument();
+      vi.stubGlobal("document", {
+        createElement(tagName: string) {
+          return createViewNode(tagName, {}, []);
+        },
+      });
+
+      const app = startClientApp({
+        mode: "shell",
+        routes: [
+          {
+            id: "posts/index",
+            path: "/posts",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+          },
+          {
+            id: "posts/[slug]",
+            path: "/posts/:slug",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+            navigation: { enter: "push", up: "/posts" },
+          },
+        ],
+        history: { pushState: vi.fn() },
+        transport: { load: vi.fn(async () => ({ ok: true })) },
+        presentation: stackPresentation({
+          duration: 320,
+          styles: false,
+        }),
+        document: env.document as never,
+        rootSelector: '[data-van-stack-app-root=""]',
+        window: {
+          location: {
+            origin: "https://example.com",
+            pathname: "/posts",
+            search: "",
+          },
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+        } as never,
+      });
+
+      await app.ready;
+      const navigation = app.router.navigate("/posts/1");
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(env.root.attributes.get("class")).toContain(
+        "van-stack-transition-ios-slide-forward",
+      );
+      expect(env.root.innerHTML).toContain(
+        'data-van-stack-stack-position="previous" data-van-stack-path="/posts"',
+      );
+      expect(env.root.innerHTML).toContain(
+        'data-van-stack-stack-position="current" data-van-stack-path="/posts/1"',
+      );
+
+      await vi.advanceTimersByTimeAsync(320);
+      await navigation;
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+
   test("stack presentation replaces the active view when navigation policy requests replace", async () => {
     const env = createClientDocument();
     const replaceState = vi.fn();
@@ -962,6 +1032,259 @@ describe("startClientApp", () => {
     expect(renderPostIndex).toHaveBeenCalledTimes(1);
     expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(1);
     expect(env.root.innerHTML).toContain("<article>/posts</article>");
+  });
+
+  test("stack presentation settles committed swipe-back before updating history", async () => {
+    vi.useFakeTimers();
+    const env = createClientDocument();
+    const back = vi.fn();
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { back, pushState: vi.fn() } as never,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({
+        duration: 320,
+        swipeBack: { enabled: true },
+        styles: false,
+      }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+
+    env.root.dispatchEvent("pointerdown", {
+      pageX: 10,
+      pageY: 20,
+      target: env.root,
+    });
+    env.root.dispatchEvent("pointermove", {
+      pageX: 260,
+      pageY: 24,
+      target: env.root,
+    });
+    env.root.dispatchEvent("pointerup", {
+      pageX: 260,
+      pageY: 24,
+      target: env.root,
+    });
+
+    expect(back).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(319);
+    expect(back).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(back).toHaveBeenCalledTimes(1);
+
+    vi.useRealTimers();
+  });
+
+  test("stack presentation preserves previous scroll during committed swipe-back", async () => {
+    vi.useFakeTimers();
+    try {
+      const env = createClientDocument();
+      const back = vi.fn();
+      const scrollTo = vi.fn(({ left, top }: { left: number; top: number }) => {
+        testWindow.scrollX = left;
+        testWindow.scrollY = top;
+      });
+      const testWindow = {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        scrollX: 0,
+        scrollY: 180,
+        scrollTo,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
+
+      const app = startClientApp({
+        mode: "shell",
+        routes: [
+          {
+            id: "posts/index",
+            path: "/posts",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+          },
+          {
+            id: "posts/[slug]",
+            path: "/posts/:slug",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+            navigation: { enter: "push", up: "/posts" },
+          },
+        ],
+        history: { back, pushState: vi.fn() } as never,
+        transport: { load: vi.fn(async () => ({ ok: true })) },
+        presentation: stackPresentation({
+          duration: 320,
+          swipeBack: { enabled: true },
+          styles: false,
+        }),
+        document: env.document as never,
+        rootSelector: '[data-van-stack-app-root=""]',
+        window: testWindow as never,
+      });
+
+      await app.ready;
+      await app.router.navigate("/posts/1");
+      scrollTo.mockClear();
+      testWindow.scrollY = 520;
+
+      env.root.dispatchEvent("pointerdown", {
+        pageX: 10,
+        pageY: 20,
+        target: env.root,
+      });
+      env.root.dispatchEvent("pointermove", {
+        pageX: 260,
+        pageY: 24,
+        target: env.root,
+      });
+
+      const previousRoot = env.root.children.find(
+        (child) =>
+          child &&
+          typeof child === "object" &&
+          "attributes" in child &&
+          (child as { attributes: Map<string, string> }).attributes.get(
+            "data-van-stack-path",
+          ) === "/posts",
+      ) as { style: Record<string, string> } | undefined;
+
+      expect(previousRoot?.style.transform).toContain(", 340px, 0)");
+
+      env.root.dispatchEvent("pointerup", {
+        pageX: 260,
+        pageY: 24,
+        target: env.root,
+      });
+
+      await vi.advanceTimersByTimeAsync(320);
+
+      expect(scrollTo).toHaveBeenCalledWith({
+        top: 180,
+        left: 0,
+        behavior: "auto",
+      });
+      expect(back).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test("stack presentation renders swipe-back dimming and edge shadow layers", async () => {
+    const env = createClientDocument();
+
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { back: vi.fn(), pushState: vi.fn() } as never,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({
+        animate: false,
+        swipeBack: { enabled: true, opacity: true, shadow: true },
+        styles: false,
+      }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/1");
+
+    env.root.dispatchEvent("pointerdown", {
+      pageX: 10,
+      pageY: 20,
+      target: env.root,
+    });
+    env.root.dispatchEvent("pointermove", {
+      pageX: 260,
+      pageY: 24,
+      target: env.root,
+    });
+
+    const previousRoot = env.root.children.find(
+      (child) =>
+        child &&
+        typeof child === "object" &&
+        "attributes" in child &&
+        (child as { attributes: Map<string, string> }).attributes.get(
+          "data-van-stack-path",
+        ) === "/posts",
+    ) as { innerHTML: string } | undefined;
+    const currentRoot = env.root.children.find(
+      (child) =>
+        child &&
+        typeof child === "object" &&
+        "attributes" in child &&
+        (child as { attributes: Map<string, string> }).attributes.get(
+          "data-van-stack-path",
+        ) === "/posts/1",
+    ) as { innerHTML: string } | undefined;
+
+    expect(previousRoot?.innerHTML).toContain("van-stack-swipe-opacity");
+    expect(currentRoot?.innerHTML).toContain("van-stack-swipe-shadow");
   });
 
   test("stack presentation resets short swipe-back gestures and honors opt-out targets", async () => {

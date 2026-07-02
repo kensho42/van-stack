@@ -56,9 +56,9 @@ export function ensureStackStyles() {
   will-change: transform, opacity;
 }
 .van-stack-transition-ios-slide-forward .van-stack-page-current,
-.van-stack-transition-ios-slide-forward .van-stack-page-next,
+.van-stack-transition-ios-slide-forward .van-stack-page-previous,
 .van-stack-transition-ios-slide-backward .van-stack-page-current,
-.van-stack-transition-ios-slide-backward .van-stack-page-previous {
+.van-stack-transition-ios-slide-backward .van-stack-page-next {
   transition: transform var(--van-stack-transition-duration, 320ms) cubic-bezier(.32,.72,0,1);
 }
 .van-stack-transition-android-fade-through-forward .van-stack-page-current,
@@ -80,15 +80,23 @@ export function ensureStackStyles() {
 .van-stack-swipe-shadow,
 .van-stack-swipe-opacity {
   position: absolute;
-  inset: 0;
   pointer-events: none;
 }
 .van-stack-swipe-shadow {
-  left: -16px;
-  width: 16px;
-  background: linear-gradient(to right, rgb(0 0 0 / 18%), transparent);
+  top: 0;
+  bottom: 0;
+  left: -10px;
+  width: 10px;
+  background: linear-gradient(
+    to right,
+    rgb(0 0 0 / 0%) 0%,
+    rgb(0 0 0 / 0%) 45%,
+    rgb(0 0 0 / 1%) 75%,
+    rgb(0 0 0 / 6%) 100%
+  );
 }
 .van-stack-swipe-opacity {
+  inset: 0;
   background: rgb(0 0 0 / 10%);
 }
 @media (prefers-reduced-motion: reduce) {

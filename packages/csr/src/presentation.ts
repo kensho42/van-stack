@@ -14,6 +14,15 @@ export type ClientPresentationWindowLike = {
     pathname: string;
     search: string;
   };
+  pageXOffset?: number;
+  pageYOffset?: number;
+  scrollTo?: (options: {
+    top: number;
+    left: number;
+    behavior: "auto";
+  }) => unknown;
+  scrollX?: number;
+  scrollY?: number;
 };
 
 export type ClientPresentationRenderInput = {

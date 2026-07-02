@@ -8,7 +8,7 @@ export type StackViewRoot = AppRootLike & {
   ) => void;
   appendChild?: (child: unknown) => unknown;
   attributes?: Map<string, string>;
-  children?: unknown[];
+  children?: ArrayLike<unknown>;
   classList?: {
     add: (...names: string[]) => void;
     remove: (...names: string[]) => void;
@@ -26,6 +26,7 @@ export type StackViewRoot = AppRootLike & {
   setAttribute?: (name: string, value: string) => void;
   style?: Record<string, string | number | undefined> & {
     removeProperty?: (name: string) => void;
+    setProperty?: (name: string, value: string) => void;
   };
   tagName?: string;
 };
@@ -43,6 +44,12 @@ export type StackPointerEventLike = {
   type?: string;
 };
 
+function hasMapAttributes(
+  root: StackViewRoot,
+): root is StackViewRoot & { attributes: Map<string, string> } {
+  return root.attributes instanceof Map;
+}
+
 function escapeAttribute(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -59,15 +66,6 @@ export function renderChildToHtml(child: unknown): string {
   if (
     child &&
     typeof child === "object" &&
-    "render" in child &&
-    typeof (child as { render: () => string }).render === "function"
-  ) {
-    return (child as { render: () => string }).render();
-  }
-
-  if (
-    child &&
-    typeof child === "object" &&
     "tagName" in child &&
     "innerHTML" in child
   ) {
@@ -79,6 +77,15 @@ export function renderChildToHtml(child: unknown): string {
       : "";
 
     return `<${node.tagName}${attributes}>${node.innerHTML ?? ""}</${node.tagName}>`;
+  }
+
+  if (
+    child &&
+    typeof child === "object" &&
+    "render" in child &&
+    typeof (child as { render: () => string }).render === "function"
+  ) {
+    return (child as { render: () => string }).render();
   }
 
   return String(child ?? "");
@@ -132,14 +139,20 @@ function createSyntheticViewRoot(): StackViewRoot {
     innerHTML: "",
     style: {},
     append(...children: unknown[]) {
-      node.replaceChildren?.(...(node.children ?? []), ...children);
+      const existingChildren = Array.from(node.children ?? []);
+      const preservedChildren = existingChildren.length
+        ? existingChildren
+        : node.innerHTML
+          ? [node.innerHTML]
+          : [];
+      node.replaceChildren?.(...preservedChildren, ...children);
     },
     appendChild(child: unknown) {
       node.append?.(child);
       return child;
     },
     querySelector(selector: string) {
-      for (const child of node.children ?? []) {
+      for (const child of Array.from(node.children ?? [])) {
         if (!child || typeof child !== "object" || !("tagName" in child)) {
           continue;
         }
@@ -189,12 +202,16 @@ export function createViewRoot(): StackViewRoot {
 
 export function setAttribute(root: StackViewRoot, name: string, value: string) {
   root.setAttribute?.(name, value);
-  root.attributes?.set(name, value);
+  if (hasMapAttributes(root)) {
+    root.attributes.set(name, value);
+  }
 }
 
 export function removeAttribute(root: StackViewRoot, name: string) {
   root.removeAttribute?.(name);
-  root.attributes?.delete(name);
+  if (hasMapAttributes(root)) {
+    root.attributes.delete(name);
+  }
 }
 
 export function addClass(root: StackViewRoot, ...names: string[]) {
@@ -217,6 +234,11 @@ export function setInlineStyle(
   value: string,
 ) {
   if (root.style) {
+    if (typeof root.style.setProperty === "function") {
+      root.style.setProperty(property, value);
+      return;
+    }
+
     root.style[property] = value;
     return;
   }
@@ -277,6 +299,25 @@ export function replaceRootChildren(
   root: StackViewRoot,
   children: StackViewRoot[],
 ) {
+  const currentChildren = root.children;
+  if (currentChildren && currentChildren.length === children.length) {
+    let isSameOrder = true;
+    for (let index = 0; index < children.length; index += 1) {
+      if (currentChildren[index] !== children[index]) {
+        isSameOrder = false;
+        break;
+      }
+    }
+    if (isSameOrder) {
+      if (hasMapAttributes(root) && "innerHTML" in root) {
+        root.innerHTML = children
+          .map((child) => renderChildToHtml(child))
+          .join("");
+      }
+      return;
+    }
+  }
+
   if (typeof root.replaceChildren === "function") {
     root.replaceChildren(...children);
     return;

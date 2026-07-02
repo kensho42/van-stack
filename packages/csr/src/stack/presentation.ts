@@ -11,6 +11,7 @@ import type {
   ClientNavigationIntent,
   ClientPresentation,
   ClientPresentationRenderInput,
+  ClientPresentationWindowLike,
 } from "../presentation";
 import { findMatchedRoute, resolveRouteModule } from "../route-render";
 import type { StackViewRoot } from "./dom";
@@ -99,6 +100,36 @@ function currentItem(stack: readonly StackItem[]) {
   return stack[stack.length - 1] ?? null;
 }
 
+function getWindowScroll(window: ClientPresentationWindowLike) {
+  return {
+    left: window.scrollX ?? window.pageXOffset ?? 0,
+    top: window.scrollY ?? window.pageYOffset ?? 0,
+  };
+}
+
+function saveItemScroll(
+  item: StackItem | null,
+  window: ClientPresentationWindowLike,
+) {
+  if (!item) return;
+  item.scroll = getWindowScroll(window);
+}
+
+function getItemScroll(item: StackItem) {
+  return item.scroll ?? { left: 0, top: 0 };
+}
+
+function restoreWindowScroll(
+  window: ClientPresentationWindowLike,
+  scroll: { left: number; top: number },
+) {
+  window.scrollTo?.({
+    top: scroll.top,
+    left: scroll.left,
+    behavior: "auto",
+  });
+}
+
 async function syncRetainedRoot(
   input: ClientPresentationRenderInput,
   stack: StackItem[],
@@ -148,6 +179,7 @@ export function stackPresentation(
     routeNavigation: RouteNavigation | undefined,
     direction: "forward" | "backward",
     before: () => Promise<void> | void,
+    during: () => Promise<void> | void,
     after: () => Promise<void> | void,
   ) {
     const transition = resolveTransition(options, routeNavigation);
@@ -155,6 +187,8 @@ export function stackPresentation(
     await before();
     if (transition.animate) {
       setTransitionRoot(input.root as StackViewRoot, transition, direction);
+      (input.root as StackViewRoot).getBoundingClientRect?.();
+      await during();
       await waitForTransition(input.root as StackViewRoot, transition);
       clearTransitionRoot(input.root as StackViewRoot, transition, direction);
     }
@@ -176,6 +210,7 @@ export function stackPresentation(
       return;
     }
 
+    saveItemScroll(previous, input.window);
     await ensureViewRoot(previous, input.routes);
     await runTransition(
       input,
@@ -185,6 +220,12 @@ export function stackPresentation(
         syncRoot(input.root, [
           { item: previous, position: "current" },
           { item: next, position: "next" },
+        ]);
+      },
+      async () => {
+        syncRoot(input.root, [
+          { item: previous, position: "previous" },
+          { item: next, position: "current" },
         ]);
       },
       async () => {
@@ -250,11 +291,13 @@ export function stackPresentation(
         ]);
       },
       async () => {
-        stack = nextStack;
         syncRoot(input.root, [
           { item: previous, position: "current" },
           { item: outgoing, position: "next" },
         ]);
+      },
+      async () => {
+        stack = nextStack;
         await syncRetainedRoot(input, stack, retention);
       },
     );
@@ -282,11 +325,13 @@ export function stackPresentation(
   }
 
   async function commitSwipeBack() {
-    if (!latestInput || stack.length <= 1) return;
+    if (!latestInput || stack.length <= 1) return undefined;
 
     const input = latestInput;
     const previous = stack[stack.length - 2] as StackItem;
     const outgoing = stack[stack.length - 1] as StackItem;
+    const nextStack = stack.slice(0, -1);
+    const previousScroll = getItemScroll(previous);
     const routeNavigation = await resolveRouteNavigation(
       input.routes,
       previous.entry,
@@ -295,19 +340,25 @@ export function stackPresentation(
 
     await ensureViewRoot(previous, input.routes);
     await ensureViewRoot(outgoing, input.routes);
-    stack = stack.slice(0, -1);
     syncRoot(input.root, [
       { item: previous, position: "current" },
       { item: outgoing, position: "next" },
     ]);
-    await syncRetainedRoot(input, stack, retention);
     suppressNextPopPath = previous.entry.path;
 
-    if (input.history.back) {
-      input.history.back();
-    } else {
-      await input.navigate(previous.entry.path, "pop");
-    }
+    return {
+      async finish() {
+        stack = nextStack;
+        await syncRetainedRoot(input, stack, retention);
+        restoreWindowScroll(input.window, previousScroll);
+
+        if (input.history.back) {
+          input.history.back();
+        } else {
+          await input.navigate(previous.entry.path, "pop");
+        }
+      },
+    };
   }
 
   const swipeBack = createSwipeBackController({
@@ -316,14 +367,23 @@ export function stackPresentation(
       const previous = stack[stack.length - 2];
       const current = stack[stack.length - 1];
       if (!previous?.root || !current?.root) return null;
+      const currentScroll = latestInput
+        ? getWindowScroll(latestInput.window)
+        : { left: 0, top: 0 };
+      const previousScroll = getItemScroll(previous);
       return {
         current: current.root,
         previous: previous.root,
+        previousOffsetY: currentScroll.top - previousScroll.top,
       };
     },
     commit: commitSwipeBack,
     getRouteNavigation() {
       return currentNavigation;
+    },
+    getSettleDuration() {
+      const transition = resolveTransition(options, currentNavigation);
+      return transition.animate ? transition.duration : 0;
     },
     options: options.swipeBack,
   });

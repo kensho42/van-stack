@@ -19,6 +19,10 @@ export type StackPosition = "previous" | "current" | "next";
 export type StackItem = {
   entry: RouterEntry;
   root?: StackViewRoot;
+  scroll?: {
+    left: number;
+    top: number;
+  };
 };
 
 export type PositionedStackItem = {

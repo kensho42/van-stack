@@ -1,12 +1,14 @@
 import type { RouteNavigation } from "../../../core/src/index";
 import {
   addClass,
+  createViewRoot,
   getElementLeft,
   getElementWidth,
   removeClass,
   removeInlineStyle,
   type StackPointerEventLike,
   type StackViewRoot,
+  setAttribute,
   setInlineStyle,
 } from "./dom";
 
@@ -41,13 +43,24 @@ export type SwipeBackController = {
 
 type SwipeTarget = {
   current: StackViewRoot;
+  opacityLayer?: StackViewRoot;
   previous: StackViewRoot;
+  previousOffsetY?: number;
+  shadowLayer?: StackViewRoot;
+};
+
+type SwipeBackCommitHandle = {
+  finish: () => Promise<void> | void;
 };
 
 type SwipeBackControllerOptions = {
   canStart: () => SwipeTarget | null;
-  commit: () => Promise<void> | void;
+  commit: () =>
+    | Promise<SwipeBackCommitHandle | undefined>
+    | SwipeBackCommitHandle
+    | undefined;
   getRouteNavigation: () => RouteNavigation | undefined;
+  getSettleDuration: () => number;
   options: StackSwipeBackOptions | undefined;
 };
 
@@ -180,10 +193,130 @@ function isBlockedTarget(target: unknown) {
   );
 }
 
+function appendGestureLayer(parent: StackViewRoot, className: string) {
+  const layer = createViewRoot();
+  addClass(layer, className);
+  setAttribute(layer, "aria-hidden", "true");
+  parent.appendChild?.(layer);
+  return layer;
+}
+
+function ensureGestureLayers(
+  target: SwipeTarget,
+  options: ResolvedSwipeBackOptions,
+) {
+  if (options.opacity && !target.opacityLayer) {
+    target.opacityLayer = appendGestureLayer(
+      target.previous,
+      "van-stack-swipe-opacity",
+    );
+  }
+  if (options.shadow && !target.shadowLayer) {
+    target.shadowLayer = appendGestureLayer(
+      target.current,
+      "van-stack-swipe-shadow",
+    );
+  }
+}
+
+function removeGestureLayer(parent: StackViewRoot, layer: StackViewRoot) {
+  layer.remove?.();
+  const children = parent.children ? Array.from(parent.children) : [];
+  if (!children.includes(layer)) return;
+  parent.replaceChildren?.(...children.filter((child) => child !== layer));
+}
+
+function removeGestureLayers(target: SwipeTarget) {
+  if (target.opacityLayer) {
+    removeGestureLayer(target.previous, target.opacityLayer);
+    target.opacityLayer = undefined;
+  }
+  if (target.shadowLayer) {
+    removeGestureLayer(target.current, target.shadowLayer);
+    target.shadowLayer = undefined;
+  }
+}
+
+function getGestureMotionNodes(target: SwipeTarget) {
+  return [
+    target.current,
+    target.previous,
+    target.opacityLayer,
+    target.shadowLayer,
+  ].filter((root): root is StackViewRoot => Boolean(root));
+}
+
 function clearGestureStyles(target: SwipeTarget) {
+  for (const root of getGestureMotionNodes(target)) {
+    removeInlineStyle(root, "transform");
+    removeInlineStyle(root, "opacity");
+    removeInlineStyle(root, "transition");
+  }
+  removeGestureLayers(target);
+}
+
+function clearGestureMotionStyles(target: SwipeTarget) {
   for (const root of [target.current, target.previous]) {
     removeInlineStyle(root, "transform");
     removeInlineStyle(root, "opacity");
+  }
+}
+
+function setCommittedGestureMotionStyles(target: SwipeTarget) {
+  removeInlineStyle(target.current, "transform");
+  removeInlineStyle(target.current, "opacity");
+  removeInlineStyle(target.previous, "opacity");
+  if (target.opacityLayer) {
+    setInlineStyle(target.opacityLayer, "opacity", "0");
+  }
+
+  const previousOffsetY = target.previousOffsetY ?? 0;
+  if (previousOffsetY === 0) {
+    removeInlineStyle(target.previous, "transform");
+    return;
+  }
+
+  setInlineStyle(
+    target.previous,
+    "transform",
+    `translate3d(0px, ${previousOffsetY}px, 0)`,
+  );
+}
+
+async function settleGesture(
+  target: SwipeTarget,
+  duration: number,
+  committed: boolean,
+) {
+  if (duration <= 0) {
+    if (committed) {
+      setCommittedGestureMotionStyles(target);
+    } else {
+      clearGestureMotionStyles(target);
+    }
+    return;
+  }
+
+  const transition = `transform ${duration}ms cubic-bezier(.32,.72,0,1), opacity ${duration}ms cubic-bezier(.32,.72,0,1)`;
+  for (const root of getGestureMotionNodes(target)) {
+    setInlineStyle(root, "transition", transition);
+  }
+  for (const root of [target.current, target.previous]) {
+    root.getBoundingClientRect?.();
+  }
+
+  if (committed) {
+    setCommittedGestureMotionStyles(target);
+  } else {
+    clearGestureMotionStyles(target);
+  }
+
+  await new Promise<void>((resolve) => {
+    globalThis.setTimeout(resolve, duration);
+  });
+
+  for (const root of getGestureMotionNodes(target)) {
+    removeInlineStyle(root, "transition");
   }
 }
 
@@ -191,6 +324,7 @@ export function createSwipeBackController({
   canStart,
   commit,
   getRouteNavigation,
+  getSettleDuration,
   options,
 }: SwipeBackControllerOptions): SwipeBackController | null {
   const resolved = resolveSwipeBackOptions(options);
@@ -256,6 +390,7 @@ export function createSwipeBackController({
     const currentTranslate = Math.min(diff, width);
     const previousTranslate = Math.min(diff / 5 - width / 5, 0);
 
+    ensureGestureLayers(target, resolved);
     setInlineStyle(
       target.current,
       "transform",
@@ -264,18 +399,11 @@ export function createSwipeBackController({
     setInlineStyle(
       target.previous,
       "transform",
-      `translate3d(${previousTranslate}px, 0, 0)`,
+      `translate3d(${previousTranslate}px, ${target.previousOffsetY ?? 0}px, 0)`,
     );
 
-    if (resolved.opacity) {
-      setInlineStyle(
-        target.previous,
-        "opacity",
-        String(0.82 + progress * 0.18),
-      );
-    }
-    if (resolved.shadow) {
-      setInlineStyle(target.current, "opacity", String(1 - progress * 0.04));
+    if (target.opacityLayer) {
+      setInlineStyle(target.opacityLayer, "opacity", String(1 - progress));
     }
   };
 
@@ -296,12 +424,19 @@ export function createSwipeBackController({
     active = false;
     moved = false;
     target = null;
-    clearGestureStyles(swipeTarget);
-    removeClass(root, "van-stack-swipe-active");
 
     if (shouldCommit) {
-      await commit();
+      const handle = await commit();
+      removeClass(root, "van-stack-swipe-active");
+      await settleGesture(swipeTarget, getSettleDuration(), true);
+      await handle?.finish?.();
+      clearGestureStyles(swipeTarget);
+      return;
     }
+
+    removeClass(root, "van-stack-swipe-active");
+    await settleGesture(swipeTarget, getSettleDuration(), false);
+    clearGestureStyles(swipeTarget);
   };
 
   function attach(nextRoot: StackViewRoot) {
