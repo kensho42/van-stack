@@ -91,6 +91,8 @@ scroll: {
 
 Pass `scroll` to `startClientApp(...)` or `hydrateApp(...)` to override that policy.
 
+Managed browser CSR also owns app back-link behavior. Use `await app.router.back({ fallback: "/posts" })` when a control should return to the previous in-app page if one exists, or navigate to a stable fallback on direct visits. `app.router.canGoBack()` reports whether VanStack currently has an in-app browser history entry available.
+
 Use `van-stack/csr` for managed CSR app startup. Use `van-stack/csr/router` only when your app owns navigation wiring and rendering and needs the lower-level router APIs directly.
 
 For an emitted browser CSR artifact, add one extra step:

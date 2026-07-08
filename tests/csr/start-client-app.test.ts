@@ -416,6 +416,148 @@ describe("startClientApp", () => {
     expect(scrollTo).not.toHaveBeenCalled();
   });
 
+  test("router.back uses browser history after an in-app push", async () => {
+    const env = createClientDocument();
+    const back = vi.fn();
+    const pushState = vi.fn();
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: { back, pushState },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/initial",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    expect(app.router.canGoBack()).toBe(false);
+
+    await app.router.navigate("/posts/next");
+
+    expect(app.router.canGoBack()).toBe(true);
+    await expect(
+      app.router.back({ fallback: "/posts/fallback" }),
+    ).resolves.toBe("history");
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(env.root.innerHTML).toContain("<article>/posts/next</article>");
+  });
+
+  test("router.back navigates to fallback when no app history can be popped", async () => {
+    const env = createClientDocument();
+    const back = vi.fn();
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: { back, pushState: vi.fn() },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts/initial",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    await expect(
+      app.router.back({ fallback: "/posts/fallback" }),
+    ).resolves.toBe("fallback");
+    expect(back).not.toHaveBeenCalled();
+    expect(env.root.innerHTML).toContain("<article>/posts/fallback</article>");
+  });
+
+  test("router.back syncs canGoBack from popstate history entries", async () => {
+    const env = createClientDocument();
+    let popstateHandler: ((event?: { state?: unknown }) => unknown) | undefined;
+    const pushedStates: unknown[] = [];
+    const testWindow = {
+      location: {
+        origin: "https://example.com",
+        pathname: "/posts/initial",
+        search: "",
+      },
+      addEventListener: vi.fn(
+        (type: string, handler: typeof popstateHandler) => {
+          if (type === "popstate") {
+            popstateHandler = handler;
+          }
+        },
+      ),
+      removeEventListener: vi.fn(),
+    };
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+      ],
+      history: {
+        back: vi.fn(),
+        pushState(state) {
+          pushedStates.push(state);
+        },
+      },
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: testWindow as never,
+    });
+
+    await app.ready;
+    await app.router.navigate("/posts/one");
+    await app.router.navigate("/posts/two");
+
+    expect(app.router.canGoBack()).toBe(true);
+
+    testWindow.location.pathname = "/posts/one";
+    await popstateHandler?.({ state: pushedStates[0] });
+
+    expect(app.router.canGoBack()).toBe(true);
+
+    testWindow.location.pathname = "/posts/initial";
+    await popstateHandler?.({ state: null });
+
+    expect(app.router.canGoBack()).toBe(false);
+    expect(testWindow.location.pathname).toBe("/posts/initial");
+  });
+
   test("honors shell scroll overrides for forward and popstate navigation", async () => {
     const env = createClientDocument();
     let popstateHandler: (() => unknown) | undefined;
@@ -593,7 +735,7 @@ describe("startClientApp", () => {
     await app.router.navigate("/posts/1");
 
     expect(pushState).toHaveBeenCalledWith(
-      { path: "/posts/1" },
+      expect.objectContaining({ path: "/posts/1" }),
       "",
       "/posts/1",
     );
@@ -710,7 +852,7 @@ describe("startClientApp", () => {
     await app.router.navigate("/posts/2");
 
     expect(replaceState).toHaveBeenCalledWith(
-      { path: "/posts/2" },
+      expect.objectContaining({ path: "/posts/2" }),
       "",
       "/posts/2",
     );

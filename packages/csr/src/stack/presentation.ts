@@ -3,6 +3,8 @@ import type {
   RouteNavigation,
   RouteNavigationRetention,
   RouteNavigationTransition,
+  RouterBackOptions,
+  RouterBackResult,
   RouterEntry,
   RuntimeRouteDefinition,
 } from "../../../core/src/index";
@@ -59,7 +61,8 @@ export type StackPresentationOptions = {
 };
 
 export type StackPresentation = ClientPresentation & {
-  back: () => Promise<void>;
+  back: (options?: RouterBackOptions) => Promise<RouterBackResult>;
+  canGoBack: () => boolean;
 };
 
 async function resolveRouteNavigation(
@@ -411,15 +414,22 @@ export function stackPresentation(
   }
 
   return {
-    async back() {
+    async back(options?: RouterBackOptions) {
       if (stack.length > 1 && latestInput?.history.back) {
         latestInput.history.back();
-        return;
+        return "history";
       }
 
-      if (currentNavigation?.up && latestInput) {
-        await latestInput.navigate(currentNavigation.up, "replace");
+      const fallback = options?.fallback ?? currentNavigation?.up;
+      if (fallback && latestInput) {
+        await latestInput.navigate(fallback, "replace");
+        return "fallback";
       }
+
+      return "none";
+    },
+    canGoBack() {
+      return stack.length > 1 && Boolean(latestInput?.history.back);
     },
     dispose() {
       swipeBack?.dispose();

@@ -45,4 +45,6 @@ Routes can opt out of edge swipe-back by setting `swipeBack: false` in `navigati
 
 The stack is session navigation state. A direct visit to `/posts/1` renders that route as one active leaf view; it does not fabricate previous `/` or `/posts` views. Browser back maps to stack pop when that previous view exists.
 
+For route-level back links, call `await app.router.back({ fallback: "/posts" })`. Stack presentation pops the in-session stack through browser history when it can, and uses the fallback route when the current page was opened directly.
+
 Presentation is chosen at startup or at navigator boundaries, not rewritten continuously at runtime. Stack presentation currently supports `shell` and `custom` CSR apps.

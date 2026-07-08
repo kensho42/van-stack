@@ -3,6 +3,9 @@ import { expectTypeOf, test } from "vitest";
 import type {
   RouteDataContext,
   RouteNavigation,
+  Router,
+  RouterBackOptions,
+  RouterBackResult,
   RuntimeRouteDefinition,
 } from "../../packages/core/src/index";
 import type {
@@ -222,6 +225,18 @@ test("hydrateApp accepts navigation scroll options", () => {
   expectTypeOf(options.scroll).toMatchTypeOf<
     NavigationScrollOptions | undefined
   >();
+});
+
+test("client routers expose managed back navigation", () => {
+  const options: RouterBackOptions = {
+    fallback: "/posts",
+  };
+
+  expectTypeOf(options).toMatchTypeOf<Parameters<Router["back"]>[0]>();
+  expectTypeOf<ReturnType<Router["back"]>>().toEqualTypeOf<
+    Promise<RouterBackResult>
+  >();
+  expectTypeOf<ReturnType<Router["canGoBack"]>>().toEqualTypeOf<boolean>();
 });
 
 test("route pages can read matched URL context", () => {

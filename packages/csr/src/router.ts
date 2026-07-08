@@ -7,11 +7,17 @@ import {
   type Resolve,
   type RouteMeta,
   type Router,
+  type RouterBackOptions,
+  type RouterBackResult,
   type RouterEntry,
   type RouterListener,
   type RuntimeRouteDefinition,
   type Transport,
 } from "../../core/src/index";
+import {
+  createNavigationHistory,
+  type NavigationHistory,
+} from "./navigation-history";
 import { resolveRouteModule } from "./route-render";
 
 type HeadElementLike = {
@@ -37,6 +43,7 @@ type CreateHydratedRouterOptions = {
   document?: HeadDocumentLike;
   history: HistoryLike;
   mode: "hydrated";
+  navigationHistory?: NavigationHistory;
   routes: readonly ClientRouteDefinition[];
   transport?: Transport;
 };
@@ -45,6 +52,7 @@ type CreateShellRouterOptions = {
   document?: HeadDocumentLike;
   history: HistoryLike;
   mode: "shell";
+  navigationHistory?: NavigationHistory;
   routes: readonly ClientRouteDefinition[];
   transport?: Transport;
 };
@@ -53,6 +61,7 @@ type CreateCustomRouterOptions = {
   document?: HeadDocumentLike;
   history: HistoryLike;
   mode: "custom";
+  navigationHistory?: NavigationHistory;
   resolve?: Resolve;
   routes: readonly ClientRouteDefinition[];
 };
@@ -305,6 +314,8 @@ export function createRouter(options: CreateRouterOptions) {
   let activeController: AbortController | null = null;
   const listeners = new Set<RouterListener>();
   const resolve = getResolve(options);
+  const navigationHistory =
+    options.navigationHistory ?? createNavigationHistory(options.history);
 
   function notify(entry: RouterEntry) {
     for (const listener of listeners) {
@@ -373,7 +384,31 @@ export function createRouter(options: CreateRouterOptions) {
     return current;
   }
 
+  async function navigatePath(path: string): Promise<RouterEntry> {
+    const entry = await resolvePath(path);
+
+    navigationHistory.history.pushState({ path: entry.path }, "", entry.path);
+
+    return entry;
+  }
+
+  async function back(options?: RouterBackOptions): Promise<RouterBackResult> {
+    const result = navigationHistory.back();
+    if (result === "history") return result;
+
+    if (options?.fallback) {
+      await navigatePath(options.fallback);
+      return "fallback";
+    }
+
+    return "none";
+  }
+
   return {
+    back,
+    canGoBack() {
+      return navigationHistory.canGoBack();
+    },
     getCurrent() {
       return current;
     },
@@ -388,11 +423,7 @@ export function createRouter(options: CreateRouterOptions) {
       return resolvePath(path);
     },
     async navigate(path: string) {
-      const entry = await resolvePath(path);
-
-      options.history.pushState({ path: entry.path }, "", entry.path);
-
-      return entry;
+      return navigatePath(path);
     },
     subscribe(listener: RouterListener) {
       listeners.add(listener);

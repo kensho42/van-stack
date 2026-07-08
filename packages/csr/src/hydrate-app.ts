@@ -3,10 +3,16 @@ import type {
   HistoryLike,
   RouteHydrateModule,
   Router,
+  RouterBackOptions,
+  RouterBackResult,
   RouterEntry,
   Transport,
 } from "../../core/src/index";
 import { matchPath as matchCanonicalPath } from "../../core/src/index";
+import {
+  createNavigationHistory,
+  type NavigationHistoryPopState,
+} from "./navigation-history";
 import {
   applyNavigationScroll,
   type NavigationScrollOptions,
@@ -65,8 +71,14 @@ type WindowLike = {
     pathname: string;
     search: string;
   };
-  addEventListener: (type: "popstate", handler: () => unknown) => void;
-  removeEventListener: (type: "popstate", handler: () => unknown) => void;
+  addEventListener: (
+    type: "popstate",
+    handler: (event?: NavigationHistoryPopState) => unknown,
+  ) => void;
+  removeEventListener: (
+    type: "popstate",
+    handler: (event?: NavigationHistoryPopState) => unknown,
+  ) => void;
 } & NavigationScrollWindowLike;
 
 export type HydrateAppOptions = {
@@ -282,7 +294,10 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
   const internalOptions = options as HydrateAppInternalOptions;
   const document = getDocument(options.document);
   const window = getWindow(options.window);
-  const history = getHistory(options.history);
+  const navigationHistory = createNavigationHistory(
+    getHistory(options.history),
+  );
+  const history = navigationHistory.history;
   const navigationScroll = resolveNavigationScrollOptions(options.scroll);
   const bootstrap = readBootstrapPayload(
     document,
@@ -299,6 +314,7 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     mode: "hydrated",
     routes: options.routes,
     history,
+    navigationHistory,
     bootstrap,
     transport: options.transport,
     document: document as never,
@@ -320,6 +336,22 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
   }
 
   const router = {
+    async back(options?: RouterBackOptions): Promise<RouterBackResult> {
+      if (baseRouter.canGoBack()) {
+        return baseRouter.back();
+      }
+
+      if (options?.fallback) {
+        const entry = await baseRouter.navigate(options.fallback);
+        await completeScrolledNavigation(entry, "navigate");
+        return "fallback";
+      }
+
+      return "none";
+    },
+    canGoBack() {
+      return baseRouter.canGoBack();
+    },
     getCurrent() {
       return baseRouter.getCurrent();
     },
@@ -380,7 +412,9 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     await router.navigate(`${url.pathname}${url.search}`);
   };
 
-  const popstateHandler = async () => {
+  const popstateHandler = async (event?: NavigationHistoryPopState) => {
+    navigationHistory.notePopState(event);
+
     const entry = await baseRouter.load(getCurrentPath(window));
     await completeScrolledNavigation(entry, "popstate");
   };

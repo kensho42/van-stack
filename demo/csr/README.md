@@ -10,6 +10,8 @@ Demonstrates all three CSR runtime modes:
 
 Managed CSR navigation uses `scroll: { onNavigate: "top", onPopState: "preserve", behavior: "auto" }` by default. Pass `scroll` to `startClientApp(...)` or `hydrateApp(...)` when a demo shell should preserve forward-navigation scroll or force top scroll on browser back/forward.
 
+The returned `app.router` includes `back({ fallback })` for back links that should pop in-app browser history when possible and use a stable route on direct visits. `app.router.canGoBack()` reports whether such a pop is currently available.
+
 Each route module imports `van` from `vanjs-core` directly. Browser CSR resolves that to the real browser package.
 
 In Node, SSR, SSG, or build tooling, filesystem routes are typically loaded with `await loadRoutes({ root: "src/routes" })`. In a Vite browser CSR app, configure `vanStackVite({ routes: { root: "src/routes" } })` and import `virtual:van-stack/routes` instead. Writing `.van-stack/routes.generated.ts` stays available for custom tooling, but it is not the default Vite browser path.

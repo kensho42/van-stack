@@ -235,6 +235,12 @@ export type RouterEntry = {
 
 export type RouterListener = (entry: RouterEntry) => void;
 
+export type RouterBackOptions = {
+  fallback?: string;
+};
+
+export type RouterBackResult = "history" | "fallback" | "none";
+
 export type BootstrapPayload = {
   routeId?: string;
   path?: string;
@@ -273,6 +279,8 @@ export type CreateRouterOptions =
   | CreateCustomRouterOptions;
 
 export type Router = {
+  back: (options?: RouterBackOptions) => Promise<RouterBackResult>;
+  canGoBack: () => boolean;
   getCurrent: () => RouterEntry | null;
   getInternalDataPath: (path: string) => string;
   load: (path: string) => Promise<RouterEntry>;

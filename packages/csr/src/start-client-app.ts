@@ -3,11 +3,17 @@ import {
   matchPath,
   type Resolve,
   type Router,
+  type RouterBackOptions,
+  type RouterBackResult,
   type RouterEntry,
   type RuntimeRouteDefinition,
   type Transport,
 } from "../../core/src/index";
 import { hydrateApp } from "./hydrate-app";
+import {
+  createNavigationHistory,
+  type NavigationHistoryPopState,
+} from "./navigation-history";
 import {
   applyNavigationScroll,
   type NavigationScrollOptions,
@@ -66,8 +72,14 @@ type WindowLike = {
     pathname: string;
     search: string;
   };
-  addEventListener: (type: "popstate", handler: () => unknown) => void;
-  removeEventListener: (type: "popstate", handler: () => unknown) => void;
+  addEventListener: (
+    type: "popstate",
+    handler: (event?: NavigationHistoryPopState) => unknown,
+  ) => void;
+  removeEventListener: (
+    type: "popstate",
+    handler: (event?: NavigationHistoryPopState) => unknown,
+  ) => void;
 } & NavigationScrollWindowLike;
 
 type BaseStartClientAppOptions = {
@@ -214,6 +226,23 @@ function createRouterProxy(
   const navigationScroll = resolveNavigationScrollOptions(scroll);
 
   return {
+    async back(options?: RouterBackOptions): Promise<RouterBackResult> {
+      if (router.canGoBack()) {
+        return router.back();
+      }
+
+      if (options?.fallback) {
+        const entry = await router.navigate(options.fallback);
+        await renderEntry(entry);
+        applyNavigationScroll(window, navigationScroll, "navigate");
+        return "fallback";
+      }
+
+      return "none";
+    },
+    canGoBack() {
+      return router.canGoBack();
+    },
     getCurrent() {
       return router.getCurrent();
     },
@@ -285,6 +314,25 @@ function createPresentedRouter(
   return {
     loadWithPresentation,
     router: {
+      async back(options?: RouterBackOptions): Promise<RouterBackResult> {
+        if (presentation.back) {
+          return presentation.back(options);
+        }
+
+        if (router.canGoBack()) {
+          return router.back();
+        }
+
+        if (options?.fallback) {
+          await navigateWithPresentation(options.fallback, "replace");
+          return "fallback";
+        }
+
+        return "none";
+      },
+      canGoBack() {
+        return presentation.canGoBack?.() ?? router.canGoBack();
+      },
       getCurrent() {
         return router.getCurrent();
       },
@@ -309,7 +357,10 @@ export function startClientApp(
 ): StartedClientApp {
   const document = getDocument(options.document);
   const window = getWindow(options.window);
-  const history = getHistory(options.history);
+  const navigationHistory = createNavigationHistory(
+    getHistory(options.history),
+  );
+  const history = navigationHistory.history;
   const root = getAppRoot(
     document,
     options.rootSelector ?? defaultRootSelector,
@@ -369,6 +420,7 @@ export function startClientApp(
     document: document as never,
     history,
     mode: options.mode,
+    navigationHistory,
     resolve: options.mode === "custom" ? options.resolve : undefined,
     routes: options.routes,
     transport: options.mode === "custom" ? undefined : options.transport,
@@ -406,7 +458,9 @@ export function startClientApp(
     await router.navigate(`${url.pathname}${url.search}`);
   };
 
-  const popstateHandler = async () => {
+  const popstateHandler = async (event?: NavigationHistoryPopState) => {
+    navigationHistory.notePopState(event);
+
     if (presented) {
       await presented.loadWithPresentation(getCurrentPath(window), "popstate");
     } else {

@@ -39,7 +39,7 @@
     "build:package": "bun scripts/build-package.mjs",
     "build": "bun run build:package",
     "prepack": "bun run build:package",
-    "test": "bun run build:package && vitest run",
+    "test": "bun run build:package && bun node_modules/vitest/vitest.mjs run",
     "check": "biome check ."
   },
   "devDependencies": {

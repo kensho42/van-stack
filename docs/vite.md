@@ -35,6 +35,8 @@ await app.ready;
 
 Managed CSR navigation scrolls to the top after successful forward navigations and preserves browser back/forward scroll by default. Override with `scroll` when needed, for example `scroll: { onNavigate: "preserve" }`.
 
+The returned `app.router` also exposes `back({ fallback })` for route-level back links. It uses browser history when VanStack has an in-app entry to pop, otherwise it navigates to the fallback route. Use `app.router.canGoBack()` when UI needs to branch on that state.
+
 The virtual module is generated as browser-safe JavaScript. It points route modules back to the real `src/routes/*` files, keeps official `vanjs-core` and optional `vanjs-ext` imports on the browser packages, and omits server-only route files such as `loader.ts`, `action.ts`, `entries.ts`, and `route.ts`.
 
 ## Compatibility

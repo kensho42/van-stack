@@ -156,6 +156,12 @@ scroll: {
 }
 ```
 
+Managed CSR apps also expose history-aware back navigation on `app.router`. Use
+`await app.router.back({ fallback: "/posts" })` for app back links: VanStack calls
+browser history when there is an in-app entry to pop, otherwise it navigates to
+the fallback path. `app.router.canGoBack()` reports whether an in-app history
+entry is currently available.
+
 Choose the runtime handoff you want:
 
 ```ts
@@ -176,7 +182,7 @@ const router = createRouter({
 ```
 
 `createRouter(...)` stays runtime-agnostic. Apps that wire links and `popstate` manually also own their scroll behavior.
-Use `van-stack/csr` for managed CSR app startup. Use `van-stack/csr/router` only when your app owns navigation wiring and rendering and needs the lower-level router APIs directly.
+Direct routers expose the same `router.back({ fallback })` and `router.canGoBack()` surface, but fallback navigation is still only route loading plus history updates. Use `van-stack/csr` for managed CSR app startup. Use `van-stack/csr/router` only when your app owns navigation wiring and rendering and needs the lower-level router APIs directly.
 
 ```ts
 // SSR request rendering
@@ -475,6 +481,8 @@ export default {
 Stack presentation keeps the full in-session route stack internally, while `retention` controls how many views stay mounted in the DOM. The default is `previous`, which keeps the current view plus the immediate previous view so Framework7-style transitions and edge swipe-back can reveal the page underneath. Use `retention: "current"` to prune inactive DOM aggressively, or `retention: "all"` when an app wants every pushed view to remain mounted.
 
 Direct visits such as `/posts/1` render the active route as a single leaf view. The stack is built from in-app navigation history, not inferred from route ancestry. In this release stack presentation is available for `shell` and `custom` CSR apps; hydrated stack handoff is intentionally left for a follow-up.
+
+Stack apps can wire route-level back links through `await app.router.back({ fallback: "/posts" })`. It pops the browser and stack history when an in-session page exists, then uses the route's fallback path for direct visits.
 
 ## Compatibility And Tooling Notes
 

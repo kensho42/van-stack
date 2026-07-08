@@ -10,7 +10,7 @@ import {
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 import { type Alias, build, createServer } from "vite";
 import { afterEach, describe, expect, test } from "vitest";
@@ -473,13 +473,17 @@ describe("van-stack/vite virtual routes", () => {
     expect(entryMatch?.[1]).toBeTruthy();
 
     const root = createElementNode("div");
+    const bundleServer = await createServer({
+      root: app.appRoot,
+      configFile: false,
+      logLevel: "silent",
+    });
     const restoreGlobals = installBrowserGlobals(root);
     try {
-      await import(
-        `${pathToFileURL(join(app.appRoot, "dist", entryMatch?.[1] ?? "")).href}?test=${Date.now()}`
-      );
+      await bundleServer.ssrLoadModule(`/dist/${entryMatch?.[1] ?? ""}`);
     } finally {
       restoreGlobals();
+      await bundleServer.close();
     }
 
     expect(root.textContent).toContain("Grouped public layout");

@@ -324,7 +324,7 @@ describe("csr hydrate app", () => {
       }),
     );
     expect(env.history.pushState).toHaveBeenCalledWith(
-      { path: "/posts/github-down?tab=related" },
+      expect.objectContaining({ path: "/posts/github-down?tab=related" }),
       "",
       "/posts/github-down?tab=related",
     );

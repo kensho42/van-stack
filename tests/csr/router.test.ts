@@ -150,7 +150,7 @@ describe("csr router", () => {
       }),
     );
     expect(pushState).toHaveBeenCalledWith(
-      { path: "/posts/github-down" },
+      expect.objectContaining({ path: "/posts/github-down" }),
       "",
       "/posts/github-down",
     );
@@ -275,7 +275,7 @@ describe("csr router", () => {
     expect(navigation.pathname).toBe("/posts/graphql-app");
     expect(navigation.query.toString()).toBe("tab=summary");
     expect(pushState).toHaveBeenCalledWith(
-      { path: "/posts/graphql-app?tab=summary" },
+      expect.objectContaining({ path: "/posts/graphql-app?tab=summary" }),
       "",
       "/posts/graphql-app?tab=summary",
     );
@@ -320,9 +320,77 @@ describe("csr router", () => {
     );
     expect(next.query.toString()).toBe("tab=comments");
     expect(pushState).toHaveBeenCalledWith(
-      { path: "/posts/component-owned?tab=comments" },
+      expect.objectContaining({ path: "/posts/component-owned?tab=comments" }),
       "",
       "/posts/component-owned?tab=comments",
+    );
+  });
+
+  test("exposes back navigation with a fallback for direct router usage", async () => {
+    const back = vi.fn();
+    const router = createRouter({
+      mode: "shell",
+      routes,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      history: { back, pushState: vi.fn() },
+    });
+
+    expect(router.canGoBack()).toBe(false);
+    await expect(router.back()).resolves.toBe("none");
+
+    await router.navigate("/posts/github-down");
+
+    expect(router.canGoBack()).toBe(true);
+    await expect(router.back({ fallback: "/posts/fallback" })).resolves.toBe(
+      "history",
+    );
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+
+  test("direct router back navigates to fallback without app history", async () => {
+    const pushState = vi.fn();
+    const router = createRouter({
+      mode: "shell",
+      routes,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      history: { pushState },
+    });
+
+    await expect(router.back({ fallback: "/posts/fallback" })).resolves.toBe(
+      "fallback",
+    );
+
+    expect(router.getCurrent()).toEqual(
+      expect.objectContaining({
+        path: "/posts/fallback",
+      }),
+    );
+    expect(pushState).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "/posts/fallback" }),
+      "",
+      "/posts/fallback",
+    );
+  });
+
+  test("direct router back falls back when native history back is unavailable", async () => {
+    const pushState = vi.fn();
+    const router = createRouter({
+      mode: "shell",
+      routes,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      history: { pushState },
+    });
+
+    await router.navigate("/posts/github-down");
+
+    expect(router.canGoBack()).toBe(false);
+    await expect(router.back({ fallback: "/posts/fallback" })).resolves.toBe(
+      "fallback",
+    );
+    expect(pushState).toHaveBeenLastCalledWith(
+      expect.objectContaining({ path: "/posts/fallback" }),
+      "",
+      "/posts/fallback",
     );
   });
 

@@ -1,5 +1,7 @@
 import type {
   HistoryLike,
+  RouterBackOptions,
+  RouterBackResult,
   RouterEntry,
   RuntimeRouteDefinition,
 } from "../../core/src/index";
@@ -41,6 +43,8 @@ export type ClientPresentationRenderInput = {
 };
 
 export type ClientPresentation = {
+  back?: (options?: RouterBackOptions) => Promise<RouterBackResult>;
+  canGoBack?: () => boolean;
   dispose?: () => void;
   render: (input: ClientPresentationRenderInput) => Promise<void> | void;
 };

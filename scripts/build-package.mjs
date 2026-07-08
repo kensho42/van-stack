@@ -45,9 +45,13 @@ async function main() {
   await rm("dist", { recursive: true, force: true });
 
   for (const entry of declarationEntries) {
-    await execFileAsync("bun", ["x", "tsc", "-p", entry], {
-      cwd: repoRoot,
-    });
+    await execFileAsync(
+      "bun",
+      ["node_modules/typescript/bin/tsc", "-p", entry],
+      {
+        cwd: repoRoot,
+      },
+    );
   }
 
   for (const [entrypoint, outfile] of buildEntries) {
