@@ -3,6 +3,8 @@ import type {
   RouterBackOptions,
   RouterBackResult,
   RouterEntry,
+  RouterNavigationState,
+  RouterNavigationStateListener,
   RuntimeRouteDefinition,
 } from "../../core/src/index";
 import type { AppRootLike } from "./route-render";
@@ -46,5 +48,9 @@ export type ClientPresentation = {
   back?: (options?: RouterBackOptions) => Promise<RouterBackResult>;
   canGoBack?: () => boolean;
   dispose?: () => void;
+  getNavigationState?: () => RouterNavigationState;
   render: (input: ClientPresentationRenderInput) => Promise<void> | void;
+  subscribeNavigationState?: (
+    listener: RouterNavigationStateListener,
+  ) => () => void;
 };

@@ -235,6 +235,39 @@ export type RouterEntry = {
 
 export type RouterListener = (entry: RouterEntry) => void;
 
+export type RouterNavigationPhase = "idle" | "load" | "transition" | "gesture";
+
+export type RouterNavigationDirection =
+  | "none"
+  | "forward"
+  | "backward"
+  | "replace"
+  | "reset";
+
+export type RouterNavigationSnapshot = {
+  canGoBack: boolean;
+  current: RouterEntry | null;
+  previous: RouterEntry | null;
+  stackDepth: number;
+};
+
+export type RouterNavigationTransitionState = {
+  direction: RouterNavigationDirection;
+  from: RouterNavigationSnapshot;
+  phase: RouterNavigationPhase;
+  progress: number;
+  to: RouterNavigationSnapshot;
+};
+
+export type RouterNavigationState = RouterNavigationSnapshot & {
+  progress: number;
+  transition: RouterNavigationTransitionState;
+};
+
+export type RouterNavigationStateListener = (
+  state: RouterNavigationState,
+) => void;
+
 export type RouterBackOptions = {
   fallback?: string;
 };
@@ -283,7 +316,11 @@ export type Router = {
   canGoBack: () => boolean;
   getCurrent: () => RouterEntry | null;
   getInternalDataPath: (path: string) => string;
+  getNavigationState: () => RouterNavigationState;
   load: (path: string) => Promise<RouterEntry>;
   navigate: (path: string) => Promise<RouterEntry>;
   subscribe: (listener: RouterListener) => () => void;
+  subscribeNavigationState: (
+    listener: RouterNavigationStateListener,
+  ) => () => void;
 };

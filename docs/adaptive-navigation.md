@@ -47,4 +47,19 @@ The stack is session navigation state. A direct visit to `/posts/1` renders that
 
 For route-level back links, call `await app.router.back({ fallback: "/posts" })`. Stack presentation pops the in-session stack through browser history when it can, and uses the fallback route when the current page was opened directly.
 
+Stack-aware app chrome should subscribe to router navigation state instead of inferring from route paths:
+
+```ts
+const unsubscribe = app.router.subscribeNavigationState((state) => {
+  state.canGoBack;
+  state.current;
+  state.previous;
+  state.stackDepth;
+  state.transition;
+  state.progress;
+});
+```
+
+The API is the primary contract. Base routers expose final route state only, while stack presentation includes `previous`, full stack depth, and live edge-swipe updates. During an interactive swipe-back, `state.transition.phase` is `"gesture"`, `state.transition.direction` is `"backward"`, and `state.progress` moves from `0` to `1` with the gesture. Apps can use that progress to morph headers or titles in sync with the gesture; DOM attributes may mirror this later, but they are not the source of truth.
+
 Presentation is chosen at startup or at navigator boundaries, not rewritten continuously at runtime. Stack presentation currently supports `shell` and `custom` CSR apps.

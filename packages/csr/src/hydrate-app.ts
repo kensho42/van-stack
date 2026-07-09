@@ -358,6 +358,9 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     getInternalDataPath(path: string) {
       return baseRouter.getInternalDataPath(path);
     },
+    getNavigationState() {
+      return baseRouter.getNavigationState();
+    },
     async load(path: string) {
       const entry = await baseRouter.load(path);
       await completeNavigation(entry, "load");
@@ -370,6 +373,9 @@ export function hydrateApp(options: HydrateAppOptions): HydratedApp {
     },
     subscribe(listener) {
       return baseRouter.subscribe(listener);
+    },
+    subscribeNavigationState(listener) {
+      return baseRouter.subscribeNavigationState(listener);
     },
   } satisfies Router;
   const root = getAppRoot(document, options.rootSelector);

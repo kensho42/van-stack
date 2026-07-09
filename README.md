@@ -162,6 +162,26 @@ browser history when there is an in-app entry to pop, otherwise it navigates to
 the fallback path. `app.router.canGoBack()` reports whether an in-app history
 entry is currently available.
 
+Apps can observe router position with `app.router.getNavigationState()` and
+`app.router.subscribeNavigationState(listener)`. The subscription calls the
+listener immediately and then reports final route state for base routers:
+
+```ts
+const unsubscribe = app.router.subscribeNavigationState((state) => {
+  state.canGoBack;
+  state.current;
+  state.previous;
+  state.stackDepth;
+  state.transition.phase;
+  state.progress;
+});
+```
+
+Idle state uses `phase: "idle"`, `direction: "none"`, `progress: 1`, and matching
+`from`/`to` snapshots. Stack presentation reports richer stack state, including
+`previous`, stack depth, and live `phase: "gesture"` progress during edge
+swipe-back. Push/pop CSS transitions may report only start and final state.
+
 Choose the runtime handoff you want:
 
 ```ts

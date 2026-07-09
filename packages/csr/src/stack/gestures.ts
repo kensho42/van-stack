@@ -53,6 +53,11 @@ type SwipeBackCommitHandle = {
   finish: () => Promise<void> | void;
 };
 
+export type SwipeBackGestureEvent = {
+  phase: "start" | "move" | "cancel" | "commit";
+  progress: number;
+};
+
 type SwipeBackControllerOptions = {
   canStart: () => SwipeTarget | null;
   commit: () =>
@@ -61,6 +66,7 @@ type SwipeBackControllerOptions = {
     | undefined;
   getRouteNavigation: () => RouteNavigation | undefined;
   getSettleDuration: () => number;
+  onGesture?: (event: SwipeBackGestureEvent) => void;
   options: StackSwipeBackOptions | undefined;
 };
 
@@ -325,6 +331,7 @@ export function createSwipeBackController({
   commit,
   getRouteNavigation,
   getSettleDuration,
+  onGesture,
   options,
 }: SwipeBackControllerOptions): SwipeBackController | null {
   const resolved = resolveSwipeBackOptions(options);
@@ -361,6 +368,7 @@ export function createSwipeBackController({
     startY = point.y;
     startTime = Date.now();
     addClass(root, "van-stack-swipe-active");
+    onGesture?.({ phase: "start", progress: 0 });
   };
 
   const onMove = (event: StackPointerEventLike) => {
@@ -379,6 +387,7 @@ export function createSwipeBackController({
       moved = false;
       clearGestureStyles(target);
       removeClass(root, "van-stack-swipe-active");
+      onGesture?.({ phase: "cancel", progress: 0 });
       target = null;
       return;
     }
@@ -405,6 +414,7 @@ export function createSwipeBackController({
     if (target.opacityLayer) {
       setInlineStyle(target.opacityLayer, "opacity", String(1 - progress));
     }
+    onGesture?.({ phase: "move", progress });
   };
 
   const onEnd = async () => {
@@ -426,6 +436,7 @@ export function createSwipeBackController({
     target = null;
 
     if (shouldCommit) {
+      onGesture?.({ phase: "commit", progress: 1 });
       const handle = await commit();
       removeClass(root, "van-stack-swipe-active");
       await settleGesture(swipeTarget, getSettleDuration(), true);
@@ -434,6 +445,7 @@ export function createSwipeBackController({
       return;
     }
 
+    onGesture?.({ phase: "cancel", progress: 0 });
     removeClass(root, "van-stack-swipe-active");
     await settleGesture(swipeTarget, getSettleDuration(), false);
     clearGestureStyles(swipeTarget);

@@ -18,6 +18,11 @@ import {
   createNavigationHistory,
   type NavigationHistory,
 } from "./navigation-history";
+import {
+  createIdleNavigationState,
+  createNavigationSnapshot,
+  createNavigationStateStore,
+} from "./navigation-state";
 import { resolveRouteModule } from "./route-render";
 
 type HeadElementLike = {
@@ -339,6 +344,26 @@ export function createRouter(options: CreateRouterOptions) {
     };
   }
 
+  const navigationStateStore = createNavigationStateStore(
+    createIdleNavigationState(
+      createNavigationSnapshot({
+        canGoBack: navigationHistory.canGoBack(),
+        current,
+      }),
+    ),
+  );
+
+  function syncNavigationState(entry: RouterEntry | null = current) {
+    navigationStateStore.set(
+      createIdleNavigationState(
+        createNavigationSnapshot({
+          canGoBack: navigationHistory.canGoBack(),
+          current: entry,
+        }),
+      ),
+    );
+  }
+
   async function resolvePath(path: string): Promise<RouterEntry> {
     activeController?.abort();
     activeController = new AbortController();
@@ -388,6 +413,7 @@ export function createRouter(options: CreateRouterOptions) {
     const entry = await resolvePath(path);
 
     navigationHistory.history.pushState({ path: entry.path }, "", entry.path);
+    syncNavigationState(entry);
 
     return entry;
   }
@@ -415,12 +441,17 @@ export function createRouter(options: CreateRouterOptions) {
     getInternalDataPath(path: string) {
       return createInternalDataPath(parsePath(path).pathname);
     },
+    getNavigationState() {
+      return navigationStateStore.get();
+    },
     async load(path: string) {
       if (current && current.path === parsePath(path).path) {
         return current;
       }
 
-      return resolvePath(path);
+      const entry = await resolvePath(path);
+      syncNavigationState(entry);
+      return entry;
     },
     async navigate(path: string) {
       return navigatePath(path);
@@ -435,6 +466,9 @@ export function createRouter(options: CreateRouterOptions) {
       return () => {
         listeners.delete(listener);
       };
+    },
+    subscribeNavigationState(listener) {
+      return navigationStateStore.subscribe(listener);
     },
   } satisfies Router;
 }

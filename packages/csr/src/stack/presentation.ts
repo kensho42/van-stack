@@ -6,8 +6,18 @@ import type {
   RouterBackOptions,
   RouterBackResult,
   RouterEntry,
+  RouterNavigationDirection,
+  RouterNavigationPhase,
+  RouterNavigationSnapshot,
+  RouterNavigationStateListener,
   RuntimeRouteDefinition,
 } from "../../../core/src/index";
+import { matchPath } from "../../../core/src/index";
+import {
+  createIdleNavigationState,
+  createNavigationSnapshot,
+  createNavigationStateStore,
+} from "../navigation-state";
 import type {
   ClientNavigationAction,
   ClientNavigationIntent,
@@ -103,6 +113,21 @@ function currentItem(stack: readonly StackItem[]) {
   return stack[stack.length - 1] ?? null;
 }
 
+function stackItemEntry(item: StackItem | undefined) {
+  return item?.entry ?? null;
+}
+
+function isRouteUpMatch(
+  routeNavigation: RouteNavigation | undefined,
+  item: StackItem | undefined,
+) {
+  return Boolean(
+    routeNavigation?.up &&
+      item &&
+      matchPath(routeNavigation.up, item.entry.pathname),
+  );
+}
+
 function getWindowScroll(window: ClientPresentationWindowLike) {
   return {
     left: window.scrollX ?? window.pageXOffset ?? 0,
@@ -152,6 +177,66 @@ export function stackPresentation(
   let currentNavigation: RouteNavigation | undefined;
   let suppressNextPopPath: string | null = null;
   let queue = Promise.resolve();
+  const navigationStateStore = createNavigationStateStore(
+    createIdleNavigationState(
+      createNavigationSnapshot({
+        canGoBack: false,
+        current: null,
+        stackDepth: 0,
+      }),
+    ),
+  );
+
+  function canStackGoBack(nextStack = stack) {
+    return nextStack.length > 1 && Boolean(latestInput?.history.back);
+  }
+
+  function createStackSnapshot(nextStack = stack): RouterNavigationSnapshot {
+    return createNavigationSnapshot({
+      canGoBack: canStackGoBack(nextStack),
+      current: stackItemEntry(nextStack[nextStack.length - 1]),
+      previous: stackItemEntry(nextStack[nextStack.length - 2]),
+      stackDepth: nextStack.length,
+    });
+  }
+
+  function setNavigationStateForStack() {
+    navigationStateStore.set(createIdleNavigationState(createStackSnapshot()));
+  }
+
+  function setTransitionState(input: {
+    direction: RouterNavigationDirection;
+    from: RouterNavigationSnapshot;
+    phase: RouterNavigationPhase;
+    progress: number;
+    to: RouterNavigationSnapshot;
+  }) {
+    navigationStateStore.set({
+      ...input.from,
+      progress: input.progress,
+      transition: input,
+    });
+  }
+
+  function reportSwipeBackGesture(input: {
+    phase: "start" | "move" | "cancel" | "commit";
+    progress: number;
+  }) {
+    if (input.phase === "cancel") {
+      setNavigationStateForStack();
+      return;
+    }
+
+    if (stack.length <= 1) return;
+
+    setTransitionState({
+      direction: "backward",
+      from: createStackSnapshot(stack),
+      phase: "gesture",
+      progress: input.progress,
+      to: createStackSnapshot(stack.slice(0, -1)),
+    });
+  }
 
   async function resolveAction(
     input: ClientPresentationRenderInput,
@@ -181,6 +266,10 @@ export function stackPresentation(
     input: ClientPresentationRenderInput,
     routeNavigation: RouteNavigation | undefined,
     direction: "forward" | "backward",
+    navigationState: {
+      from: RouterNavigationSnapshot;
+      to: RouterNavigationSnapshot;
+    },
     before: () => Promise<void> | void,
     during: () => Promise<void> | void,
     after: () => Promise<void> | void,
@@ -189,9 +278,23 @@ export function stackPresentation(
 
     await before();
     if (transition.animate) {
+      setTransitionState({
+        direction,
+        from: navigationState.from,
+        phase: "transition",
+        progress: 0,
+        to: navigationState.to,
+      });
       setTransitionRoot(input.root as StackViewRoot, transition, direction);
       (input.root as StackViewRoot).getBoundingClientRect?.();
       await during();
+      setTransitionState({
+        direction,
+        from: navigationState.from,
+        phase: "transition",
+        progress: 1,
+        to: navigationState.to,
+      });
       await waitForTransition(input.root as StackViewRoot, transition);
       clearTransitionRoot(input.root as StackViewRoot, transition, direction);
     }
@@ -219,6 +322,10 @@ export function stackPresentation(
       input,
       routeNavigation,
       "forward",
+      {
+        from: createStackSnapshot(stack),
+        to: createStackSnapshot(nextStack),
+      },
       async () => {
         syncRoot(input.root, [
           { item: previous, position: "current" },
@@ -244,10 +351,18 @@ export function stackPresentation(
     action: "replace" | "reset",
   ) {
     const next = await createStackItem(input.routes, input.entry);
-    stack =
-      action === "replace" && stack.length > 0
-        ? [...stack.slice(0, -1), next]
-        : [next];
+    if (action === "reset" || stack.length === 0) {
+      stack = [next];
+    } else {
+      const existingIndex = findStackIndex(stack, input.entry);
+      const previous = stack[stack.length - 2];
+      stack =
+        existingIndex >= 0
+          ? [...stack.slice(0, existingIndex), next]
+          : isRouteUpMatch(routeNavigation, previous)
+            ? [...stack.slice(0, -1), next]
+            : [next];
+    }
     await syncRetainedRoot(
       input,
       stack,
@@ -287,6 +402,10 @@ export function stackPresentation(
       input,
       routeNavigation,
       "backward",
+      {
+        from: createStackSnapshot(stack),
+        to: createStackSnapshot(nextStack),
+      },
       async () => {
         syncRoot(input.root, [
           { item: previous, position: "previous" },
@@ -353,6 +472,7 @@ export function stackPresentation(
       async finish() {
         stack = nextStack;
         await syncRetainedRoot(input, stack, retention);
+        setNavigationStateForStack();
         restoreWindowScroll(input.window, previousScroll);
 
         if (input.history.back) {
@@ -388,6 +508,7 @@ export function stackPresentation(
       const transition = resolveTransition(options, currentNavigation);
       return transition.animate ? transition.duration : 0;
     },
+    onGesture: reportSwipeBackGesture,
     options: options.swipeBack,
   });
 
@@ -411,6 +532,7 @@ export function stackPresentation(
 
     const action = await resolveAction(input, currentNavigation);
     await applyAction(input, action, currentNavigation);
+    setNavigationStateForStack();
   }
 
   return {
@@ -429,15 +551,21 @@ export function stackPresentation(
       return "none";
     },
     canGoBack() {
-      return stack.length > 1 && Boolean(latestInput?.history.back);
+      return canStackGoBack();
     },
     dispose() {
       swipeBack?.dispose();
+    },
+    getNavigationState() {
+      return navigationStateStore.get();
     },
     render(input) {
       const run = queue.then(() => renderQueued(input));
       queue = run.catch(() => {});
       return run;
+    },
+    subscribeNavigationState(listener: RouterNavigationStateListener) {
+      return navigationStateStore.subscribe(listener);
     },
   };
 }

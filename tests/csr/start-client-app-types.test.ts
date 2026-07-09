@@ -6,6 +6,12 @@ import type {
   Router,
   RouterBackOptions,
   RouterBackResult,
+  RouterNavigationDirection,
+  RouterNavigationPhase,
+  RouterNavigationSnapshot,
+  RouterNavigationState,
+  RouterNavigationStateListener,
+  RouterNavigationTransitionState,
   RuntimeRouteDefinition,
 } from "../../packages/core/src/index";
 import type {
@@ -237,6 +243,48 @@ test("client routers expose managed back navigation", () => {
     Promise<RouterBackResult>
   >();
   expectTypeOf<ReturnType<Router["canGoBack"]>>().toEqualTypeOf<boolean>();
+});
+
+test("client routers expose navigation state subscriptions", () => {
+  expectTypeOf<RouterNavigationPhase>().toEqualTypeOf<
+    "idle" | "load" | "transition" | "gesture"
+  >();
+  expectTypeOf<RouterNavigationDirection>().toEqualTypeOf<
+    "none" | "forward" | "backward" | "replace" | "reset"
+  >();
+  expectTypeOf<RouterNavigationSnapshot>().toMatchTypeOf<{
+    canGoBack: boolean;
+    current: unknown;
+    previous: unknown;
+    stackDepth: number;
+  }>();
+  expectTypeOf<RouterNavigationTransitionState>().toMatchTypeOf<{
+    direction: RouterNavigationDirection;
+    from: RouterNavigationSnapshot;
+    phase: RouterNavigationPhase;
+    progress: number;
+    to: RouterNavigationSnapshot;
+  }>();
+  expectTypeOf<RouterNavigationState>().toMatchTypeOf<
+    RouterNavigationSnapshot & {
+      progress: number;
+      transition: RouterNavigationTransitionState;
+    }
+  >();
+
+  const listener: RouterNavigationStateListener = (state) => {
+    expectTypeOf(state).toEqualTypeOf<RouterNavigationState>();
+  };
+
+  expectTypeOf(listener).toMatchTypeOf<
+    Parameters<Router["subscribeNavigationState"]>[0]
+  >();
+  expectTypeOf<
+    ReturnType<Router["getNavigationState"]>
+  >().toEqualTypeOf<RouterNavigationState>();
+  expectTypeOf<ReturnType<Router["subscribeNavigationState"]>>().toEqualTypeOf<
+    () => void
+  >();
 });
 
 test("route pages can read matched URL context", () => {

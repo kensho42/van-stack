@@ -394,6 +394,92 @@ describe("csr router", () => {
     );
   });
 
+  test("exposes immediate navigation state subscriptions for base routers", async () => {
+    const pushState = vi.fn();
+    const router = createRouter({
+      mode: "shell",
+      routes,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      history: { back: vi.fn(), pushState },
+    });
+    const listener = vi.fn();
+
+    const unsubscribe = router.subscribeNavigationState(listener);
+
+    expect(listener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canGoBack: false,
+        current: null,
+        previous: null,
+        progress: 1,
+        stackDepth: 0,
+        transition: expect.objectContaining({
+          direction: "none",
+          phase: "idle",
+          progress: 1,
+        }),
+      }),
+    );
+
+    await router.load("/posts/initial");
+
+    expect(router.getNavigationState()).toEqual(
+      expect.objectContaining({
+        canGoBack: false,
+        current: expect.objectContaining({ path: "/posts/initial" }),
+        previous: null,
+        progress: 1,
+        stackDepth: 1,
+      }),
+    );
+
+    await router.navigate("/posts/next");
+
+    expect(router.getNavigationState()).toEqual(
+      expect.objectContaining({
+        canGoBack: true,
+        current: expect.objectContaining({ path: "/posts/next" }),
+        previous: null,
+        progress: 1,
+        stackDepth: 1,
+      }),
+    );
+    expect(listener).toHaveBeenCalledTimes(3);
+
+    unsubscribe();
+    await router.navigate("/posts/final");
+
+    expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  test("base router fallback back updates navigation state", async () => {
+    const router = createRouter({
+      mode: "shell",
+      routes,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      history: { pushState: vi.fn() },
+    });
+
+    await expect(router.back({ fallback: "/posts/fallback" })).resolves.toBe(
+      "fallback",
+    );
+
+    expect(router.getNavigationState()).toEqual(
+      expect.objectContaining({
+        canGoBack: false,
+        current: expect.objectContaining({ path: "/posts/fallback" }),
+        previous: null,
+        progress: 1,
+        stackDepth: 1,
+        transition: expect.objectContaining({
+          direction: "none",
+          phase: "idle",
+          progress: 1,
+        }),
+      }),
+    );
+  });
+
   test("applies route metadata to the document head for transport-backed navigations", async () => {
     const head = createHeadDocument();
     const load = vi.fn(async (match: { params: Record<string, string> }) => ({

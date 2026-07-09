@@ -249,6 +249,9 @@ function createRouterProxy(
     getInternalDataPath(path: string) {
       return router.getInternalDataPath(path);
     },
+    getNavigationState() {
+      return router.getNavigationState();
+    },
     async load(path: string) {
       const entry = await router.load(path);
       await renderEntry(entry);
@@ -262,6 +265,9 @@ function createRouterProxy(
     },
     subscribe(listener) {
       return router.subscribe(listener);
+    },
+    subscribeNavigationState(listener) {
+      return router.subscribeNavigationState(listener);
     },
   } satisfies Router;
 }
@@ -339,6 +345,11 @@ function createPresentedRouter(
       getInternalDataPath(path: string) {
         return router.getInternalDataPath(path);
       },
+      getNavigationState() {
+        return (
+          presentation.getNavigationState?.() ?? router.getNavigationState()
+        );
+      },
       load(path: string) {
         return loadWithPresentation(path, "load");
       },
@@ -347,6 +358,12 @@ function createPresentedRouter(
       },
       subscribe(listener) {
         return router.subscribe(listener);
+      },
+      subscribeNavigationState(listener) {
+        return (
+          presentation.subscribeNavigationState?.(listener) ??
+          router.subscribeNavigationState(listener)
+        );
       },
     } satisfies Router,
   };

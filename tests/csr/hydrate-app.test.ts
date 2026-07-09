@@ -272,6 +272,8 @@ describe("csr hydrate app", () => {
 
     const listener = vi.fn();
     app.router.subscribe(listener);
+    const navigationStateListener = vi.fn();
+    app.router.subscribeNavigationState(navigationStateListener);
 
     expect(app.bootstrap).toEqual(bootstrap);
     expect(routeHydrate).toHaveBeenCalledWith({
@@ -292,6 +294,22 @@ describe("csr hydrate app", () => {
       }),
     );
     expect(listener.mock.calls[0][0].query.toString()).toBe("tab=summary");
+    expect(navigationStateListener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canGoBack: false,
+        current: expect.objectContaining({
+          path: "/posts/agentic-coding-is-the-future?tab=summary",
+        }),
+        previous: null,
+        progress: 1,
+        stackDepth: 1,
+        transition: expect.objectContaining({
+          direction: "none",
+          phase: "idle",
+          progress: 1,
+        }),
+      }),
+    );
 
     const clickHandler = env.getClickHandler();
     expect(clickHandler).toBeTypeOf("function");
