@@ -1853,6 +1853,17 @@ describe("startClientApp", () => {
     vi.useFakeTimers();
     try {
       const env = createClientDocument();
+      const testWindow = {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        scrollX: 0,
+        scrollY: 180,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
 
       const app = startClientApp({
         mode: "shell",
@@ -1887,19 +1898,12 @@ describe("startClientApp", () => {
         }),
         document: env.document as never,
         rootSelector: '[data-van-stack-app-root=""]',
-        window: {
-          location: {
-            origin: "https://example.com",
-            pathname: "/posts",
-            search: "",
-          },
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-        } as never,
+        window: testWindow as never,
       });
 
       await app.ready;
       await app.router.navigate("/posts/1");
+      testWindow.scrollY = 520;
 
       env.root.dispatchEvent("pointerdown", {
         pageX: 10,
@@ -1911,6 +1915,18 @@ describe("startClientApp", () => {
         pageY: 24,
         target: env.root,
       });
+
+      const previousRoot = env.root.children.find(
+        (child) =>
+          child &&
+          typeof child === "object" &&
+          "attributes" in child &&
+          (child as { attributes: Map<string, string> }).attributes.get(
+            "data-van-stack-path",
+          ) === "/posts",
+      ) as { style: Record<string, string> } | undefined;
+
+      expect(previousRoot?.style.transform).toContain(", 340px, 0)");
 
       expect(app.router.getNavigationState()).toEqual(
         expect.objectContaining({
@@ -1930,6 +1946,8 @@ describe("startClientApp", () => {
       });
       await vi.advanceTimersByTimeAsync(0);
 
+      expect(previousRoot?.style.transform).toBe("translate3d(-20%, 340px, 0)");
+
       expect(app.router.getNavigationState()).toEqual(
         expect.objectContaining({
           canGoBack: true,
@@ -1946,6 +1964,7 @@ describe("startClientApp", () => {
       );
 
       await vi.advanceTimersByTimeAsync(320);
+      expect(previousRoot?.style.transform).toBeUndefined();
     } finally {
       vi.useRealTimers();
     }
@@ -2127,6 +2146,15 @@ describe("startClientApp", () => {
             };
           }
         | undefined;
+      const outgoingRoot = env.root.children.find(
+        (child) =>
+          child &&
+          typeof child === "object" &&
+          "attributes" in child &&
+          (child as { attributes: Map<string, string> }).attributes.get(
+            "data-van-stack-path",
+          ) === "/posts/1",
+      ) as { style: Record<string, string> } | undefined;
 
       expect(previousRoot?.style.transform).toContain(", 340px, 0)");
       if (previousRoot) {
@@ -2146,6 +2174,8 @@ describe("startClientApp", () => {
 
       await vi.advanceTimersByTimeAsync(0);
       expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
+      expect(previousRoot?.style["z-index"]).toBe("1");
+      expect(outgoingRoot?.style["z-index"]).toBe("2");
 
       await vi.advanceTimersByTimeAsync(320);
 
@@ -2156,6 +2186,8 @@ describe("startClientApp", () => {
       });
       expect(finishEvents).toEqual(["clear-transform", "scroll"]);
       expect(env.root.attributes.get("style")).toBeUndefined();
+      expect(previousRoot?.style["z-index"]).toBeUndefined();
+      expect(outgoingRoot?.style["z-index"]).toBeUndefined();
       expect(back).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();

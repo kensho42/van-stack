@@ -257,18 +257,32 @@ function clearGestureStyles(target: SwipeTarget) {
     removeInlineStyle(root, "transform");
     removeInlineStyle(root, "opacity");
     removeInlineStyle(root, "transition");
+    removeInlineStyle(root, "z-index");
   }
   removeGestureLayers(target);
 }
 
-function clearGestureMotionStyles(target: SwipeTarget) {
-  for (const root of [target.current, target.previous]) {
-    removeInlineStyle(root, "transform");
-    removeInlineStyle(root, "opacity");
+function setCanceledGestureMotionStyles(target: SwipeTarget) {
+  removeInlineStyle(target.current, "transform");
+  removeInlineStyle(target.current, "opacity");
+  removeInlineStyle(target.previous, "opacity");
+
+  const previousOffsetY = target.previousOffsetY ?? 0;
+  if (previousOffsetY === 0) {
+    removeInlineStyle(target.previous, "transform");
+    return;
   }
+
+  setInlineStyle(
+    target.previous,
+    "transform",
+    `translate3d(-20%, ${previousOffsetY}px, 0)`,
+  );
 }
 
 function setCommittedGestureMotionStyles(target: SwipeTarget) {
+  setInlineStyle(target.current, "z-index", "2");
+  setInlineStyle(target.previous, "z-index", "1");
   removeInlineStyle(target.current, "transform");
   removeInlineStyle(target.current, "opacity");
   removeInlineStyle(target.previous, "opacity");
@@ -298,7 +312,7 @@ async function settleGesture(
     if (committed) {
       setCommittedGestureMotionStyles(target);
     } else {
-      clearGestureMotionStyles(target);
+      setCanceledGestureMotionStyles(target);
     }
     return;
   }
@@ -314,7 +328,7 @@ async function settleGesture(
   if (committed) {
     setCommittedGestureMotionStyles(target);
   } else {
-    clearGestureMotionStyles(target);
+    setCanceledGestureMotionStyles(target);
   }
 
   await new Promise<void>((resolve) => {

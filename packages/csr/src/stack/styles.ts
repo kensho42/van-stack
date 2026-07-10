@@ -51,6 +51,12 @@ export function ensureStackStyles() {
 .van-stack-page-next {
   transform: translate3d(100%, 0, 0);
 }
+.van-stack-transition-backward .van-stack-page-current {
+  z-index: 1;
+}
+.van-stack-transition-backward .van-stack-page-next {
+  z-index: 2;
+}
 .van-stack-transition [data-van-stack-view],
 .van-stack-swipe-active [data-van-stack-view] {
   will-change: transform, opacity;

@@ -36,6 +36,39 @@ describe("stack presentation styles", () => {
     );
   });
 
+  test("keeps the popped page above the returning page during Back", () => {
+    const headNodes: Array<{ textContent: string }> = [];
+
+    vi.stubGlobal("document", {
+      createElement() {
+        return {
+          setAttribute: vi.fn(),
+          textContent: "",
+        };
+      },
+      head: {
+        appendChild(node: { textContent: string }) {
+          headNodes.push(node);
+        },
+      },
+      querySelector: vi.fn(() => null),
+    });
+
+    try {
+      ensureStackStyles();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+
+    const css = headNodes[0]?.textContent ?? "";
+    expect(css).toContain(
+      ".van-stack-transition-backward .van-stack-page-current {\n  z-index: 1;",
+    );
+    expect(css).toContain(
+      ".van-stack-transition-backward .van-stack-page-next {\n  z-index: 2;",
+    );
+  });
+
   test("uses a subtle edge-attached iOS swipe shadow instead of a dark slab", () => {
     const headNodes: Array<{ textContent: string }> = [];
 
