@@ -41,6 +41,14 @@ export default {
 
 Stack presentation uses Framework7-style page positions: previous, current, and next. The default `retention: "previous"` keeps the current view and immediate previous view mounted so transitions and iOS-style edge swipe-back can reveal the page underneath. `retention: "current"` keeps only the active view mounted after transitions, and `retention: "all"` keeps every pushed view mounted.
 
+Managed scroll is synchronized with those page transitions. With the default
+`scroll: { onNavigate: "top", onPopState: "preserve", behavior: "auto" }`, a
+pushed view starts at the top on its first transition frame, while Back restores
+the retained view's saved scroll position before it moves on screen. The stack
+engine compensates the outgoing view during the handoff so it does not jump. It
+temporarily owns native history scroll restoration while mounted and restores
+the browser's previous setting when disposed.
+
 Routes can opt out of edge swipe-back by setting `swipeBack: false` in `navigation.ts`, and individual controls can opt out with `data-van-stack-no-swipe-back`.
 
 The stack is session navigation state. A direct visit to `/posts/1` renders that route as one active leaf view; it does not fabricate previous `/` or `/posts` views. Browser back maps to stack pop when that previous view exists.

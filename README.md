@@ -156,6 +156,11 @@ scroll: {
 }
 ```
 
+Stack presentation applies that policy as part of the transition handoff. A
+pushed route is rendered at its target scroll position from the first frame,
+and popping restores the retained route's saved scroll position before the
+backward transition begins.
+
 Managed CSR apps also expose history-aware back navigation on `app.router`. Use
 `await app.router.back({ fallback: "/posts" })` for app back links: VanStack calls
 browser history when there is an in-app entry to pop, otherwise it navigates to
@@ -499,6 +504,12 @@ export default {
 ```
 
 Stack presentation keeps the full in-session route stack internally, while `retention` controls how many views stay mounted in the DOM. The default is `previous`, which keeps the current view plus the immediate previous view so Framework7-style transitions and edge swipe-back can reveal the page underneath. Use `retention: "current"` to prune inactive DOM aggressively, or `retention: "all"` when an app wants every pushed view to remain mounted.
+
+The stack engine also owns managed scroll timing during transitions. It honors
+the `startClientApp({ scroll })` policy while keeping outgoing and incoming
+views visually stable at their independent scroll positions. While mounted, it
+temporarily sets native history scroll restoration to `manual`; disposing the
+presentation restores the browser's previous setting.
 
 Direct visits such as `/posts/1` render the active route as a single leaf view. The stack is built from in-app navigation history, not inferred from route ancestry. In this release stack presentation is available for `shell` and `custom` CSR apps; hydrated stack handoff is intentionally left for a follow-up.
 

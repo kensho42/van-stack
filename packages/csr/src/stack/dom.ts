@@ -13,7 +13,11 @@ export type StackViewRoot = AppRootLike & {
     add: (...names: string[]) => void;
     remove: (...names: string[]) => void;
   };
-  getBoundingClientRect?: () => { left?: number; width?: number };
+  getBoundingClientRect?: () => {
+    height?: number;
+    left?: number;
+    width?: number;
+  };
   innerHTML?: string;
   remove?: () => void;
   removeAttribute?: (name: string) => void;
@@ -289,6 +293,10 @@ export function removeInlineStyle(root: StackViewRoot, property: string) {
 
 export function getElementLeft(root: StackViewRoot) {
   return root.getBoundingClientRect?.().left ?? 0;
+}
+
+export function getElementHeight(root: StackViewRoot) {
+  return root.getBoundingClientRect?.().height ?? 0;
 }
 
 export function getElementWidth(root: StackViewRoot) {

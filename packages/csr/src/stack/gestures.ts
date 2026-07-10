@@ -50,7 +50,7 @@ type SwipeTarget = {
 };
 
 type SwipeBackCommitHandle = {
-  finish: () => Promise<void> | void;
+  finish: (clearStyles: () => void) => Promise<void> | void;
 };
 
 export type SwipeBackGestureEvent = {
@@ -440,8 +440,14 @@ export function createSwipeBackController({
       const handle = await commit();
       removeClass(root, "van-stack-swipe-active");
       await settleGesture(swipeTarget, getSettleDuration(), true);
-      await handle?.finish?.();
-      clearGestureStyles(swipeTarget);
+      let stylesCleared = false;
+      const clearStyles = () => {
+        if (stylesCleared) return;
+        stylesCleared = true;
+        clearGestureStyles(swipeTarget);
+      };
+      await handle?.finish?.(clearStyles);
+      clearStyles();
       return;
     }
 

@@ -302,8 +302,12 @@ function createPresentedRouter(
       navigate: navigateWithPresentation,
       root: context.root,
       routes: context.routes,
+      scroll: navigationScroll,
       window: context.window,
     });
+    if (!presentation.managesScroll && intent !== "load") {
+      applyNavigationScroll(context.window, navigationScroll, intent);
+    }
     renderedEntry = entry;
     return entry;
   };
@@ -312,9 +316,7 @@ function createPresentedRouter(
     path: string,
     action?: ClientNavigationAction,
   ) => {
-    const entry = await loadWithPresentation(path, "navigate", action);
-    applyNavigationScroll(context.window, navigationScroll, "navigate");
-    return entry;
+    return loadWithPresentation(path, "navigate", action);
   };
 
   return {
@@ -482,8 +484,8 @@ export function startClientApp(
       await presented.loadWithPresentation(getCurrentPath(window), "popstate");
     } else {
       await router.load(getCurrentPath(window));
+      applyNavigationScroll(window, navigationScroll, "popstate");
     }
-    applyNavigationScroll(window, navigationScroll, "popstate");
   };
 
   document.addEventListener("click", clickHandler);

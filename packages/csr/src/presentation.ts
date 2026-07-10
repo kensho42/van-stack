@@ -7,6 +7,10 @@ import type {
   RouterNavigationStateListener,
   RuntimeRouteDefinition,
 } from "../../core/src/index";
+import type {
+  NavigationScrollBehavior,
+  ResolvedNavigationScrollOptions,
+} from "./navigation-scroll";
 import type { AppRootLike } from "./route-render";
 
 export type ClientNavigationAction = "push" | "replace" | "pop" | "reset";
@@ -23,7 +27,7 @@ export type ClientPresentationWindowLike = {
   scrollTo?: (options: {
     top: number;
     left: number;
-    behavior: "auto";
+    behavior: NavigationScrollBehavior;
   }) => unknown;
   scrollX?: number;
   scrollY?: number;
@@ -41,6 +45,7 @@ export type ClientPresentationRenderInput = {
   ) => Promise<RouterEntry>;
   root: AppRootLike;
   routes: readonly RuntimeRouteDefinition[];
+  scroll: ResolvedNavigationScrollOptions;
   window: ClientPresentationWindowLike;
 };
 
@@ -49,6 +54,7 @@ export type ClientPresentation = {
   canGoBack?: () => boolean;
   dispose?: () => void;
   getNavigationState?: () => RouterNavigationState;
+  managesScroll?: boolean;
   render: (input: ClientPresentationRenderInput) => Promise<void> | void;
   subscribeNavigationState?: (
     listener: RouterNavigationStateListener,

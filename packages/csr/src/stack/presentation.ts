@@ -26,7 +26,12 @@ import type {
   ClientPresentationWindowLike,
 } from "../presentation";
 import { findMatchedRoute, resolveRouteModule } from "../route-render";
-import type { StackViewRoot } from "./dom";
+import {
+  getElementHeight,
+  removeInlineStyle,
+  type StackViewRoot,
+  setInlineStyle,
+} from "./dom";
 import {
   createSwipeBackController,
   type StackSwipeBackOptions,
@@ -147,14 +152,67 @@ function getItemScroll(item: StackItem) {
   return item.scroll ?? { left: 0, top: 0 };
 }
 
+function setItemScrollOffset(item: StackItem | null, offsetY: number) {
+  if (!item?.root) return;
+  if (offsetY === 0) {
+    removeInlineStyle(item.root, "translate");
+    return;
+  }
+  setInlineStyle(item.root, "translate", `0 ${offsetY}px`);
+}
+
+function lockStackHeight(
+  input: ClientPresentationRenderInput,
+  ...items: Array<StackItem | null>
+) {
+  const height = Math.max(
+    0,
+    ...items.map((item) => (item?.root ? getElementHeight(item.root) : 0)),
+  );
+  if (height > 0) {
+    setInlineStyle(input.root as StackViewRoot, "min-height", `${height}px`);
+  }
+}
+
+function unlockStackHeight(input: ClientPresentationRenderInput) {
+  removeInlineStyle(input.root as StackViewRoot, "min-height");
+}
+
+function getNavigationTargetScroll(
+  input: ClientPresentationRenderInput,
+  destination?: StackItem,
+) {
+  if (input.intent === "navigate") {
+    return input.scroll.onNavigate === "top" ? { left: 0, top: 0 } : null;
+  }
+
+  if (input.intent === "popstate") {
+    return getPopStateTargetScroll(input, destination);
+  }
+
+  return null;
+}
+
+function getPopStateTargetScroll(
+  input: ClientPresentationRenderInput,
+  destination?: StackItem,
+) {
+  return input.scroll.onPopState === "top"
+    ? { left: 0, top: 0 }
+    : destination
+      ? getItemScroll(destination)
+      : null;
+}
+
 function restoreWindowScroll(
   window: ClientPresentationWindowLike,
   scroll: { left: number; top: number },
+  behavior: ClientPresentationRenderInput["scroll"]["behavior"] = "auto",
 ) {
   window.scrollTo?.({
     top: scroll.top,
     left: scroll.left,
-    behavior: "auto",
+    behavior,
   });
 }
 
@@ -177,6 +235,9 @@ export function stackPresentation(
   let currentNavigation: RouteNavigation | undefined;
   let suppressNextPopPath: string | null = null;
   let queue = Promise.resolve();
+  let disposed = false;
+  let managedHistory: HistoryLike | null = null;
+  let previousScrollRestoration: HistoryLike["scrollRestoration"];
   const navigationStateStore = createNavigationStateStore(
     createIdleNavigationState(
       createNavigationSnapshot({
@@ -189,6 +250,24 @@ export function stackPresentation(
 
   function canStackGoBack(nextStack = stack) {
     return nextStack.length > 1 && Boolean(latestInput?.history.back);
+  }
+
+  function restoreNativeScrollRestoration() {
+    if (managedHistory && previousScrollRestoration) {
+      managedHistory.scrollRestoration = previousScrollRestoration;
+    }
+    managedHistory = null;
+    previousScrollRestoration = undefined;
+  }
+
+  function manageNativeScrollRestoration(history: HistoryLike) {
+    if (managedHistory === history) return;
+    restoreNativeScrollRestoration();
+    if (!history.scrollRestoration) return;
+
+    managedHistory = history;
+    previousScrollRestoration = history.scrollRestoration;
+    history.scrollRestoration = "manual";
   }
 
   function createStackSnapshot(nextStack = stack): RouterNavigationSnapshot {
@@ -317,6 +396,8 @@ export function stackPresentation(
     }
 
     saveItemScroll(previous, input.window);
+    const previousScroll = getItemScroll(previous);
+    const nextScroll = getNavigationTargetScroll(input, next);
     await ensureViewRoot(previous, input.routes);
     await runTransition(
       input,
@@ -327,6 +408,10 @@ export function stackPresentation(
         to: createStackSnapshot(nextStack),
       },
       async () => {
+        if (nextScroll) {
+          setItemScrollOffset(previous, nextScroll.top - previousScroll.top);
+          restoreWindowScroll(input.window, nextScroll, input.scroll.behavior);
+        }
         syncRoot(input.root, [
           { item: previous, position: "current" },
           { item: next, position: "next" },
@@ -341,6 +426,7 @@ export function stackPresentation(
       async () => {
         stack = nextStack;
         await syncRetainedRoot(input, stack, retention);
+        setItemScrollOffset(previous, 0);
       },
     );
   }
@@ -368,6 +454,10 @@ export function stackPresentation(
       stack,
       resolveRetention(options, routeNavigation),
     );
+    const nextScroll = getNavigationTargetScroll(input, currentItem(stack));
+    if (nextScroll) {
+      restoreWindowScroll(input.window, nextScroll, input.scroll.behavior);
+    }
   }
 
   async function applyPop(
@@ -382,6 +472,10 @@ export function stackPresentation(
         stack,
         resolveRetention(options, routeNavigation),
       );
+      const nextScroll = getNavigationTargetScroll(input, currentItem(stack));
+      if (nextScroll) {
+        restoreWindowScroll(input.window, nextScroll, input.scroll.behavior);
+      }
       return;
     }
 
@@ -393,36 +487,60 @@ export function stackPresentation(
     if (!outgoing || outgoing === previous) {
       stack = nextStack;
       await syncRetainedRoot(input, stack, retention);
+      const nextScroll = getNavigationTargetScroll(input, previous);
+      if (nextScroll) {
+        restoreWindowScroll(input.window, nextScroll, input.scroll.behavior);
+      }
       return;
     }
 
+    saveItemScroll(outgoing, input.window);
+    const outgoingScroll = getItemScroll(outgoing);
+    const previousScroll = getNavigationTargetScroll(input, previous);
     await ensureViewRoot(previous, input.routes);
     await ensureViewRoot(outgoing, input.routes);
-    await runTransition(
-      input,
-      routeNavigation,
-      "backward",
-      {
-        from: createStackSnapshot(stack),
-        to: createStackSnapshot(nextStack),
-      },
-      async () => {
-        syncRoot(input.root, [
-          { item: previous, position: "previous" },
-          { item: outgoing, position: "current" },
-        ]);
-      },
-      async () => {
-        syncRoot(input.root, [
-          { item: previous, position: "current" },
-          { item: outgoing, position: "next" },
-        ]);
-      },
-      async () => {
-        stack = nextStack;
-        await syncRetainedRoot(input, stack, retention);
-      },
-    );
+    try {
+      await runTransition(
+        input,
+        routeNavigation,
+        "backward",
+        {
+          from: createStackSnapshot(stack),
+          to: createStackSnapshot(nextStack),
+        },
+        async () => {
+          lockStackHeight(input, previous, outgoing);
+          if (previousScroll) {
+            setItemScrollOffset(
+              outgoing,
+              previousScroll.top - outgoingScroll.top,
+            );
+            restoreWindowScroll(
+              input.window,
+              previousScroll,
+              input.scroll.behavior,
+            );
+          }
+          syncRoot(input.root, [
+            { item: previous, position: "previous" },
+            { item: outgoing, position: "current" },
+          ]);
+        },
+        async () => {
+          syncRoot(input.root, [
+            { item: previous, position: "current" },
+            { item: outgoing, position: "next" },
+          ]);
+        },
+        async () => {
+          stack = nextStack;
+          await syncRetainedRoot(input, stack, retention);
+        },
+      );
+    } finally {
+      setItemScrollOffset(outgoing, 0);
+      unlockStackHeight(input);
+    }
   }
 
   async function applyAction(
@@ -453,7 +571,7 @@ export function stackPresentation(
     const previous = stack[stack.length - 2] as StackItem;
     const outgoing = stack[stack.length - 1] as StackItem;
     const nextStack = stack.slice(0, -1);
-    const previousScroll = getItemScroll(previous);
+    const previousScroll = getPopStateTargetScroll(input, previous);
     const routeNavigation = await resolveRouteNavigation(
       input.routes,
       previous.entry,
@@ -462,6 +580,7 @@ export function stackPresentation(
 
     await ensureViewRoot(previous, input.routes);
     await ensureViewRoot(outgoing, input.routes);
+    lockStackHeight(input, previous, outgoing);
     syncRoot(input.root, [
       { item: previous, position: "current" },
       { item: outgoing, position: "next" },
@@ -469,11 +588,22 @@ export function stackPresentation(
     suppressNextPopPath = previous.entry.path;
 
     return {
-      async finish() {
-        stack = nextStack;
-        await syncRetainedRoot(input, stack, retention);
-        setNavigationStateForStack();
-        restoreWindowScroll(input.window, previousScroll);
+      async finish(clearStyles: () => void) {
+        try {
+          stack = nextStack;
+          await syncRetainedRoot(input, stack, retention);
+          setNavigationStateForStack();
+          clearStyles();
+          if (previousScroll) {
+            restoreWindowScroll(
+              input.window,
+              previousScroll,
+              input.scroll.behavior,
+            );
+          }
+        } finally {
+          unlockStackHeight(input);
+        }
 
         if (input.history.back) {
           input.history.back();
@@ -493,11 +623,13 @@ export function stackPresentation(
       const currentScroll = latestInput
         ? getWindowScroll(latestInput.window)
         : { left: 0, top: 0 };
-      const previousScroll = getItemScroll(previous);
+      const previousScroll = latestInput
+        ? getPopStateTargetScroll(latestInput, previous)
+        : getItemScroll(previous);
       return {
         current: current.root,
         previous: previous.root,
-        previousOffsetY: currentScroll.top - previousScroll.top,
+        previousOffsetY: currentScroll.top - (previousScroll?.top ?? 0),
       };
     },
     commit: commitSwipeBack,
@@ -513,13 +645,17 @@ export function stackPresentation(
   });
 
   async function renderQueued(input: ClientPresentationRenderInput) {
+    if (disposed) return;
+
     if (options.styles !== false) {
       ensureStackStyles();
     }
 
     latestInput = input;
+    manageNativeScrollRestoration(input.history);
     swipeBack?.update(input.root as StackViewRoot);
     currentNavigation = await resolveRouteNavigation(input.routes, input.entry);
+    if (disposed) return;
 
     if (
       input.intent === "popstate" &&
@@ -554,12 +690,19 @@ export function stackPresentation(
       return canStackGoBack();
     },
     dispose() {
+      disposed = true;
       swipeBack?.dispose();
+      if (latestInput) {
+        unlockStackHeight(latestInput);
+      }
+      restoreNativeScrollRestoration();
     },
     getNavigationState() {
       return navigationStateStore.get();
     },
+    managesScroll: true,
     render(input) {
+      if (disposed) return Promise.resolve();
       const run = queue.then(() => renderQueued(input));
       queue = run.catch(() => {});
       return run;

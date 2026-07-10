@@ -10,7 +10,7 @@ export type NavigationScrollOptions = {
 
 export type NavigationScrollTransition = "navigate" | "popstate";
 
-type ResolvedNavigationScrollOptions = Required<NavigationScrollOptions>;
+export type ResolvedNavigationScrollOptions = Required<NavigationScrollOptions>;
 
 type ScrollToOptionsLike = {
   top: number;

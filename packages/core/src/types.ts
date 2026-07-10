@@ -200,6 +200,7 @@ export type HistoryLike = {
   pushState: (state: unknown, unused: string, url?: string) => void;
   replaceState?: (state: unknown, unused: string, url?: string) => void;
   back?: () => void;
+  scrollRestoration?: "auto" | "manual";
 };
 
 export type RouteMatch = {

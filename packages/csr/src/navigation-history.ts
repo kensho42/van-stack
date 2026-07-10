@@ -62,6 +62,17 @@ export function createNavigationHistory(
       history.back?.();
     };
   }
+  if (history.scrollRestoration) {
+    Object.defineProperty(trackedHistory, "scrollRestoration", {
+      enumerable: true,
+      get() {
+        return history.scrollRestoration;
+      },
+      set(value: "auto" | "manual") {
+        history.scrollRestoration = value;
+      },
+    });
+  }
 
   return {
     back() {
