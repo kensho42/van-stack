@@ -1801,6 +1801,36 @@ describe("startClientApp", () => {
     expect(centerAtBase).not.toHaveBeenCalled();
     expect(back).not.toHaveBeenCalled();
 
+    const edgeButtonTarget = {
+      closest: vi.fn((selector: string) =>
+        selector.includes("button") ? {} : null,
+      ),
+      matches: vi.fn(),
+    };
+    const buttonTouchStart = vi.fn();
+    const buttonTouchJitter = vi.fn();
+    const buttonTouchMove = vi.fn();
+    env.viewport.dispatchEvent("touchstart", {
+      preventDefault: buttonTouchStart,
+      target: edgeButtonTarget,
+      targetTouches: [{ pageX: 390, pageY: 20 }],
+    });
+    env.viewport.dispatchEvent("touchmove", {
+      preventDefault: buttonTouchJitter,
+      target: edgeButtonTarget,
+      targetTouches: [{ pageX: 388, pageY: 21 }],
+    });
+    env.viewport.dispatchEvent("touchmove", {
+      preventDefault: buttonTouchMove,
+      target: edgeButtonTarget,
+      targetTouches: [{ pageX: 350, pageY: 22 }],
+    });
+    env.viewport.dispatchEvent("touchend", { target: edgeButtonTarget });
+
+    expect(buttonTouchStart).not.toHaveBeenCalled();
+    expect(buttonTouchJitter).not.toHaveBeenCalled();
+    expect(buttonTouchMove).toHaveBeenCalledTimes(1);
+
     await app.router.navigate("/posts/1");
 
     const rightWithBack = vi.fn();
@@ -2069,7 +2099,7 @@ describe("startClientApp", () => {
           ) === "/posts",
       ) as { style: Record<string, string> } | undefined;
 
-      expect(previousRoot?.style.transform).toContain(", 340px, 0)");
+      expect(previousRoot?.style.translate).toBe("0 340px");
 
       expect(app.router.getNavigationState()).toEqual(
         expect.objectContaining({
@@ -2089,7 +2119,8 @@ describe("startClientApp", () => {
       });
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(previousRoot?.style.transform).toBe("translate3d(-20%, 340px, 0)");
+      expect(previousRoot?.style.transform).toBeUndefined();
+      expect(previousRoot?.style.translate).toBe("0 340px");
 
       expect(app.router.getNavigationState()).toEqual(
         expect.objectContaining({
@@ -2108,6 +2139,7 @@ describe("startClientApp", () => {
 
       await vi.advanceTimersByTimeAsync(320);
       expect(previousRoot?.style.transform).toBeUndefined();
+      expect(previousRoot?.style.translate).toBeUndefined();
     } finally {
       vi.useRealTimers();
     }
@@ -2187,14 +2219,119 @@ describe("startClientApp", () => {
     vi.useRealTimers();
   });
 
+  test("stack presentation coalesces native popstate during swipe settle", async () => {
+    vi.useFakeTimers();
+    try {
+      const env = createClientDocument();
+      const back = vi.fn();
+      const scrollTo = vi.fn(({ left, top }: { left: number; top: number }) => {
+        testWindow.scrollX = left;
+        testWindow.scrollY = top;
+      });
+      let popstateHandler: (() => Promise<unknown> | unknown) | undefined;
+      const testWindow = {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        scrollX: 0,
+        scrollY: 180,
+        scrollTo,
+        addEventListener: vi.fn(
+          (type: string, handler: () => Promise<unknown> | unknown) => {
+            if (type === "popstate") {
+              popstateHandler = handler;
+            }
+          },
+        ),
+        removeEventListener: vi.fn(),
+      };
+
+      const app = startClientApp({
+        mode: "shell",
+        routes: [
+          {
+            id: "posts/index",
+            path: "/posts",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+          },
+          {
+            id: "posts/[slug]",
+            path: "/posts/:slug",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+            navigation: { enter: "push", up: "/posts" },
+          },
+        ],
+        history: { back, pushState: vi.fn() } as never,
+        transport: { load: vi.fn(async () => ({ ok: true })) },
+        presentation: stackPresentation({
+          duration: 320,
+          swipeBack: { captureNativeEdges: true, enabled: true },
+          styles: false,
+        }),
+        document: env.document as never,
+        rootSelector: '[data-van-stack-app-root=""]',
+        window: testWindow as never,
+      });
+
+      await app.ready;
+      await app.router.navigate("/posts/1");
+      scrollTo.mockClear();
+      testWindow.scrollY = 520;
+
+      const shellTarget = { closest: vi.fn(() => null), matches: vi.fn() };
+      env.viewport.dispatchEvent("pointerdown", {
+        pageX: 10,
+        pageY: 20,
+        target: shellTarget,
+      });
+      env.viewport.dispatchEvent("pointermove", {
+        pageX: 260,
+        pageY: 24,
+        target: shellTarget,
+      });
+      env.viewport.dispatchEvent("pointerup", {
+        pageX: 260,
+        pageY: 24,
+        target: shellTarget,
+      });
+
+      testWindow.location.pathname = "/posts";
+      const nativePop = popstateHandler?.();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(back).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(320);
+      await nativePop;
+
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      expect(scrollTo).toHaveBeenCalledWith({
+        behavior: "auto",
+        left: 0,
+        top: 180,
+      });
+      expect(back).not.toHaveBeenCalled();
+      expect(env.root.innerHTML).toContain("<article>/posts</article>");
+      expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test("stack presentation preserves previous scroll during committed swipe-back", async () => {
     vi.useFakeTimers();
     try {
       const env = createClientDocument();
       const back = vi.fn();
-      const finishEvents: string[] = [];
+      const frameCallbacks: Array<(time: number) => unknown> = [];
       const scrollTo = vi.fn(({ left, top }: { left: number; top: number }) => {
-        finishEvents.push("scroll");
         testWindow.scrollX = left;
         testWindow.scrollY = top;
       });
@@ -2207,6 +2344,10 @@ describe("startClientApp", () => {
         scrollX: 0,
         scrollY: 180,
         scrollTo,
+        requestAnimationFrame(callback: (time: number) => unknown) {
+          frameCallbacks.push(callback);
+          return frameCallbacks.length;
+        },
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
       };
@@ -2246,7 +2387,6 @@ describe("startClientApp", () => {
       await app.ready;
       await app.router.navigate("/posts/1");
       scrollTo.mockClear();
-      finishEvents.length = 0;
       testWindow.scrollY = 520;
 
       for (const child of env.root.children) {
@@ -2299,15 +2439,7 @@ describe("startClientApp", () => {
           ) === "/posts/1",
       ) as { style: Record<string, string> } | undefined;
 
-      expect(previousRoot?.style.transform).toContain(", 340px, 0)");
-      if (previousRoot) {
-        previousRoot.style.removeProperty = (property) => {
-          if (property === "transform") {
-            finishEvents.push("clear-transform");
-          }
-          delete previousRoot.style[property];
-        };
-      }
+      expect(previousRoot?.style.translate).toBe("0 340px");
 
       env.root.dispatchEvent("pointerup", {
         pageX: 260,
@@ -2320,17 +2452,139 @@ describe("startClientApp", () => {
       expect(previousRoot?.style["z-index"]).toBe("1");
       expect(outgoingRoot?.style["z-index"]).toBe("2");
 
-      await vi.advanceTimersByTimeAsync(320);
+      await vi.advanceTimersByTimeAsync(160);
+      testWindow.scrollY = 180;
+      frameCallbacks.shift()?.(160);
+      expect(previousRoot?.style.transform).toBeUndefined();
+      expect(previousRoot?.style.translate).toBeUndefined();
+
+      await vi.advanceTimersByTimeAsync(160);
 
       expect(scrollTo).toHaveBeenCalledWith({
         top: 180,
         left: 0,
         behavior: "smooth",
       });
-      expect(finishEvents).toEqual(["clear-transform", "scroll"]);
       expect(env.root.attributes.get("style")).toBeUndefined();
       expect(previousRoot?.style["z-index"]).toBeUndefined();
       expect(outgoingRoot?.style["z-index"]).toBeUndefined();
+      expect(back).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test("stack presentation keeps swipe compensation until async scroll restoration settles", async () => {
+    vi.useFakeTimers();
+    try {
+      const env = createClientDocument();
+      const back = vi.fn();
+      let deferScroll = false;
+      let deferredScroll: { left: number; top: number } | undefined;
+      const frameCallbacks: Array<(time: number) => unknown> = [];
+      const testWindow = {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        scrollX: 0,
+        scrollY: 180,
+        scrollTo({ left, top }: { left: number; top: number }) {
+          if (deferScroll) {
+            deferredScroll = { left, top };
+            return;
+          }
+          testWindow.scrollX = left;
+          testWindow.scrollY = top;
+        },
+        requestAnimationFrame(callback: (time: number) => unknown) {
+          frameCallbacks.push(callback);
+          return frameCallbacks.length;
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
+
+      const app = startClientApp({
+        mode: "shell",
+        routes: [
+          {
+            id: "posts/index",
+            path: "/posts",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+          },
+          {
+            id: "posts/[slug]",
+            path: "/posts/:slug",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+            navigation: { enter: "push", up: "/posts" },
+          },
+        ],
+        history: { back, pushState: vi.fn() } as never,
+        transport: { load: vi.fn(async () => ({ ok: true })) },
+        presentation: stackPresentation({
+          duration: 320,
+          swipeBack: { enabled: true },
+          styles: false,
+        }),
+        document: env.document as never,
+        rootSelector: '[data-van-stack-app-root=""]',
+        window: testWindow as never,
+      });
+
+      await app.ready;
+      await app.router.navigate("/posts/1");
+      testWindow.scrollY = 520;
+      deferScroll = true;
+
+      const previousRoot = env.root.children.find(
+        (child) =>
+          child &&
+          typeof child === "object" &&
+          "attributes" in child &&
+          (child as { attributes: Map<string, string> }).attributes.get(
+            "data-van-stack-path",
+          ) === "/posts",
+      ) as { style: Record<string, string> } | undefined;
+
+      env.root.dispatchEvent("pointerdown", {
+        pageX: 10,
+        pageY: 20,
+        target: env.root,
+      });
+      env.root.dispatchEvent("pointermove", {
+        pageX: 260,
+        pageY: 24,
+        target: env.root,
+      });
+      env.root.dispatchEvent("pointerup", {
+        pageX: 260,
+        pageY: 24,
+        target: env.root,
+      });
+
+      await vi.advanceTimersByTimeAsync(320);
+
+      expect(deferredScroll).toEqual({ left: 0, top: 180 });
+      expect(previousRoot?.style.transform).toBeUndefined();
+      expect(previousRoot?.style.translate).toBe("0 340px");
+      expect(back).not.toHaveBeenCalled();
+      expect(frameCallbacks).toHaveLength(2);
+
+      testWindow.scrollX = deferredScroll?.left ?? 0;
+      testWindow.scrollY = deferredScroll?.top ?? 0;
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(0);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(previousRoot?.style.transform).toBeUndefined();
+      expect(previousRoot?.style.translate).toBeUndefined();
       expect(back).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();

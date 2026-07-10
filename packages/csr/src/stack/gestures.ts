@@ -44,10 +44,13 @@ export type SwipeBackController = {
 };
 
 type SwipeTarget = {
+  appliedPreviousOffsetY?: number;
   current: StackViewRoot;
+  getPreviousOffsetY?: () => number;
   opacityLayer?: StackViewRoot;
   previous: StackViewRoot;
   previousOffsetY?: number;
+  requestAnimationFrame?: (callback: (time: number) => unknown) => number;
   shadowLayer?: StackViewRoot;
 };
 
@@ -264,6 +267,7 @@ function getGestureMotionNodes(target: SwipeTarget) {
 function clearGestureStyles(target: SwipeTarget) {
   for (const root of getGestureMotionNodes(target)) {
     removeInlineStyle(root, "transform");
+    removeInlineStyle(root, "translate");
     removeInlineStyle(root, "opacity");
     removeInlineStyle(root, "transition");
     removeInlineStyle(root, "z-index");
@@ -271,22 +275,27 @@ function clearGestureStyles(target: SwipeTarget) {
   removeGestureLayers(target);
 }
 
+function syncPreviousOffsetY(target: SwipeTarget) {
+  const previousOffsetY =
+    target.getPreviousOffsetY?.() ?? target.previousOffsetY ?? 0;
+  const nextOffsetY = Math.abs(previousOffsetY) <= 0.5 ? 0 : previousOffsetY;
+  if (target.appliedPreviousOffsetY === nextOffsetY) return;
+
+  target.appliedPreviousOffsetY = nextOffsetY;
+  if (nextOffsetY === 0) {
+    removeInlineStyle(target.previous, "translate");
+    return;
+  }
+
+  setInlineStyle(target.previous, "translate", `0 ${nextOffsetY}px`);
+}
+
 function setCanceledGestureMotionStyles(target: SwipeTarget) {
   removeInlineStyle(target.current, "transform");
   removeInlineStyle(target.current, "opacity");
   removeInlineStyle(target.previous, "opacity");
-
-  const previousOffsetY = target.previousOffsetY ?? 0;
-  if (previousOffsetY === 0) {
-    removeInlineStyle(target.previous, "transform");
-    return;
-  }
-
-  setInlineStyle(
-    target.previous,
-    "transform",
-    `translate3d(-20%, ${previousOffsetY}px, 0)`,
-  );
+  removeInlineStyle(target.previous, "transform");
+  syncPreviousOffsetY(target);
 }
 
 function setCommittedGestureMotionStyles(target: SwipeTarget) {
@@ -298,18 +307,8 @@ function setCommittedGestureMotionStyles(target: SwipeTarget) {
   if (target.opacityLayer) {
     setInlineStyle(target.opacityLayer, "opacity", "0");
   }
-
-  const previousOffsetY = target.previousOffsetY ?? 0;
-  if (previousOffsetY === 0) {
-    removeInlineStyle(target.previous, "transform");
-    return;
-  }
-
-  setInlineStyle(
-    target.previous,
-    "transform",
-    `translate3d(0px, ${previousOffsetY}px, 0)`,
-  );
+  removeInlineStyle(target.previous, "transform");
+  syncPreviousOffsetY(target);
 }
 
 async function settleGesture(
@@ -340,9 +339,19 @@ async function settleGesture(
     setCanceledGestureMotionStyles(target);
   }
 
+  let monitorOffset = true;
+  const monitorPreviousOffset = () => {
+    if (!monitorOffset) return;
+    syncPreviousOffsetY(target);
+    target.requestAnimationFrame?.(monitorPreviousOffset);
+  };
+  target.requestAnimationFrame?.(monitorPreviousOffset);
+
   await new Promise<void>((resolve) => {
     globalThis.setTimeout(resolve, duration);
   });
+  monitorOffset = false;
+  syncPreviousOffsetY(target);
 
   for (const root of getGestureMotionNodes(target)) {
     removeInlineStyle(root, "transition");
@@ -361,6 +370,7 @@ export function createSwipeBackController({
   let root: StackViewRoot | null = null;
   let surface: StackViewRoot | null = null;
   let target: SwipeTarget | null = null;
+  let deferredEdgeStart: { x: number; y: number } | null = null;
   let active = false;
   let moved = false;
   let scrolling: boolean | undefined;
@@ -373,6 +383,7 @@ export function createSwipeBackController({
   const onStart = (event: StackPointerEventLike) => {
     if (!root || active) return;
     if (!isEnvironmentEnabled(resolved)) return;
+    deferredEdgeStart = null;
 
     const point = getPoint(event);
     const left = getElementLeft(root);
@@ -383,12 +394,15 @@ export function createSwipeBackController({
       offsetX >= rootWidth - resolved.activeArea && offsetX <= rootWidth;
     if (!isLeftEdge && !isRightEdge) return;
 
-    if (resolved.captureNativeEdges) {
+    const blockedTarget = isBlockedTarget(event.target);
+    if (resolved.captureNativeEdges && blockedTarget) {
+      deferredEdgeStart = point;
+    } else if (resolved.captureNativeEdges) {
       event.preventDefault?.();
     }
     if (!isLeftEdge) return;
     if (!isEnabled(resolved, getRouteNavigation())) return;
-    if (isBlockedTarget(event.target)) return;
+    if (blockedTarget) return;
 
     const swipeTarget = canStart();
     if (!swipeTarget) return;
@@ -407,7 +421,22 @@ export function createSwipeBackController({
   };
 
   const onMove = (event: StackPointerEventLike) => {
-    if (!root || !active || !target) return;
+    if (!root) return;
+
+    if (!active || !target) {
+      if (!deferredEdgeStart) return;
+      const point = getPoint(event);
+      const deltaX = point.x - deferredEdgeStart.x;
+      const deltaY = point.y - deferredEdgeStart.y;
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        deferredEdgeStart = null;
+        return;
+      }
+      if (Math.abs(deltaX) > Math.max(resolved.threshold, 4)) {
+        event.preventDefault?.();
+      }
+      return;
+    }
 
     const point = getPoint(event);
     const deltaX = point.x - startX;
@@ -443,8 +472,9 @@ export function createSwipeBackController({
     setInlineStyle(
       target.previous,
       "transform",
-      `translate3d(${previousTranslate}px, ${target.previousOffsetY ?? 0}px, 0)`,
+      `translate3d(${previousTranslate}px, 0, 0)`,
     );
+    syncPreviousOffsetY(target);
 
     if (target.opacityLayer) {
       setInlineStyle(target.opacityLayer, "opacity", String(1 - progress));
@@ -453,6 +483,7 @@ export function createSwipeBackController({
   };
 
   const onEnd = async () => {
+    deferredEdgeStart = null;
     if (!root || !active || !target) {
       active = false;
       moved = false;

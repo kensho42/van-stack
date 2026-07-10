@@ -24,6 +24,7 @@ export type ClientPresentationWindowLike = {
   };
   pageXOffset?: number;
   pageYOffset?: number;
+  requestAnimationFrame?: (callback: (time: number) => unknown) => number;
   scrollTo?: (options: {
     top: number;
     left: number;

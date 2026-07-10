@@ -216,6 +216,55 @@ function restoreWindowScroll(
   });
 }
 
+async function restoreSwipeBackScroll(
+  input: ClientPresentationRenderInput,
+  destination: StackItem,
+  scroll: { left: number; top: number },
+  clearStyles: () => void,
+) {
+  restoreWindowScroll(input.window, scroll, input.scroll.behavior);
+
+  const requestFrame = input.window.requestAnimationFrame?.bind(input.window);
+  if (!input.window.scrollTo || !requestFrame) {
+    clearStyles();
+    return;
+  }
+
+  const current = getWindowScroll(input.window);
+  if (
+    Math.abs(current.left - scroll.left) <= 0.5 &&
+    Math.abs(current.top - scroll.top) <= 0.5
+  ) {
+    clearStyles();
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const update = () => {
+      const next = getWindowScroll(input.window);
+      if (
+        Math.abs(next.left - scroll.left) <= 0.5 &&
+        Math.abs(next.top - scroll.top) <= 0.5
+      ) {
+        clearStyles();
+        resolve();
+        return;
+      }
+
+      if (destination.root) {
+        setInlineStyle(
+          destination.root,
+          "translate",
+          `0 ${next.top - scroll.top}px`,
+        );
+      }
+      requestFrame(update);
+    };
+
+    requestFrame(update);
+  });
+}
+
 async function syncRetainedRoot(
   input: ClientPresentationRenderInput,
   stack: StackItem[],
@@ -234,6 +283,8 @@ export function stackPresentation(
   let latestInput: ClientPresentationRenderInput | null = null;
   let currentNavigation: RouteNavigation | undefined;
   let suppressNextPopPath: string | null = null;
+  let activeSwipeTargetPath: string | null = null;
+  let activeSwipeHistoryPopped = false;
   let queue = Promise.resolve();
   let disposed = false;
   let managedHistory: HistoryLike | null = null;
@@ -302,11 +353,18 @@ export function stackPresentation(
     progress: number;
   }) {
     if (input.phase === "cancel") {
+      activeSwipeTargetPath = null;
+      activeSwipeHistoryPopped = false;
       setNavigationStateForStack();
       return;
     }
 
     if (stack.length <= 1) return;
+
+    if (input.phase === "start") {
+      activeSwipeTargetPath = stack[stack.length - 2]?.entry.path ?? null;
+      activeSwipeHistoryPopped = false;
+    }
 
     setTransitionState({
       direction: "backward",
@@ -585,7 +643,6 @@ export function stackPresentation(
       { item: previous, position: "current" },
       { item: outgoing, position: "next" },
     ]);
-    suppressNextPopPath = previous.entry.path;
 
     return {
       async finish(clearStyles: () => void) {
@@ -593,19 +650,27 @@ export function stackPresentation(
           stack = nextStack;
           await syncRetainedRoot(input, stack, retention);
           setNavigationStateForStack();
-          clearStyles();
           if (previousScroll) {
-            restoreWindowScroll(
-              input.window,
+            await restoreSwipeBackScroll(
+              input,
+              previous,
               previousScroll,
-              input.scroll.behavior,
+              clearStyles,
             );
+          } else {
+            clearStyles();
           }
         } finally {
           unlockStackHeight(input);
         }
 
+        const historyAlreadyPopped = activeSwipeHistoryPopped;
+        activeSwipeTargetPath = null;
+        activeSwipeHistoryPopped = false;
+        if (historyAlreadyPopped) return;
+
         if (input.history.back) {
+          suppressNextPopPath = previous.entry.path;
           input.history.back();
         } else {
           await input.navigate(previous.entry.path, "pop");
@@ -626,10 +691,18 @@ export function stackPresentation(
       const previousScroll = latestInput
         ? getPopStateTargetScroll(latestInput, previous)
         : getItemScroll(previous);
+      const previousTop = previousScroll?.top ?? 0;
+      const input = latestInput;
       return {
         current: current.root,
+        getPreviousOffsetY: input
+          ? () => getWindowScroll(input.window).top - previousTop
+          : undefined,
         previous: previous.root,
-        previousOffsetY: currentScroll.top - (previousScroll?.top ?? 0),
+        previousOffsetY: currentScroll.top - previousTop,
+        requestAnimationFrame: input?.window.requestAnimationFrame?.bind(
+          input.window,
+        ),
       };
     },
     commit: commitSwipeBack,
@@ -649,6 +722,15 @@ export function stackPresentation(
 
     if (options.styles !== false) {
       ensureStackStyles();
+    }
+
+    if (
+      input.intent === "popstate" &&
+      activeSwipeTargetPath === input.entry.path
+    ) {
+      activeSwipeHistoryPopped = true;
+      suppressNextPopPath = null;
+      return;
     }
 
     latestInput = input;
