@@ -42,6 +42,48 @@ describe("stack DOM helpers", () => {
     expect(replaceChildren).toHaveBeenCalledWith(second, first);
   });
 
+  test("replaceRootChildren does not reattach retained nodes when siblings change", () => {
+    const first = {};
+    const second = {};
+    const children = [first];
+    const replaceChildren = vi.fn();
+    const insertBefore = vi.fn((child: object, reference: object | null) => {
+      const existingIndex = children.indexOf(child);
+      if (existingIndex >= 0) children.splice(existingIndex, 1);
+      const referenceIndex = reference ? children.indexOf(reference) : -1;
+      if (referenceIndex >= 0) {
+        children.splice(referenceIndex, 0, child);
+      } else {
+        children.push(child);
+      }
+    });
+    const removeChild = vi.fn((child: object) => {
+      const index = children.indexOf(child);
+      if (index >= 0) children.splice(index, 1);
+    });
+    const root = {
+      children,
+      insertBefore,
+      removeChild,
+      replaceChildren,
+    };
+
+    replaceRootChildren(root as never, [first, second] as never);
+
+    expect(insertBefore).toHaveBeenCalledWith(second, null);
+    expect(removeChild).not.toHaveBeenCalled();
+    expect(replaceChildren).not.toHaveBeenCalled();
+    expect(children).toEqual([first, second]);
+
+    insertBefore.mockClear();
+    replaceRootChildren(root as never, [first] as never);
+
+    expect(removeChild).toHaveBeenCalledWith(second);
+    expect(insertBefore).not.toHaveBeenCalled();
+    expect(replaceChildren).not.toHaveBeenCalled();
+    expect(children).toEqual([first]);
+  });
+
   test("setInlineStyle writes CSS custom properties on real DOM style objects", () => {
     const setProperty = vi.fn();
     const removeProperty = vi.fn();

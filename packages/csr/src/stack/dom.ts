@@ -19,8 +19,10 @@ export type StackViewRoot = AppRootLike & {
     width?: number;
   };
   innerHTML?: string;
+  insertBefore?: (child: unknown, reference: unknown | null) => unknown;
   remove?: () => void;
   removeAttribute?: (name: string) => void;
+  removeChild?: (child: unknown) => unknown;
   removeEventListener?: (
     type: string,
     listener: (event: StackPointerEventLike) => unknown,
@@ -324,6 +326,28 @@ export function replaceRootChildren(
       }
       return;
     }
+  }
+
+  if (
+    currentChildren &&
+    typeof root.insertBefore === "function" &&
+    typeof root.removeChild === "function"
+  ) {
+    const retained = new Set(children);
+    for (const child of Array.from(currentChildren)) {
+      if (!retained.has(child as StackViewRoot)) {
+        root.removeChild(child);
+      }
+    }
+
+    for (let index = 0; index < children.length; index += 1) {
+      const child = children[index] as StackViewRoot;
+      const current = root.children?.[index] ?? null;
+      if (current !== child) {
+        root.insertBefore(child, current);
+      }
+    }
+    return;
   }
 
   if (typeof root.replaceChildren === "function") {
