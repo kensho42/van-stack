@@ -16,6 +16,7 @@ export type StackSwipeBackOptions =
   | boolean
   | {
       activeArea?: number;
+      captureNativeEdges?: boolean;
       commitRatio?: number;
       enabled?: boolean | "auto";
       fastSwipeDistance?: number;
@@ -27,6 +28,7 @@ export type StackSwipeBackOptions =
 
 export type ResolvedSwipeBackOptions = {
   activeArea: number;
+  captureNativeEdges: boolean;
   commitRatio: number;
   enabled: boolean | "auto";
   fastSwipeDistance: number;
@@ -76,6 +78,7 @@ function resolveSwipeBackOptions(
   if (options === false) {
     return {
       activeArea: 30,
+      captureNativeEdges: false,
       commitRatio: 0.5,
       enabled: false,
       fastSwipeDistance: 10,
@@ -89,6 +92,7 @@ function resolveSwipeBackOptions(
   if (options === true || typeof options === "undefined") {
     return {
       activeArea: 30,
+      captureNativeEdges: false,
       commitRatio: 0.5,
       enabled: "auto",
       fastSwipeDistance: 10,
@@ -101,6 +105,7 @@ function resolveSwipeBackOptions(
 
   return {
     activeArea: options.activeArea ?? 30,
+    captureNativeEdges: options.captureNativeEdges ?? false,
     commitRatio: options.commitRatio ?? 0.5,
     enabled: options.enabled ?? "auto",
     fastSwipeDistance: options.fastSwipeDistance ?? 10,
@@ -140,6 +145,10 @@ function isEnabled(
   if (routeNavigation?.swipeBack === true) {
     return true;
   }
+  return isEnvironmentEnabled(options);
+}
+
+function isEnvironmentEnabled(options: ResolvedSwipeBackOptions) {
   if (options.enabled === "auto") {
     return isIosLikeTouchEnvironment();
   }
@@ -350,6 +359,7 @@ export function createSwipeBackController({
 }: SwipeBackControllerOptions): SwipeBackController | null {
   const resolved = resolveSwipeBackOptions(options);
   let root: StackViewRoot | null = null;
+  let surface: StackViewRoot | null = null;
   let target: SwipeTarget | null = null;
   let active = false;
   let moved = false;
@@ -362,17 +372,28 @@ export function createSwipeBackController({
 
   const onStart = (event: StackPointerEventLike) => {
     if (!root || active) return;
-    if (!isEnabled(resolved, getRouteNavigation())) return;
-    if (isBlockedTarget(event.target)) return;
+    if (!isEnvironmentEnabled(resolved)) return;
 
     const point = getPoint(event);
     const left = getElementLeft(root);
-    if (point.x - left > resolved.activeArea) return;
+    const rootWidth = getElementWidth(root) || 1;
+    const offsetX = point.x - left;
+    const isLeftEdge = offsetX >= 0 && offsetX <= resolved.activeArea;
+    const isRightEdge =
+      offsetX >= rootWidth - resolved.activeArea && offsetX <= rootWidth;
+    if (!isLeftEdge && !isRightEdge) return;
+
+    if (resolved.captureNativeEdges) {
+      event.preventDefault?.();
+    }
+    if (!isLeftEdge) return;
+    if (!isEnabled(resolved, getRouteNavigation())) return;
+    if (isBlockedTarget(event.target)) return;
 
     const swipeTarget = canStart();
     if (!swipeTarget) return;
 
-    width = getElementWidth(root) || 1;
+    width = rootWidth;
     target = swipeTarget;
     active = true;
     moved = false;
@@ -472,42 +493,77 @@ export function createSwipeBackController({
   };
 
   function attach(nextRoot: StackViewRoot) {
-    if (root === nextRoot) return;
-    if (root) {
-      root.removeEventListener?.("pointerdown", onStart);
-      root.removeEventListener?.("pointermove", onMove);
-      root.removeEventListener?.("pointerup", onEnd as never);
-      root.removeEventListener?.("pointercancel", onEnd as never);
-      root.removeEventListener?.("touchstart", onStart);
-      root.removeEventListener?.("touchmove", onMove);
-      root.removeEventListener?.("touchend", onEnd as never);
-      root.removeEventListener?.("touchcancel", onEnd as never);
+    const nextSurface = resolved.captureNativeEdges
+      ? (nextRoot.ownerDocument?.documentElement ?? nextRoot)
+      : nextRoot;
+    if (root === nextRoot && surface === nextSurface) return;
+    if (surface) {
+      const capture = resolved.captureNativeEdges;
+      surface.removeEventListener?.("pointerdown", onStart, capture);
+      surface.removeEventListener?.("pointermove", onMove, capture);
+      surface.removeEventListener?.("pointerup", onEnd as never, capture);
+      surface.removeEventListener?.("pointercancel", onEnd as never, capture);
+      surface.removeEventListener?.("touchstart", onStart, capture);
+      surface.removeEventListener?.("touchmove", onMove, capture);
+      surface.removeEventListener?.("touchend", onEnd as never, capture);
+      surface.removeEventListener?.("touchcancel", onEnd as never, capture);
+      if (resolved.captureNativeEdges) {
+        surface.removeAttribute?.("data-van-stack-native-edge-capture");
+      }
     }
 
     root = nextRoot;
-    root.addEventListener?.("pointerdown", onStart);
-    root.addEventListener?.("pointermove", onMove);
-    root.addEventListener?.("pointerup", onEnd as never);
-    root.addEventListener?.("pointercancel", onEnd as never);
-    root.addEventListener?.("touchstart", onStart, { passive: true });
-    root.addEventListener?.("touchmove", onMove);
-    root.addEventListener?.("touchend", onEnd as never);
-    root.addEventListener?.("touchcancel", onEnd as never);
+    surface = nextSurface;
+    const capture = resolved.captureNativeEdges;
+    if (capture) {
+      surface.setAttribute?.("data-van-stack-native-edge-capture", "");
+    }
+    surface.addEventListener?.("pointerdown", onStart, capture);
+    surface.addEventListener?.("pointermove", onMove, capture);
+    surface.addEventListener?.("pointerup", onEnd as never, capture);
+    surface.addEventListener?.("pointercancel", onEnd as never, capture);
+    surface.addEventListener?.("touchstart", onStart, {
+      capture,
+      passive: !capture,
+    });
+    surface.addEventListener?.("touchmove", onMove, {
+      capture,
+      passive: false,
+    });
+    surface.addEventListener?.("touchend", onEnd as never, capture);
+    surface.addEventListener?.("touchcancel", onEnd as never, capture);
   }
 
   return {
     dispose() {
-      if (!root) return;
-      const currentRoot = root;
+      if (!root || !surface) return;
+      const currentSurface = surface;
       root = null;
-      currentRoot.removeEventListener?.("pointerdown", onStart);
-      currentRoot.removeEventListener?.("pointermove", onMove);
-      currentRoot.removeEventListener?.("pointerup", onEnd as never);
-      currentRoot.removeEventListener?.("pointercancel", onEnd as never);
-      currentRoot.removeEventListener?.("touchstart", onStart);
-      currentRoot.removeEventListener?.("touchmove", onMove);
-      currentRoot.removeEventListener?.("touchend", onEnd as never);
-      currentRoot.removeEventListener?.("touchcancel", onEnd as never);
+      surface = null;
+      const capture = resolved.captureNativeEdges;
+      currentSurface.removeEventListener?.("pointerdown", onStart, capture);
+      currentSurface.removeEventListener?.("pointermove", onMove, capture);
+      currentSurface.removeEventListener?.(
+        "pointerup",
+        onEnd as never,
+        capture,
+      );
+      currentSurface.removeEventListener?.(
+        "pointercancel",
+        onEnd as never,
+        capture,
+      );
+      currentSurface.removeEventListener?.("touchstart", onStart, capture);
+      currentSurface.removeEventListener?.("touchmove", onMove, capture);
+      currentSurface.removeEventListener?.("touchend", onEnd as never, capture);
+      currentSurface.removeEventListener?.(
+        "touchcancel",
+        onEnd as never,
+        capture,
+      );
+      if (capture) {
+        currentSurface.removeAttribute?.("data-van-stack-native-edge-capture");
+      }
     },
     update(nextRoot) {
       attach(nextRoot);

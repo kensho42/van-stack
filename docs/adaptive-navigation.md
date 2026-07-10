@@ -20,7 +20,7 @@ startClientApp({
   presentation: stackPresentation({
     platform: "auto",
     retention: "previous",
-    swipeBack: { enabled: "auto" },
+    swipeBack: { captureNativeEdges: true, enabled: "auto" },
     transition: "platform",
   }),
 });
@@ -50,6 +50,8 @@ temporarily owns native history scroll restoration while mounted and restores
 the browser's previous setting when disposed.
 
 Routes can opt out of edge swipe-back by setting `swipeBack: false` in `navigation.ts`, and individual controls can opt out with `data-van-stack-no-swipe-back`.
+
+For a native-app shell with persistent UI outside the route root, set `swipeBack.captureNativeEdges: true`. The gesture controller binds to the document viewport so a left-edge Back swipe can begin over headers, route content, or tab bars. VanStack claims both viewport edges even when the stack has no previous entry; only a valid left-edge Back gesture changes the stack. Route and control opt-outs still prevent the custom Back animation, while native-edge capture remains active. Browser-owned gestures may still override cancellation on some iOS browsers, so this option is a best-effort guard in browser tabs and is most reliable in standalone or embedded app shells.
 
 The stack is session navigation state. A direct visit to `/posts/1` renders that route as one active leaf view; it does not fabricate previous `/` or `/posts` views. Browser back maps to stack pop when that previous view exists.
 

@@ -106,4 +106,34 @@ describe("stack presentation styles", () => {
       "background: linear-gradient(to right, rgb(0 0 0 / 18%), transparent);",
     );
   });
+
+  test("suppresses horizontal viewport overscroll when native edges are captured", () => {
+    const headNodes: Array<{ textContent: string }> = [];
+
+    vi.stubGlobal("document", {
+      createElement() {
+        return {
+          setAttribute: vi.fn(),
+          textContent: "",
+        };
+      },
+      head: {
+        appendChild(node: { textContent: string }) {
+          headNodes.push(node);
+        },
+      },
+      querySelector: vi.fn(() => null),
+    });
+
+    try {
+      ensureStackStyles();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+
+    const css = headNodes[0]?.textContent ?? "";
+    expect(css).toContain(
+      "[data-van-stack-native-edge-capture] {\n  overscroll-behavior-x: none;",
+    );
+  });
 });

@@ -484,7 +484,7 @@ const app = startClientApp({
   presentation: stackPresentation({
     platform: "auto",
     retention: "previous",
-    swipeBack: { enabled: "auto" },
+    swipeBack: { captureNativeEdges: true, enabled: "auto" },
     transition: "platform",
   }),
 });
@@ -504,6 +504,8 @@ export default {
 ```
 
 Stack presentation keeps the full in-session route stack internally, while `retention` controls how many views stay mounted in the DOM. The default is `previous`, which keeps the current view plus the immediate previous view so Framework7-style transitions and edge swipe-back can reveal the page underneath. Use `retention: "current"` to prune inactive DOM aggressively, or `retention: "all"` when an app wants every pushed view to remain mounted.
+
+Native-app shells can set `swipeBack.captureNativeEdges: true`. VanStack then listens on the document viewport instead of only the route root, so swipes beginning over persistent headers or tab bars join the same gesture. It also consumes both screen edges when no previous stack entry exists and applies `overscroll-behavior-x: none` as a supplementary browser guard. This is opt-in because browser-style sites may need to preserve the browser's own history gestures, and browser chrome can still override web-content cancellation on some iOS browsers.
 
 The stack engine also owns managed scroll timing during transitions. It honors
 the `startClientApp({ scroll })` policy while keeping outgoing and incoming

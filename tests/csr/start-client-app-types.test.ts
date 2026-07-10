@@ -19,7 +19,10 @@ import type {
   NavigationScrollOptions,
   StartClientAppOptions,
 } from "../../packages/csr/src/index";
-import { stackPresentation } from "../../packages/csr/src/stack";
+import {
+  type StackSwipeBackOptions,
+  stackPresentation,
+} from "../../packages/csr/src/stack";
 
 test("startClientApp accepts eager and lazy route records", () => {
   const eagerOptions: StartClientAppOptions = {
@@ -130,6 +133,17 @@ test("startClientApp accepts navigation scroll options", () => {
 });
 
 test("startClientApp accepts stack presentation for shell and custom modes only", () => {
+  const swipeBack = {
+    activeArea: 30,
+    captureNativeEdges: true,
+    commitRatio: 0.5,
+    enabled: "auto",
+    fastSwipeDistance: 10,
+    fastSwipeMs: 300,
+    opacity: true,
+    shadow: true,
+    threshold: 0,
+  } satisfies StackSwipeBackOptions;
   const shellOptions: StartClientAppOptions = {
     mode: "shell",
     history: {
@@ -156,16 +170,7 @@ test("startClientApp accepts stack presentation for shell and custom modes only"
       duration: 240,
       platform: "auto",
       retention: "previous",
-      swipeBack: {
-        activeArea: 30,
-        commitRatio: 0.5,
-        enabled: "auto",
-        fastSwipeDistance: 10,
-        fastSwipeMs: 300,
-        opacity: true,
-        shadow: true,
-        threshold: 0,
-      },
+      swipeBack,
       transition: "platform",
     }),
   };

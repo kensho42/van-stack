@@ -16,6 +16,7 @@ type RootNode = {
   addEventListener: (
     type: string,
     listener: (event: Record<string, unknown>) => unknown,
+    options?: unknown,
   ) => void;
   attributes: Map<string, string>;
   classList: {
@@ -26,11 +27,14 @@ type RootNode = {
   dispatchEvent: (type: string, event: Record<string, unknown>) => void;
   getBoundingClientRect: () => { left: number; width: number };
   innerHTML: string;
+  listenerOptions: Map<string, unknown>;
+  ownerDocument?: { documentElement?: RootNode };
   querySelector?: (selector: string) => unknown;
   removeAttribute: (name: string) => void;
   removeEventListener: (
     type: string,
     listener: (event: Record<string, unknown>) => unknown,
+    options?: unknown,
   ) => void;
   replaceChildren: (...children: unknown[]) => void;
   setAttribute: (name: string, value: string) => void;
@@ -121,6 +125,7 @@ function createRootNode(): RootNode {
   const root: RootNode = {
     attributes: new Map<string, string>(),
     children: [],
+    listenerOptions: new Map<string, unknown>(),
     classList: {
       add(...names: string[]) {
         const classes = new Set(
@@ -142,10 +147,11 @@ function createRootNode(): RootNode {
       },
     },
     innerHTML: "",
-    addEventListener(type, listener) {
+    addEventListener(type, listener, options) {
       const registered = listeners.get(type) ?? new Set();
       registered.add(listener);
       listeners.set(type, registered);
+      root.listenerOptions.set(type, options);
     },
     dispatchEvent(type, event) {
       for (const listener of listeners.get(type) ?? []) {
@@ -202,6 +208,7 @@ function createRootNode(): RootNode {
 
 function createClientDocument() {
   const headNodes: HeadNode[] = [];
+  const viewport = createRootNode();
   const root = createRootNode();
   let bootstrapScript: { textContent: string | null } | null = null;
 
@@ -250,6 +257,7 @@ function createClientDocument() {
   }
 
   const document = {
+    documentElement: viewport,
     title: "",
     addEventListener: vi.fn(),
     createElement(tagName: string) {
@@ -286,10 +294,12 @@ function createClientDocument() {
     },
     removeEventListener: vi.fn(),
   };
+  root.ownerDocument = document;
 
   return {
     document,
     root,
+    viewport,
     setBootstrapScript(payload: object | null) {
       bootstrapScript = payload
         ? {
@@ -1711,6 +1721,139 @@ describe("startClientApp", () => {
     expect(renderPostIndex).toHaveBeenCalledTimes(1);
     expect(env.root.innerHTML.match(/data-van-stack-view/g)).toHaveLength(1);
     expect(env.root.innerHTML).toContain("<article>/posts</article>");
+  });
+
+  test("stack presentation captures both native edges across the viewport", async () => {
+    const env = createClientDocument();
+    const back = vi.fn();
+    const app = startClientApp({
+      mode: "shell",
+      routes: [
+        {
+          id: "posts/index",
+          path: "/posts",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+        },
+        {
+          id: "posts/[slug]",
+          path: "/posts/:slug",
+          page({ path }: { path: string }) {
+            return `<article>${path}</article>`;
+          },
+          navigation: { enter: "push", up: "/posts" },
+        },
+      ],
+      history: { back, pushState: vi.fn() } as never,
+      transport: { load: vi.fn(async () => ({ ok: true })) },
+      presentation: stackPresentation({
+        animate: false,
+        swipeBack: { captureNativeEdges: true, enabled: true },
+        styles: false,
+      }),
+      document: env.document as never,
+      rootSelector: '[data-van-stack-app-root=""]',
+      window: {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as never,
+    });
+
+    await app.ready;
+
+    const leftAtBase = vi.fn();
+    const rightAtBase = vi.fn();
+    const centerAtBase = vi.fn();
+    const shellTarget = { closest: vi.fn(() => null), matches: vi.fn() };
+
+    expect(env.viewport.listenerOptions.get("touchstart")).toEqual({
+      capture: true,
+      passive: false,
+    });
+    expect(
+      env.viewport.attributes.get("data-van-stack-native-edge-capture"),
+    ).toBe("");
+
+    env.viewport.dispatchEvent("touchstart", {
+      preventDefault: leftAtBase,
+      target: shellTarget,
+      targetTouches: [{ pageX: 10, pageY: 20 }],
+    });
+    env.viewport.dispatchEvent("touchstart", {
+      preventDefault: rightAtBase,
+      target: shellTarget,
+      targetTouches: [{ pageX: 390, pageY: 20 }],
+    });
+    env.viewport.dispatchEvent("touchstart", {
+      preventDefault: centerAtBase,
+      target: shellTarget,
+      targetTouches: [{ pageX: 200, pageY: 20 }],
+    });
+
+    expect(leftAtBase).toHaveBeenCalledTimes(1);
+    expect(rightAtBase).toHaveBeenCalledTimes(1);
+    expect(centerAtBase).not.toHaveBeenCalled();
+    expect(back).not.toHaveBeenCalled();
+
+    await app.router.navigate("/posts/1");
+
+    const rightWithBack = vi.fn();
+    env.viewport.dispatchEvent("touchstart", {
+      preventDefault: rightWithBack,
+      target: shellTarget,
+      targetTouches: [{ pageX: 390, pageY: 20 }],
+    });
+    env.viewport.dispatchEvent("touchmove", {
+      target: shellTarget,
+      targetTouches: [{ pageX: 350, pageY: 20 }],
+    });
+    env.viewport.dispatchEvent("touchend", { target: shellTarget });
+
+    expect(rightWithBack).toHaveBeenCalledTimes(1);
+    expect(back).not.toHaveBeenCalled();
+    expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
+
+    const leftWithBack = vi.fn();
+    env.viewport.dispatchEvent("pointerdown", {
+      pageX: 10,
+      pageY: 20,
+      preventDefault: leftWithBack,
+      target: shellTarget,
+    });
+    env.viewport.dispatchEvent("pointermove", {
+      pageX: 260,
+      pageY: 24,
+      target: shellTarget,
+    });
+    env.viewport.dispatchEvent("pointerup", {
+      pageX: 260,
+      pageY: 24,
+      target: shellTarget,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(leftWithBack).toHaveBeenCalledTimes(1);
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(env.root.innerHTML).toContain("<article>/posts</article>");
+
+    app.dispose();
+    expect(
+      env.viewport.attributes.has("data-van-stack-native-edge-capture"),
+    ).toBe(false);
+
+    const afterDispose = vi.fn();
+    env.viewport.dispatchEvent("touchstart", {
+      preventDefault: afterDispose,
+      target: shellTarget,
+      targetTouches: [{ pageX: 10, pageY: 20 }],
+    });
+    expect(afterDispose).not.toHaveBeenCalled();
   });
 
   test("stack presentation exposes stack navigation state and gesture progress", async () => {

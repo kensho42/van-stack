@@ -20,6 +20,7 @@ export type StackViewRoot = AppRootLike & {
   };
   innerHTML?: string;
   insertBefore?: (child: unknown, reference: unknown | null) => unknown;
+  ownerDocument?: { documentElement?: StackViewRoot };
   remove?: () => void;
   removeAttribute?: (name: string) => void;
   removeChild?: (child: unknown) => unknown;

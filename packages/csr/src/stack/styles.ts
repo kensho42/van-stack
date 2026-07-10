@@ -24,6 +24,9 @@ export function ensureStackStyles() {
   overflow: hidden;
   touch-action: pan-y;
 }
+[data-van-stack-native-edge-capture] {
+  overscroll-behavior-x: none;
+}
 [data-van-stack-view] {
   box-sizing: border-box;
   width: 100%;
