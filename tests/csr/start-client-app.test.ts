@@ -2461,9 +2461,158 @@ describe("startClientApp", () => {
       await vi.advanceTimersByTimeAsync(160);
 
       expect(scrollTo).not.toHaveBeenCalled();
-      expect(env.root.attributes.get("style")).toBeUndefined();
+      expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
       expect(previousRoot?.style["z-index"]).toBeUndefined();
       expect(outgoingRoot?.style["z-index"]).toBeUndefined();
+      expect(back).not.toHaveBeenCalled();
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(320);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
+      expect(back).not.toHaveBeenCalled();
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(336);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(env.root.attributes.get("style")).toBeUndefined();
+      expect(back).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test("stack presentation keeps a taller destination height-locked through compositor demotion when scroll is unchanged", async () => {
+    vi.useFakeTimers();
+    try {
+      const env = createClientDocument();
+      const back = vi.fn();
+      const frameCallbacks: Array<(time: number) => unknown> = [];
+      const scrollTo = vi.fn(({ left, top }: { left: number; top: number }) => {
+        testWindow.scrollX = left;
+        testWindow.scrollY = top;
+      });
+      const testWindow = {
+        location: {
+          origin: "https://example.com",
+          pathname: "/posts",
+          search: "",
+        },
+        scrollX: 0,
+        scrollY: 0,
+        scrollTo,
+        requestAnimationFrame(callback: (time: number) => unknown) {
+          frameCallbacks.push(callback);
+          return frameCallbacks.length;
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
+
+      const app = startClientApp({
+        mode: "shell",
+        routes: [
+          {
+            id: "posts/index",
+            path: "/posts",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+          },
+          {
+            id: "posts/[slug]",
+            path: "/posts/:slug",
+            page({ path }: { path: string }) {
+              return `<article>${path}</article>`;
+            },
+            navigation: { enter: "push", up: "/posts" },
+          },
+        ],
+        history: { back, pushState: vi.fn() } as never,
+        transport: { load: vi.fn(async () => ({ ok: true })) },
+        presentation: stackPresentation({
+          duration: 320,
+          swipeBack: { enabled: true },
+          styles: false,
+        }),
+        document: env.document as never,
+        rootSelector: '[data-van-stack-app-root=""]',
+        window: testWindow as never,
+      });
+
+      await app.ready;
+      await app.router.navigate("/posts/1");
+      scrollTo.mockClear();
+
+      for (const child of env.root.children) {
+        if (!child || typeof child !== "object") continue;
+        const node = child as {
+          attributes?: Map<string, string>;
+          getBoundingClientRect?: () => { height: number };
+        };
+        node.getBoundingClientRect = () => ({
+          height:
+            node.attributes?.get("data-van-stack-path") === "/posts"
+              ? 1200
+              : 300,
+        });
+      }
+
+      const previousRoot = env.root.children.find(
+        (child) =>
+          child &&
+          typeof child === "object" &&
+          "attributes" in child &&
+          (child as { attributes: Map<string, string> }).attributes.get(
+            "data-van-stack-path",
+          ) === "/posts",
+      ) as { style: Record<string, string> } | undefined;
+
+      env.root.dispatchEvent("pointerdown", {
+        pageX: 10,
+        pageY: 20,
+        target: env.root,
+      });
+      env.root.dispatchEvent("pointermove", {
+        pageX: 260,
+        pageY: 24,
+        target: env.root,
+      });
+      env.root.dispatchEvent("pointerup", {
+        pageX: 260,
+        pageY: 24,
+        target: env.root,
+      });
+
+      await vi.advanceTimersByTimeAsync(320);
+
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(previousRoot?.style.transform).toBeUndefined();
+      expect(previousRoot?.style.translate).toBeUndefined();
+      expect(env.root.attributes.get("style")).toBe("min-height: 1200px");
+      expect(env.root.innerHTML).toContain("<article>/posts</article>");
+      expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
+      expect(back).not.toHaveBeenCalled();
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(0);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(env.root.attributes.get("style")).toBe("min-height: 1200px");
+      expect(back).not.toHaveBeenCalled();
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(16);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(env.root.attributes.get("style")).toBeUndefined();
       expect(back).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();

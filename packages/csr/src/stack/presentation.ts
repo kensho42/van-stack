@@ -241,19 +241,19 @@ async function restoreSwipeBackScroll(
   updateLayoutOffset();
   clearStyles();
 
-  if (!input.window.scrollTo) {
-    if (destination.root) removeInlineStyle(destination.root, "top");
-    return;
-  }
-
-  if (updateLayoutOffset()) return;
-
   const requestFrame = input.window.requestAnimationFrame?.bind(input.window);
   if (requestFrame) {
     await new Promise<void>((resolve) => {
       requestFrame(() => requestFrame(() => resolve()));
     });
   }
+
+  if (!input.window.scrollTo) {
+    if (destination.root) removeInlineStyle(destination.root, "top");
+    return;
+  }
+
+  if (updateLayoutOffset()) return;
 
   restoreWindowScroll(input.window, scroll, input.scroll.behavior);
 
