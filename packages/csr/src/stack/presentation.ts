@@ -34,6 +34,7 @@ import {
 } from "./dom";
 import {
   createSwipeBackController,
+  isIosLikeTouchEnvironment,
   type StackSwipeBackOptions,
 } from "./gestures";
 import {
@@ -306,6 +307,7 @@ export function stackPresentation(
   let suppressNextPopPath: string | null = null;
   let activeSwipeTargetPath: string | null = null;
   let activeSwipeHistoryPopped = false;
+  let resolveActiveSwipeHistory: (() => void) | null = null;
   let queue = Promise.resolve();
   let disposed = false;
   let managedHistory: HistoryLike | null = null;
@@ -353,6 +355,24 @@ export function stackPresentation(
 
   function setNavigationStateForStack() {
     navigationStateStore.set(createIdleNavigationState(createStackSnapshot()));
+  }
+
+  function createActiveSwipeHistoryWait() {
+    return new Promise<void>((resolve) => {
+      let settled = false;
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        if (resolveActiveSwipeHistory === settle) {
+          resolveActiveSwipeHistory = null;
+        }
+        resolve();
+      };
+
+      resolveActiveSwipeHistory = settle;
+      // Do not leave the stack wedged if a custom HistoryLike drops popstate.
+      globalThis.setTimeout(settle, 1000);
+    });
   }
 
   function setTransitionState(input: {
@@ -658,6 +678,10 @@ export function stackPresentation(
     const retention = resolveRetention(options, routeNavigation);
     const historyTraversalRequested =
       !activeSwipeHistoryPopped && Boolean(input.history.back);
+    const historyCommit =
+      historyTraversalRequested && isIosLikeTouchEnvironment()
+        ? createActiveSwipeHistoryWait()
+        : Promise.resolve();
 
     if (historyTraversalRequested) {
       suppressNextPopPath = previous.entry.path;
@@ -669,6 +693,7 @@ export function stackPresentation(
     lockStackHeight(input, previous, outgoing);
 
     return {
+      beforeFinish: () => historyCommit,
       async finish(clearStyles: () => void) {
         try {
           const activate = async () => {
@@ -753,6 +778,7 @@ export function stackPresentation(
     ) {
       activeSwipeHistoryPopped = true;
       suppressNextPopPath = null;
+      resolveActiveSwipeHistory?.();
       return;
     }
 
@@ -796,6 +822,7 @@ export function stackPresentation(
     },
     dispose() {
       disposed = true;
+      resolveActiveSwipeHistory?.();
       swipeBack?.dispose();
       if (latestInput) {
         unlockStackHeight(latestInput);

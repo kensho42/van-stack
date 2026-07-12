@@ -55,6 +55,7 @@ type SwipeTarget = {
 };
 
 type SwipeBackCommitHandle = {
+  beforeFinish?: () => Promise<void> | void;
   finish: (clearStyles: () => void) => Promise<void> | void;
 };
 
@@ -119,7 +120,7 @@ function resolveSwipeBackOptions(
   };
 }
 
-function isIosLikeTouchEnvironment() {
+export function isIosLikeTouchEnvironment() {
   if (typeof globalThis.navigator === "undefined") {
     return false;
   }
@@ -505,6 +506,7 @@ export function createSwipeBackController({
       onGesture?.({ phase: "commit", progress: 1 });
       const handle = await commit();
       await settleGesture(swipeTarget, getSettleDuration(), true);
+      await handle?.beforeFinish?.();
       removeClass(root, "van-stack-swipe-active");
       let stylesCleared = false;
       const clearStyles = () => {

@@ -2147,8 +2147,28 @@ describe("startClientApp", () => {
 
   test("stack presentation requests history traversal before committed swipe-back settles", async () => {
     vi.useFakeTimers();
+    vi.stubGlobal("navigator", {
+      maxTouchPoints: 5,
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)",
+    });
     const env = createClientDocument();
     const back = vi.fn();
+    let popstateHandler: (() => Promise<unknown> | unknown) | undefined;
+    const testWindow = {
+      location: {
+        origin: "https://example.com",
+        pathname: "/posts",
+        search: "",
+      },
+      addEventListener: vi.fn(
+        (type: string, handler: () => Promise<unknown> | unknown) => {
+          if (type === "popstate") {
+            popstateHandler = handler;
+          }
+        },
+      ),
+      removeEventListener: vi.fn(),
+    };
 
     const app = startClientApp({
       mode: "shell",
@@ -2178,15 +2198,7 @@ describe("startClientApp", () => {
       }),
       document: env.document as never,
       rootSelector: '[data-van-stack-app-root=""]',
-      window: {
-        location: {
-          origin: "https://example.com",
-          pathname: "/posts",
-          search: "",
-        },
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      } as never,
+      window: testWindow as never,
     });
 
     await app.ready;
@@ -2216,7 +2228,24 @@ describe("startClientApp", () => {
 
     await vi.advanceTimersByTimeAsync(1);
     expect(back).toHaveBeenCalledTimes(1);
+    expect(env.root.attributes.get("class")).toContain(
+      "van-stack-swipe-active",
+    );
+    expect(env.root.innerHTML).toContain("<article>/posts</article>");
+    expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
 
+    testWindow.location.pathname = "/posts";
+    const popstate = popstateHandler?.();
+    await popstate;
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(env.root.attributes.get("class")).not.toContain(
+      "van-stack-swipe-active",
+    );
+    expect(env.root.innerHTML).toContain("<article>/posts</article>");
+    expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
+
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
