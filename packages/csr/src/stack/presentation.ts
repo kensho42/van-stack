@@ -224,6 +224,13 @@ async function restoreSwipeBackScroll(
   activate: () => Promise<void>,
   clearStyles: () => void,
 ) {
+  const isAtTargetScroll = () => {
+    const current = getWindowScroll(input.window);
+    return (
+      Math.abs(current.left - scroll.left) <= 0.5 &&
+      Math.abs(current.top - scroll.top) <= 0.5
+    );
+  };
   const updateLayoutOffset = () => {
     const current = getWindowScroll(input.window);
     const offsetY = current.top - scroll.top;
@@ -234,19 +241,75 @@ async function restoreSwipeBackScroll(
         setInlineStyle(destination.root, "top", `${offsetY}px`);
       }
     }
-    return (
-      Math.abs(current.left - scroll.left) <= 0.5 &&
-      Math.abs(current.top - scroll.top) <= 0.5
-    );
+    return isAtTargetScroll();
   };
 
-  updateLayoutOffset();
-  if (destination.root) {
-    removeInlineStyle(destination.root, "translate");
-    removeInlineStyle(destination.root, "opacity");
-    removeInlineStyle(destination.root, "transition");
-    removeInlineStyle(destination.root, "z-index");
-    setInlineStyle(destination.root, "transform", "none");
+  const destinationRoot = destination.root;
+  const currentScroll = getWindowScroll(input.window);
+  const fixedIsolation =
+    destinationRoot &&
+    isIosLikeTouchEnvironment() &&
+    scroll.top - currentScroll.top > 0.5
+      ? destinationRoot
+      : null;
+  const clearFixedIsolation = () => {
+    if (!fixedIsolation) return;
+    for (const property of [
+      "position",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "width",
+      "pointer-events",
+      "z-index",
+    ]) {
+      removeInlineStyle(fixedIsolation, property);
+    }
+  };
+
+  if (fixedIsolation) {
+    const rect = fixedIsolation.getBoundingClientRect?.();
+    const isolationHeight = Math.max(
+      getElementHeight(input.root as StackViewRoot),
+      getElementHeight(fixedIsolation),
+      fixedIsolation.scrollHeight ?? 0,
+      scroll.top +
+        ((
+          input.window as ClientPresentationWindowLike & {
+            innerHeight?: number;
+          }
+        ).innerHeight ?? 0),
+    );
+    if (isolationHeight > 0) {
+      setInlineStyle(
+        input.root as StackViewRoot,
+        "min-height",
+        `${isolationHeight}px`,
+      );
+    }
+    setInlineStyle(fixedIsolation, "position", "fixed");
+    setInlineStyle(fixedIsolation, "top", `${rect?.top ?? 0}px`);
+    setInlineStyle(fixedIsolation, "right", "auto");
+    setInlineStyle(fixedIsolation, "bottom", "auto");
+    setInlineStyle(fixedIsolation, "left", `${rect?.left ?? 0}px`);
+    if ((rect?.width ?? 0) > 0) {
+      setInlineStyle(fixedIsolation, "width", `${rect?.width}px`);
+    }
+    setInlineStyle(fixedIsolation, "pointer-events", "none");
+  } else {
+    updateLayoutOffset();
+  }
+
+  if (destinationRoot) {
+    removeInlineStyle(destinationRoot, "translate");
+    removeInlineStyle(destinationRoot, "opacity");
+    removeInlineStyle(destinationRoot, "transition");
+    removeInlineStyle(destinationRoot, "z-index");
+    setInlineStyle(destinationRoot, "transform", "none");
+  }
+  if (fixedIsolation) {
+    setInlineStyle(fixedIsolation, "z-index", "1");
   }
 
   const requestFrame = input.window.requestAnimationFrame?.bind(input.window);
@@ -262,9 +325,39 @@ async function restoreSwipeBackScroll(
 
   await activate();
   clearStyles();
+  if (fixedIsolation) {
+    setInlineStyle(fixedIsolation, "z-index", "1");
+  }
 
   if (!input.window.scrollTo) {
-    if (destination.root) removeInlineStyle(destination.root, "top");
+    clearFixedIsolation();
+    if (destinationRoot) removeInlineStyle(destinationRoot, "top");
+    return;
+  }
+
+  if (fixedIsolation) {
+    if (!isAtTargetScroll()) {
+      restoreWindowScroll(input.window, scroll, input.scroll.behavior);
+    }
+
+    if (!isAtTargetScroll() && requestFrame) {
+      await new Promise<void>((resolve) => {
+        const update = () => {
+          if (isAtTargetScroll()) {
+            resolve();
+            return;
+          }
+          requestFrame(update);
+        };
+
+        requestFrame(update);
+      });
+    }
+
+    if (waitForPaint) {
+      await waitForPaint();
+    }
+    clearFixedIsolation();
     return;
   }
 

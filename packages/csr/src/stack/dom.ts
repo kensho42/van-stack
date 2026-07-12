@@ -16,6 +16,7 @@ export type StackViewRoot = AppRootLike & {
   getBoundingClientRect?: () => {
     height?: number;
     left?: number;
+    top?: number;
     width?: number;
   };
   innerHTML?: string;
@@ -30,6 +31,7 @@ export type StackViewRoot = AppRootLike & {
     options?: unknown,
   ) => void;
   render?: () => string;
+  scrollHeight?: number;
   setAttribute?: (name: string, value: string) => void;
   style?: Record<string, string | number | undefined> & {
     removeProperty?: (name: string) => void;

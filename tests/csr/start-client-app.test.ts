@@ -2518,10 +2518,15 @@ describe("startClientApp", () => {
 
   test("stack presentation paints a taller scrolled destination after activation before restoring scroll", async () => {
     vi.useFakeTimers();
+    vi.stubGlobal("navigator", {
+      maxTouchPoints: 5,
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)",
+    });
     try {
       const env = createClientDocument();
       const back = vi.fn();
       const frameCallbacks: Array<(time: number) => unknown> = [];
+      let popstateHandler: (() => Promise<unknown> | unknown) | undefined;
       const scrollTo = vi.fn(({ left, top }: { left: number; top: number }) => {
         testWindow.scrollX = left;
         testWindow.scrollY = top;
@@ -2534,12 +2539,19 @@ describe("startClientApp", () => {
         },
         scrollX: 0,
         scrollY: 674,
+        innerHeight: 844,
         scrollTo,
         requestAnimationFrame(callback: (time: number) => unknown) {
           frameCallbacks.push(callback);
           return frameCallbacks.length;
         },
-        addEventListener: vi.fn(),
+        addEventListener: vi.fn(
+          (type: string, handler: () => Promise<unknown> | unknown) => {
+            if (type === "popstate") {
+              popstateHandler = handler;
+            }
+          },
+        ),
         removeEventListener: vi.fn(),
       };
 
@@ -2582,13 +2594,22 @@ describe("startClientApp", () => {
         if (!child || typeof child !== "object") continue;
         const node = child as {
           attributes?: Map<string, string>;
-          getBoundingClientRect?: () => { height: number };
+          getBoundingClientRect?: () => {
+            height: number;
+            left: number;
+            top: number;
+            width: number;
+          };
+          scrollHeight?: number;
         };
+        const isPrevious =
+          node.attributes?.get("data-van-stack-path") === "/posts";
+        node.scrollHeight = isPrevious ? 1518 : 300;
         node.getBoundingClientRect = () => ({
-          height:
-            node.attributes?.get("data-van-stack-path") === "/posts"
-              ? 1200
-              : 300,
+          height: isPrevious ? 1200 : 300,
+          left: 0,
+          top: isPrevious ? -674 : 0,
+          width: 390,
         });
       }
 
@@ -2646,13 +2667,21 @@ describe("startClientApp", () => {
         outgoingRoot?.attributes.get("data-van-stack-stack-position"),
       ).toBe("current");
 
+      const nativePop = popstateHandler?.();
+      await nativePop;
+      await vi.advanceTimersByTimeAsync(0);
+
       await vi.advanceTimersByTimeAsync(320);
 
       expect(scrollTo).not.toHaveBeenCalled();
       expect(previousRoot?.style.transform).toBe("none");
       expect(previousRoot?.style.translate).toBeUndefined();
       expect(previousRoot?.style.top).toBe("-674px");
-      expect(env.root.attributes.get("style")).toBe("min-height: 1200px");
+      expect(previousRoot?.style.position).toBe("fixed");
+      expect(previousRoot?.style.left).toBe("0px");
+      expect(previousRoot?.style.width).toBe("390px");
+      expect(previousRoot?.style["pointer-events"]).toBe("none");
+      expect(env.root.attributes.get("style")).toBe("min-height: 1518px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
       expect(
@@ -2668,7 +2697,8 @@ describe("startClientApp", () => {
       }
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(env.root.attributes.get("style")).toBe("min-height: 1200px");
+      expect(previousRoot?.style.position).toBe("fixed");
+      expect(env.root.attributes.get("style")).toBe("min-height: 1518px");
       expect(
         previousRoot?.attributes.get("data-van-stack-stack-position"),
       ).toBe("previous");
@@ -2679,10 +2709,15 @@ describe("startClientApp", () => {
       }
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(scrollTo).not.toHaveBeenCalled();
-      expect(testWindow.scrollY).toBe(0);
+      expect(scrollTo).toHaveBeenCalledWith({
+        top: 674,
+        left: 0,
+        behavior: "auto",
+      });
+      expect(testWindow.scrollY).toBe(674);
       expect(previousRoot?.style.top).toBe("-674px");
-      expect(env.root.attributes.get("style")).toBe("min-height: 1200px");
+      expect(previousRoot?.style.position).toBe("fixed");
+      expect(env.root.attributes.get("style")).toBe("min-height: 1518px");
       expect(
         previousRoot?.attributes.get("data-van-stack-stack-position"),
       ).toBe("current");
@@ -2694,7 +2729,8 @@ describe("startClientApp", () => {
       }
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(scrollTo).not.toHaveBeenCalled();
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      expect(previousRoot?.style.position).toBe("fixed");
       expect(previousRoot?.style.top).toBe("-674px");
 
       for (const callback of frameCallbacks.splice(0)) {
@@ -2702,15 +2738,16 @@ describe("startClientApp", () => {
       }
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(scrollTo).toHaveBeenCalledWith({
-        top: 674,
-        left: 0,
-        behavior: "auto",
-      });
+      expect(scrollTo).toHaveBeenCalledTimes(1);
       expect(testWindow.scrollY).toBe(674);
+      expect(previousRoot?.style.position).toBeUndefined();
       expect(previousRoot?.style.top).toBeUndefined();
+      expect(previousRoot?.style.left).toBeUndefined();
+      expect(previousRoot?.style.width).toBeUndefined();
+      expect(previousRoot?.style["pointer-events"]).toBeUndefined();
       expect(env.root.attributes.get("style")).toBeUndefined();
     } finally {
+      vi.unstubAllGlobals();
       vi.useRealTimers();
     }
   });
