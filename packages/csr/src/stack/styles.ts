@@ -32,13 +32,12 @@ export function ensureStackStyles() {
   width: 100%;
   min-width: 100%;
   background: var(--van-stack-page-background, Canvas);
-  backface-visibility: hidden;
 }
 .van-stack-page-current {
   position: relative;
   z-index: 2;
   pointer-events: auto;
-  transform: translate3d(0, 0, 0);
+  transform: none;
   opacity: 1;
 }
 .van-stack-page-previous,
@@ -62,6 +61,7 @@ export function ensureStackStyles() {
 }
 .van-stack-transition [data-van-stack-view],
 .van-stack-swipe-active [data-van-stack-view] {
+  backface-visibility: hidden;
   will-change: transform, opacity;
 }
 .van-stack-transition-ios-slide-forward .van-stack-page-current,

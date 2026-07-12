@@ -69,6 +69,41 @@ describe("stack presentation styles", () => {
     );
   });
 
+  test("does not keep the settled current page on a forced GPU layer", () => {
+    const headNodes: Array<{ textContent: string }> = [];
+
+    vi.stubGlobal("document", {
+      createElement() {
+        return {
+          setAttribute: vi.fn(),
+          textContent: "",
+        };
+      },
+      head: {
+        appendChild(node: { textContent: string }) {
+          headNodes.push(node);
+        },
+      },
+      querySelector: vi.fn(() => null),
+    });
+
+    try {
+      ensureStackStyles();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+
+    const css = headNodes[0]?.textContent ?? "";
+    const baseViewRule = css.match(/\[data-van-stack-view\] \{([^}]*)\}/)?.[1];
+    expect(baseViewRule).not.toContain("backface-visibility: hidden;");
+    expect(css).toContain(
+      ".van-stack-page-current {\n  position: relative;\n  z-index: 2;\n  pointer-events: auto;\n  transform: none;",
+    );
+    expect(css).toContain(
+      ".van-stack-transition [data-van-stack-view],\n.van-stack-swipe-active [data-van-stack-view] {\n  backface-visibility: hidden;",
+    );
+  });
+
   test("uses a subtle edge-attached iOS swipe shadow instead of a dark slab", () => {
     const headNodes: Array<{ textContent: string }> = [];
 

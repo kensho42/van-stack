@@ -504,8 +504,8 @@ export function createSwipeBackController({
     if (shouldCommit) {
       onGesture?.({ phase: "commit", progress: 1 });
       const handle = await commit();
-      removeClass(root, "van-stack-swipe-active");
       await settleGesture(swipeTarget, getSettleDuration(), true);
+      removeClass(root, "van-stack-swipe-active");
       let stylesCleared = false;
       const clearStyles = () => {
         if (stylesCleared) return;
@@ -518,8 +518,8 @@ export function createSwipeBackController({
     }
 
     onGesture?.({ phase: "cancel", progress: 0 });
-    removeClass(root, "van-stack-swipe-active");
     await settleGesture(swipeTarget, getSettleDuration(), false);
+    removeClass(root, "van-stack-swipe-active");
     clearGestureStyles(swipeTarget);
   };
 

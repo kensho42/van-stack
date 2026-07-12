@@ -2305,12 +2305,7 @@ describe("startClientApp", () => {
       const nativePop = popstateHandler?.();
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(scrollTo).toHaveBeenCalledTimes(1);
-      expect(scrollTo).toHaveBeenCalledWith({
-        behavior: "auto",
-        left: 0,
-        top: 180,
-      });
+      expect(scrollTo).not.toHaveBeenCalled();
       expect(back).not.toHaveBeenCalled();
 
       await vi.advanceTimersByTimeAsync(320);
@@ -2465,11 +2460,7 @@ describe("startClientApp", () => {
 
       await vi.advanceTimersByTimeAsync(160);
 
-      expect(scrollTo).toHaveBeenCalledWith({
-        top: 180,
-        left: 0,
-        behavior: "smooth",
-      });
+      expect(scrollTo).not.toHaveBeenCalled();
       expect(env.root.attributes.get("style")).toBeUndefined();
       expect(previousRoot?.style["z-index"]).toBeUndefined();
       expect(outgoingRoot?.style["z-index"]).toBeUndefined();
@@ -2479,7 +2470,7 @@ describe("startClientApp", () => {
     }
   });
 
-  test("stack presentation restores short destination scroll before committed swipe settles", async () => {
+  test("stack presentation demotes a short destination before restoring scroll after swipe settle", async () => {
     vi.useFakeTimers();
     try {
       const env = createClientDocument();
@@ -2593,14 +2584,10 @@ describe("startClientApp", () => {
 
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(scrollTo).toHaveBeenCalledWith({
-        top: 180,
-        left: 0,
-        behavior: "auto",
-      });
-      expect(testWindow.scrollY).toBe(180);
-      expect(previousRoot?.style.translate).toBeUndefined();
-      expect(outgoingRoot?.style.translate).toBe("0 -340px");
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(testWindow.scrollY).toBe(520);
+      expect(previousRoot?.style.translate).toBe("0 340px");
+      expect(outgoingRoot?.style.translate).toBeUndefined();
       expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
@@ -2608,8 +2595,36 @@ describe("startClientApp", () => {
 
       await vi.advanceTimersByTimeAsync(320);
 
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(testWindow.scrollY).toBe(520);
       expect(previousRoot?.style.translate).toBeUndefined();
       expect(outgoingRoot?.style.translate).toBeUndefined();
+      expect(previousRoot?.style.top).toBe("340px");
+      expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
+      expect(env.root.innerHTML).toContain("<article>/posts</article>");
+      expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
+      expect(back).not.toHaveBeenCalled();
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(0);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(previousRoot?.style.top).toBe("340px");
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(16);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(scrollTo).toHaveBeenCalledWith({
+        top: 180,
+        left: 0,
+        behavior: "auto",
+      });
+      expect(testWindow.scrollY).toBe(180);
+      expect(previousRoot?.style.top).toBeUndefined();
       expect(env.root.attributes.get("style")).toBeUndefined();
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
@@ -2715,7 +2730,7 @@ describe("startClientApp", () => {
 
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(deferredScroll).toEqual({ left: 0, top: 180 });
+      expect(deferredScroll).toBeUndefined();
       expect(previousRoot?.style.translate).toBe("0 340px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
@@ -2723,23 +2738,42 @@ describe("startClientApp", () => {
 
       await vi.advanceTimersByTimeAsync(320);
 
-      expect(deferredScroll).toEqual({ left: 0, top: 180 });
+      expect(deferredScroll).toBeUndefined();
       expect(previousRoot?.style.transform).toBeUndefined();
-      expect(previousRoot?.style.translate).toBe("0 340px");
+      expect(previousRoot?.style.translate).toBeUndefined();
+      expect(previousRoot?.style.top).toBe("340px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
-      expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
+      expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
       expect(back).not.toHaveBeenCalled();
       expect(frameCallbacks).toHaveLength(2);
 
-      testWindow.scrollX = deferredScroll?.left ?? 0;
-      testWindow.scrollY = deferredScroll?.top ?? 0;
       for (const callback of frameCallbacks.splice(0)) {
         callback(0);
       }
       await vi.advanceTimersByTimeAsync(0);
 
+      expect(deferredScroll).toBeUndefined();
+      expect(previousRoot?.style.top).toBe("340px");
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(16);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(deferredScroll).toEqual({ left: 0, top: 180 });
+      expect(previousRoot?.style.top).toBe("340px");
+      expect(back).not.toHaveBeenCalled();
+
+      testWindow.scrollX = deferredScroll?.left ?? 0;
+      testWindow.scrollY = deferredScroll?.top ?? 0;
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(32);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
       expect(previousRoot?.style.transform).toBeUndefined();
       expect(previousRoot?.style.translate).toBeUndefined();
+      expect(previousRoot?.style.top).toBeUndefined();
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
       expect(back).toHaveBeenCalledTimes(1);
