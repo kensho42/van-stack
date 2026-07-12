@@ -2305,7 +2305,12 @@ describe("startClientApp", () => {
       const nativePop = popstateHandler?.();
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(scrollTo).not.toHaveBeenCalled();
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      expect(scrollTo).toHaveBeenCalledWith({
+        behavior: "auto",
+        left: 0,
+        top: 180,
+      });
       expect(back).not.toHaveBeenCalled();
 
       await vi.advanceTimersByTimeAsync(320);
@@ -2474,7 +2479,7 @@ describe("startClientApp", () => {
     }
   });
 
-  test("stack presentation keeps short-view compensation through synchronous scroll restoration", async () => {
+  test("stack presentation restores short destination scroll before committed swipe settles", async () => {
     vi.useFakeTimers();
     try {
       const env = createClientDocument();
@@ -2560,6 +2565,15 @@ describe("startClientApp", () => {
             "data-van-stack-path",
           ) === "/posts",
       ) as { style: Record<string, string> } | undefined;
+      const outgoingRoot = env.root.children.find(
+        (child) =>
+          child &&
+          typeof child === "object" &&
+          "attributes" in child &&
+          (child as { attributes: Map<string, string> }).attributes.get(
+            "data-van-stack-path",
+          ) === "/posts/1",
+      ) as { style: Record<string, string> } | undefined;
 
       env.root.dispatchEvent("pointerdown", {
         pageX: 10,
@@ -2577,7 +2591,7 @@ describe("startClientApp", () => {
         target: env.root,
       });
 
-      await vi.advanceTimersByTimeAsync(320);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(scrollTo).toHaveBeenCalledWith({
         top: 180,
@@ -2585,17 +2599,20 @@ describe("startClientApp", () => {
         behavior: "auto",
       });
       expect(testWindow.scrollY).toBe(180);
-      expect(previousRoot?.style.translate).toBe("0 340px");
+      expect(previousRoot?.style.translate).toBeUndefined();
+      expect(outgoingRoot?.style.translate).toBe("0 -340px");
       expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
+      expect(env.root.innerHTML).toContain("<article>/posts</article>");
+      expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
       expect(back).not.toHaveBeenCalled();
 
-      for (const callback of frameCallbacks.splice(0)) {
-        callback(0);
-      }
-      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(320);
 
       expect(previousRoot?.style.translate).toBeUndefined();
+      expect(outgoingRoot?.style.translate).toBeUndefined();
       expect(env.root.attributes.get("style")).toBeUndefined();
+      expect(env.root.innerHTML).toContain("<article>/posts</article>");
+      expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
       expect(back).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
@@ -2696,11 +2713,21 @@ describe("startClientApp", () => {
         target: env.root,
       });
 
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(deferredScroll).toEqual({ left: 0, top: 180 });
+      expect(previousRoot?.style.translate).toBe("0 340px");
+      expect(env.root.innerHTML).toContain("<article>/posts</article>");
+      expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
+      expect(back).not.toHaveBeenCalled();
+
       await vi.advanceTimersByTimeAsync(320);
 
       expect(deferredScroll).toEqual({ left: 0, top: 180 });
       expect(previousRoot?.style.transform).toBeUndefined();
       expect(previousRoot?.style.translate).toBe("0 340px");
+      expect(env.root.innerHTML).toContain("<article>/posts</article>");
+      expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
       expect(back).not.toHaveBeenCalled();
       expect(frameCallbacks).toHaveLength(2);
 
@@ -2713,6 +2740,8 @@ describe("startClientApp", () => {
 
       expect(previousRoot?.style.transform).toBeUndefined();
       expect(previousRoot?.style.translate).toBeUndefined();
+      expect(env.root.innerHTML).toContain("<article>/posts</article>");
+      expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
       expect(back).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();

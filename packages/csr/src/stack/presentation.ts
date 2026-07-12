@@ -219,40 +219,34 @@ function restoreWindowScroll(
 async function restoreSwipeBackScroll(
   input: ClientPresentationRenderInput,
   destination: StackItem,
+  outgoing: StackItem,
   scroll: { left: number; top: number },
-  clearStyles: () => void,
+  outgoingScroll: { left: number; top: number },
 ) {
-  const current = getWindowScroll(input.window);
-  const wasAtTarget =
-    Math.abs(current.left - scroll.left) <= 0.5 &&
-    Math.abs(current.top - scroll.top) <= 0.5;
-
   restoreWindowScroll(input.window, scroll, input.scroll.behavior);
 
+  if (!input.window.scrollTo) return;
+
+  const updateOffsets = () => {
+    const current = getWindowScroll(input.window);
+    setItemScrollOffset(destination, current.top - scroll.top);
+    setItemScrollOffset(outgoing, current.top - outgoingScroll.top);
+    return (
+      Math.abs(current.left - scroll.left) <= 0.5 &&
+      Math.abs(current.top - scroll.top) <= 0.5
+    );
+  };
+
+  if (updateOffsets()) return;
+
   const requestFrame = input.window.requestAnimationFrame?.bind(input.window);
-  if (!input.window.scrollTo || !requestFrame || wasAtTarget) {
-    clearStyles();
-    return;
-  }
+  if (!requestFrame) return;
 
   await new Promise<void>((resolve) => {
     const update = () => {
-      const next = getWindowScroll(input.window);
-      if (
-        Math.abs(next.left - scroll.left) <= 0.5 &&
-        Math.abs(next.top - scroll.top) <= 0.5
-      ) {
-        clearStyles();
+      if (updateOffsets()) {
         resolve();
         return;
-      }
-
-      if (destination.root) {
-        setInlineStyle(
-          destination.root,
-          "translate",
-          `0 ${next.top - scroll.top}px`,
-        );
       }
       requestFrame(update);
     };
@@ -626,6 +620,7 @@ export function stackPresentation(
     const outgoing = stack[stack.length - 1] as StackItem;
     const nextStack = stack.slice(0, -1);
     const previousScroll = getPopStateTargetScroll(input, previous);
+    const outgoingScroll = getWindowScroll(input.window);
     const routeNavigation = await resolveRouteNavigation(
       input.routes,
       previous.entry,
@@ -635,6 +630,15 @@ export function stackPresentation(
     await ensureViewRoot(previous, input.routes);
     await ensureViewRoot(outgoing, input.routes);
     lockStackHeight(input, previous, outgoing);
+    const scrollRestoration = previousScroll
+      ? restoreSwipeBackScroll(
+          input,
+          previous,
+          outgoing,
+          previousScroll,
+          outgoingScroll,
+        )
+      : Promise.resolve();
     syncRoot(input.root, [
       { item: previous, position: "current" },
       { item: outgoing, position: "next" },
@@ -643,19 +647,11 @@ export function stackPresentation(
     return {
       async finish(clearStyles: () => void) {
         try {
+          await scrollRestoration;
           stack = nextStack;
           await syncRetainedRoot(input, stack, retention);
           setNavigationStateForStack();
-          if (previousScroll) {
-            await restoreSwipeBackScroll(
-              input,
-              previous,
-              previousScroll,
-              clearStyles,
-            );
-          } else {
-            clearStyles();
-          }
+          clearStyles();
         } finally {
           unlockStackHeight(input);
         }
