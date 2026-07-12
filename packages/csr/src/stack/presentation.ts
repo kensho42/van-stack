@@ -656,6 +656,13 @@ export function stackPresentation(
       previous.entry,
     );
     const retention = resolveRetention(options, routeNavigation);
+    const historyTraversalRequested =
+      !activeSwipeHistoryPopped && Boolean(input.history.back);
+
+    if (historyTraversalRequested) {
+      suppressNextPopPath = previous.entry.path;
+      input.history.back?.();
+    }
 
     await ensureViewRoot(previous, input.routes);
     await ensureViewRoot(outgoing, input.routes);
@@ -688,14 +695,9 @@ export function stackPresentation(
         const historyAlreadyPopped = activeSwipeHistoryPopped;
         activeSwipeTargetPath = null;
         activeSwipeHistoryPopped = false;
-        if (historyAlreadyPopped) return;
+        if (historyTraversalRequested || historyAlreadyPopped) return;
 
-        if (input.history.back) {
-          suppressNextPopPath = previous.entry.path;
-          input.history.back();
-        } else {
-          await input.navigate(previous.entry.path, "pop");
-        }
+        await input.navigate(previous.entry.path, "pop");
       },
     };
   }

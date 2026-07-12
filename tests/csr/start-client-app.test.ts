@@ -2145,7 +2145,7 @@ describe("startClientApp", () => {
     }
   });
 
-  test("stack presentation settles committed swipe-back before updating history", async () => {
+  test("stack presentation requests history traversal before committed swipe-back settles", async () => {
     vi.useFakeTimers();
     const env = createClientDocument();
     const back = vi.fn();
@@ -2208,10 +2208,11 @@ describe("startClientApp", () => {
       target: env.root,
     });
 
-    expect(back).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(back).toHaveBeenCalledTimes(1);
 
     await vi.advanceTimersByTimeAsync(319);
-    expect(back).not.toHaveBeenCalled();
+    expect(back).toHaveBeenCalledTimes(1);
 
     await vi.advanceTimersByTimeAsync(1);
     expect(back).toHaveBeenCalledTimes(1);
@@ -2306,7 +2307,7 @@ describe("startClientApp", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(scrollTo).not.toHaveBeenCalled();
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       await vi.advanceTimersByTimeAsync(320);
       await nativePop;
@@ -2317,7 +2318,7 @@ describe("startClientApp", () => {
         left: 0,
         top: 180,
       });
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
     } finally {
@@ -2464,7 +2465,7 @@ describe("startClientApp", () => {
       expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
       expect(previousRoot?.style["z-index"]).toBeUndefined();
       expect(outgoingRoot?.style["z-index"]).toBe("2");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       for (const callback of frameCallbacks.splice(0)) {
         callback(320);
@@ -2472,7 +2473,7 @@ describe("startClientApp", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       for (const callback of frameCallbacks.splice(0)) {
         callback(336);
@@ -2630,7 +2631,7 @@ describe("startClientApp", () => {
       expect(
         outgoingRoot?.attributes.get("data-van-stack-stack-position"),
       ).toBe("current");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       for (const callback of frameCallbacks.splice(0)) {
         callback(0);
@@ -2641,7 +2642,7 @@ describe("startClientApp", () => {
       expect(
         previousRoot?.attributes.get("data-van-stack-stack-position"),
       ).toBe("previous");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       for (const callback of frameCallbacks.splice(0)) {
         callback(16);
@@ -2781,7 +2782,7 @@ describe("startClientApp", () => {
       expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       await vi.advanceTimersByTimeAsync(320);
 
@@ -2793,7 +2794,7 @@ describe("startClientApp", () => {
       expect(env.root.attributes.get("style")).toContain("min-height: 1200px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       for (const callback of frameCallbacks.splice(0)) {
         callback(0);
@@ -2802,6 +2803,7 @@ describe("startClientApp", () => {
 
       expect(scrollTo).not.toHaveBeenCalled();
       expect(previousRoot?.style.top).toBe("340px");
+      expect(back).toHaveBeenCalledTimes(1);
 
       for (const callback of frameCallbacks.splice(0)) {
         callback(16);
@@ -2924,7 +2926,7 @@ describe("startClientApp", () => {
       expect(previousRoot?.style.translate).toBe("0 340px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       await vi.advanceTimersByTimeAsync(320);
 
@@ -2934,7 +2936,7 @@ describe("startClientApp", () => {
       expect(previousRoot?.style.top).toBe("340px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
       expect(frameCallbacks).toHaveLength(2);
 
       for (const callback of frameCallbacks.splice(0)) {
@@ -2944,6 +2946,7 @@ describe("startClientApp", () => {
 
       expect(deferredScroll).toBeUndefined();
       expect(previousRoot?.style.top).toBe("340px");
+      expect(back).toHaveBeenCalledTimes(1);
 
       for (const callback of frameCallbacks.splice(0)) {
         callback(16);
@@ -2952,7 +2955,7 @@ describe("startClientApp", () => {
 
       expect(deferredScroll).toEqual({ left: 0, top: 180 });
       expect(previousRoot?.style.top).toBe("340px");
-      expect(back).not.toHaveBeenCalled();
+      expect(back).toHaveBeenCalledTimes(1);
 
       testWindow.scrollX = deferredScroll?.left ?? 0;
       testWindow.scrollY = deferredScroll?.top ?? 0;
