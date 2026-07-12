@@ -220,6 +220,7 @@ async function restoreSwipeBackScroll(
   input: ClientPresentationRenderInput,
   destination: StackItem,
   scroll: { left: number; top: number },
+  activate: () => Promise<void>,
   clearStyles: () => void,
 ) {
   const updateLayoutOffset = () => {
@@ -239,7 +240,13 @@ async function restoreSwipeBackScroll(
   };
 
   updateLayoutOffset();
-  clearStyles();
+  if (destination.root) {
+    removeInlineStyle(destination.root, "translate");
+    removeInlineStyle(destination.root, "opacity");
+    removeInlineStyle(destination.root, "transition");
+    removeInlineStyle(destination.root, "z-index");
+    setInlineStyle(destination.root, "transform", "none");
+  }
 
   const requestFrame = input.window.requestAnimationFrame?.bind(input.window);
   if (requestFrame) {
@@ -247,6 +254,9 @@ async function restoreSwipeBackScroll(
       requestFrame(() => requestFrame(() => resolve()));
     });
   }
+
+  await activate();
+  clearStyles();
 
   if (!input.window.scrollTo) {
     if (destination.root) removeInlineStyle(destination.root, "top");
@@ -650,25 +660,25 @@ export function stackPresentation(
     await ensureViewRoot(previous, input.routes);
     await ensureViewRoot(outgoing, input.routes);
     lockStackHeight(input, previous, outgoing);
-    syncRoot(input.root, [
-      { item: previous, position: "current" },
-      { item: outgoing, position: "next" },
-    ]);
 
     return {
       async finish(clearStyles: () => void) {
         try {
-          stack = nextStack;
-          await syncRetainedRoot(input, stack, retention);
-          setNavigationStateForStack();
+          const activate = async () => {
+            stack = nextStack;
+            await syncRetainedRoot(input, stack, retention);
+            setNavigationStateForStack();
+          };
           if (previousScroll) {
             await restoreSwipeBackScroll(
               input,
               previous,
               previousScroll,
+              activate,
               clearStyles,
             );
           } else {
+            await activate();
             clearStyles();
           }
         } finally {

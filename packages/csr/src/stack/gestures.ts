@@ -301,13 +301,13 @@ function setCanceledGestureMotionStyles(target: SwipeTarget) {
 function setCommittedGestureMotionStyles(target: SwipeTarget) {
   setInlineStyle(target.current, "z-index", "2");
   setInlineStyle(target.previous, "z-index", "1");
-  removeInlineStyle(target.current, "transform");
+  setInlineStyle(target.current, "transform", "translate3d(100%, 0, 0)");
   removeInlineStyle(target.current, "opacity");
   removeInlineStyle(target.previous, "opacity");
   if (target.opacityLayer) {
     setInlineStyle(target.opacityLayer, "opacity", "0");
   }
-  removeInlineStyle(target.previous, "transform");
+  setInlineStyle(target.previous, "transform", "none");
   syncPreviousOffsetY(target);
 }
 
