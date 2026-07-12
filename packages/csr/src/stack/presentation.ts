@@ -222,19 +222,15 @@ async function restoreSwipeBackScroll(
   scroll: { left: number; top: number },
   clearStyles: () => void,
 ) {
+  const current = getWindowScroll(input.window);
+  const wasAtTarget =
+    Math.abs(current.left - scroll.left) <= 0.5 &&
+    Math.abs(current.top - scroll.top) <= 0.5;
+
   restoreWindowScroll(input.window, scroll, input.scroll.behavior);
 
   const requestFrame = input.window.requestAnimationFrame?.bind(input.window);
-  if (!input.window.scrollTo || !requestFrame) {
-    clearStyles();
-    return;
-  }
-
-  const current = getWindowScroll(input.window);
-  if (
-    Math.abs(current.left - scroll.left) <= 0.5 &&
-    Math.abs(current.top - scroll.top) <= 0.5
-  ) {
+  if (!input.window.scrollTo || !requestFrame || wasAtTarget) {
     clearStyles();
     return;
   }
