@@ -2516,7 +2516,7 @@ describe("startClientApp", () => {
     }
   });
 
-  test("stack presentation keeps a taller destination height-locked through compositor demotion when scroll is unchanged", async () => {
+  test("stack presentation paints a taller scrolled destination after activation before restoring scroll", async () => {
     vi.useFakeTimers();
     try {
       const env = createClientDocument();
@@ -2533,7 +2533,7 @@ describe("startClientApp", () => {
           search: "",
         },
         scrollX: 0,
-        scrollY: 0,
+        scrollY: 674,
         scrollTo,
         requestAnimationFrame(callback: (time: number) => unknown) {
           frameCallbacks.push(callback);
@@ -2651,6 +2651,7 @@ describe("startClientApp", () => {
       expect(scrollTo).not.toHaveBeenCalled();
       expect(previousRoot?.style.transform).toBe("none");
       expect(previousRoot?.style.translate).toBeUndefined();
+      expect(previousRoot?.style.top).toBe("-674px");
       expect(env.root.attributes.get("style")).toBe("min-height: 1200px");
       expect(env.root.innerHTML).toContain("<article>/posts</article>");
       expect(env.root.innerHTML).toContain("<article>/posts/1</article>");
@@ -2679,12 +2680,36 @@ describe("startClientApp", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(scrollTo).not.toHaveBeenCalled();
-      expect(env.root.attributes.get("style")).toBeUndefined();
+      expect(testWindow.scrollY).toBe(0);
+      expect(previousRoot?.style.top).toBe("-674px");
+      expect(env.root.attributes.get("style")).toBe("min-height: 1200px");
       expect(
         previousRoot?.attributes.get("data-van-stack-stack-position"),
       ).toBe("current");
       expect(env.root.innerHTML).not.toContain("<article>/posts/1</article>");
       expect(back).toHaveBeenCalledTimes(1);
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(32);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(previousRoot?.style.top).toBe("-674px");
+
+      for (const callback of frameCallbacks.splice(0)) {
+        callback(48);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(scrollTo).toHaveBeenCalledWith({
+        top: 674,
+        left: 0,
+        behavior: "auto",
+      });
+      expect(testWindow.scrollY).toBe(674);
+      expect(previousRoot?.style.top).toBeUndefined();
+      expect(env.root.attributes.get("style")).toBeUndefined();
     } finally {
       vi.useRealTimers();
     }

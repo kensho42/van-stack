@@ -250,10 +250,14 @@ async function restoreSwipeBackScroll(
   }
 
   const requestFrame = input.window.requestAnimationFrame?.bind(input.window);
-  if (requestFrame) {
-    await new Promise<void>((resolve) => {
-      requestFrame(() => requestFrame(() => resolve()));
-    });
+  const waitForPaint = requestFrame
+    ? () =>
+        new Promise<void>((resolve) => {
+          requestFrame(() => requestFrame(() => resolve()));
+        })
+    : null;
+  if (waitForPaint) {
+    await waitForPaint();
   }
 
   await activate();
@@ -265,6 +269,11 @@ async function restoreSwipeBackScroll(
   }
 
   if (updateLayoutOffset()) return;
+
+  if (waitForPaint && scroll.top - getWindowScroll(input.window).top > 0.5) {
+    await waitForPaint();
+    if (updateLayoutOffset()) return;
+  }
 
   restoreWindowScroll(input.window, scroll, input.scroll.behavior);
 
